@@ -1,0 +1,336 @@
+---
+// src/pages/vinilos/[slug].astro
+import MainLayout from "../../layouts/MainLayout.astro";
+import { getSiteInfo, getViniloBySlug, getVinilos } from "../../lib/wordpress";
+
+export async function getStaticPaths() {
+  const { vinilos } = await getVinilos({ limit: 20000 }); // Obtener TODOS los vinilos
+  console.log(`🎵 Generando rutas estáticas para ${vinilos.length} vinilos`);
+  return vinilos.map((v) => ({ params: { slug: v.slug }, props: { vinilo: v } }));
+}
+
+const { slug } = Astro.params;
+const { vinilo } = Astro.props;
+
+const siteInfo = await getSiteInfo();
+const data = vinilo || (await getViniloBySlug(slug));
+if (!data) {
+  return Astro.redirect("/404");
+}
+
+const imagenVinilo =
+  data.imagenPrincipalUrl ||
+  data.imagenPrincipal?.sourceUrl ||
+  data.featuredImage?.node?.sourceUrl ||
+  "/images/placeholder-vinyl.jpg";
+
+const altImagen =
+  data.imagenPrincipal?.altText ||
+  data.featuredImage?.node?.altText ||
+  data.title;
+
+const pageTitle = data.seo?.title || `${data.title} - VinylStation`;
+const pageDescription =
+  data.seo?.metaDesc ||
+  data.excerpt ||
+  `Descubre "${data.title}" en VinylStation.`;
+---
+<MainLayout title={`${pageTitle} | ${siteInfo.title}`} description={pageDescription}>
+  <div class="vinilo-page">
+    <nav class="breadcrumbs">
+      <div class="container">
+        <a href="/">Inicio</a>
+        <span class="separator">›</span>
+        <a href="/vinilos">Vinilos</a>
+        <span class="separator">›</span>
+        <span class="current">{data.title}</span>
+      </div>
+    </nav>
+
+    <section class="vinilo-details">
+      <div class="container">
+        <div class="vinilo-layout">
+          <div class="vinilo-image-section">
+            <div class="main-image">
+              <img
+                src={imagenVinilo}
+                alt={altImagen}
+                loading="lazy"
+                onerror="this.onerror=null;this.src='/images/placeholder-vinyl.jpg';"
+              />
+              <div class="vinilo-badge">VINILO</div>
+            </div>
+          </div>
+
+          <div class="vinilo-info-section">
+            <header class="vinilo-header">
+              <h1>{data.title}</h1>
+            </header>
+
+            {data.excerpt && (
+              <div class="vinilo-description">
+                <h4>Descripción</h4>
+                <div class="content" set:html={data.excerpt}></div>
+              </div>
+            )}
+
+            <div class="vinilo-meta">
+              <h4>Información del Vinilo</h4>
+              <div class="meta-grid">
+                {data.camposVinilo?.vsArtista && (
+                  <div class="meta-item">
+                    <strong>Artista:</strong>
+                    <span>{data.camposVinilo.vsArtista}</span>
+                  </div>
+                )}
+                {data.camposVinilo?.vsAlbum && (
+                  <div class="meta-item">
+                    <strong>Álbum:</strong>
+                    <span>{data.camposVinilo.vsAlbum}</span>
+                  </div>
+                )}
+                {data.camposVinilo?.vsPrecio && (
+                  <div class="meta-item">
+                    <strong>Precio:</strong>
+                    <span>{data.camposVinilo.vsPrecio}</span>
+                  </div>
+                )}
+                {data.date && (
+                  <div class="meta-item">
+                    <strong>Fecha de publicación:</strong>
+                    <span>{new Date(data.date).toLocaleDateString('es-ES')}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div class="vinilo-actions">
+              <a href="/vinilos" class="btn-back-vinilos">
+                ← Volver a todos los vinilos
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {data.content && (
+      <section class="vinilo-content">
+        <div class="container">
+          <h2 class="content-title">Contenido Completo</h2>
+          <div class="content-body" set:html={data.content}></div>
+        </div>
+      </section>
+    )}
+  </div>
+</MainLayout>
+
+<style>
+ /* ==== Contenedor principal ==== */
+.vinilo-page {
+  min-height: 100vh;
+  background: #0a0a0a;
+  color: #e0e0e0;
+  padding-bottom: 3rem;
+}
+
+/* ==== Breadcrumbs ==== */
+.breadcrumbs {
+  background: #111;
+  padding: 1rem 0;
+  border-bottom: 1px solid #222;
+}
+.breadcrumbs a {
+  color: #ccc;
+}
+.breadcrumbs .separator,
+.breadcrumbs .current {
+  color: #777;
+}
+
+/* ==== Grid principal ==== */
+.vinilo-details .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem 1rem;
+}
+.vinilo-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: stretch;
+}
+@media (max-width: 968px) {
+  .vinilo-layout {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+
+/* ==== Imagen 1:1 ==== */
+.vinilo-image-section {
+  position: sticky;
+  top: 2rem;
+}
+.vinilo-image-section .main-image {
+  position: relative;
+  aspect-ratio: 1/1;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.7);
+}
+.vinilo-image-section .main-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ==== Badge ==== */
+.vinilo-badge {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  background: #9333ea;
+  color: #fff;
+  padding: .5rem 1rem;
+  border-radius: 20px;
+  font-size: .8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+/* ==== Sección de info ==== */
+.vinilo-info-section {
+  background: #1a1a1a;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+.vinilo-header h1 {
+  font-size: 2.5rem;
+  color: #fff;
+  margin-bottom: 2rem;
+}
+@media (max-width: 480px) {
+  .vinilo-header h1 {
+    font-size: 1.8rem;
+  }
+}
+
+/* ==== Descripción ==== */
+.vinilo-description h4 {
+  font-size: 1.3rem;
+  color: #fff;
+  margin-bottom: 1rem;
+}
+.content,
+.vinilo-description p {
+  color: #ccc;
+  line-height: 1.6;
+  font-size: 1.05rem;
+  margin-bottom: 2rem;
+}
+
+/* ==== Meta ==== */
+.vinilo-meta h4 {
+  font-size: 1.3rem;
+  color: #fff;
+  margin-bottom: 1rem;
+}
+.meta-grid {
+  display: grid;
+  gap: .8rem;
+}
+.meta-item {
+  display: flex;
+  justify-content: space-between;
+  padding: .7rem 0;
+  border-bottom: 1px solid #333;
+}
+.meta-item strong {
+  color: #fff;
+}
+.meta-item span {
+  color: #bbb;
+}
+
+/* ==== Botón "volver" ==== */
+.vinilo-actions {
+  text-align: center;
+  padding-top: 1rem;
+  border-top: 1px solid #333;
+}
+.btn-back-vinilos {
+  background: #9333ea;
+  color: #fff;
+  padding: 1rem 2rem;
+  border-radius: 30px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background .3s, transform .3s;
+}
+.btn-back-vinilos:hover {
+  background: #7c3aed;
+  transform: translateY(-2px);
+}
+
+/* ==== Contenido completo ==== */
+.vinilo-content {
+  padding: 3rem 0;
+}
+.content-title {
+  color: #9333ea;
+  font-size: 2rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+.content-body {
+  max-width: 800px;
+  margin: 0 auto;
+  background: #1a1a1a;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+.content-body p {
+  color: #ccc;
+  line-height: 1.6;
+  margin-bottom: 1rem;
+}
+.content-body h1,
+.content-body h2,
+.content-body h3,
+.content-body h4,
+.content-body h5,
+.content-body h6 {
+  color: #fff;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+}
+.content-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 1rem 0;
+}
+.content-body ul,
+.content-body ol {
+  color: #ccc;
+  padding-left: 1.5rem;
+  margin-bottom: 1rem;
+}
+.content-body blockquote {
+  border-left: 4px solid #9333ea;
+  padding-left: 1rem;
+  margin: 1rem 0;
+  font-style: italic;
+  color: #bbb;
+}
+
+/* Mensajes sin contenido */
+.no-content {
+  text-align: center;
+  color: #777;
+  font-style: italic;
+}
+</style>

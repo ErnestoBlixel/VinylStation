@@ -1,0 +1,4 @@
+---
+// Redireccionar /vinilos/index a /vinilos/ (primera página)
+return Astro.redirect('/vinilos/', 301);
+---

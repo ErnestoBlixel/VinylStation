@@ -1,0 +1,13 @@
+@echo off
+echo 🔧 APLICANDO ESTILOS DE ENCABEZADOS MEJORADOS...
+echo.
+echo 🗂️ Limpiando cache...
+if exist "dist" rmdir /s /q "dist"
+if exist ".astro" rmdir /s /q ".astro"
+
+echo 🔨 Reconstruyendo con los nuevos estilos...
+npm run build
+
+echo 🚀 Iniciando servidor...
+start http://localhost:4321/noticias
+npm run dev

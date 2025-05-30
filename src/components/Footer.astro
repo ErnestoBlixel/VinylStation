@@ -1,0 +1,114 @@
+---
+const currentYear = new Date().getFullYear();
+---
+
+<footer>
+  <div class="footer-content">
+    <div class="footer-logo">
+      <h2>VinylStation</h2>
+      <p>Tu plataforma para amantes del vinilo</p>
+    </div>
+    
+    <div class="footer-links">
+      <h3>Enlaces Rápidos</h3>
+      <ul>
+        <li><a href="/">Inicio</a></li>
+        <li><a href="/coleccion">Mi Colección</a></li>
+        <li><a href="/explorar">Explorar</a></li>
+        <li><a href="/sobre-nosotros">Sobre Nosotros</a></li>
+      </ul>
+    </div>
+    
+    <div class="footer-social">
+      <h3>Síguenos</h3>
+      <div class="social-icons">
+        <a href="#" aria-label="Facebook">FB</a>
+        <a href="#" aria-label="Twitter">TW</a>
+        <a href="#" aria-label="Instagram">IG</a>
+      </div>
+    </div>
+  </div>
+  
+  <div class="footer-bottom">
+    <p>&copy; {currentYear} VinylStation. Todos los derechos reservados.</p>
+  </div>
+</footer>
+
+<style>
+  footer {
+    background-color: #1e1e1e;
+    color: white;
+    padding: 2rem 1rem 1rem;
+  }
+  
+  .footer-content {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    max-width: 1200px;
+    margin: 0 auto;
+    gap: 2rem;
+  }
+  
+  .footer-logo h2 {
+    margin: 0 0 0.5rem 0;
+  }
+  
+  .footer-links ul {
+    list-style: none;
+    padding: 0;
+  }
+  
+  .footer-links li {
+    margin-bottom: 0.5rem;
+  }
+  
+  .footer-links a {
+    color: #ddd;
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+  
+  .footer-links a:hover {
+    color: #f9ca24;
+  }
+  
+  .social-icons {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+  
+  .social-icons a {
+    display: inline-block;
+    width: 2rem;
+    height: 2rem;
+    background-color: #333;
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    transition: background-color 0.3s;
+  }
+  
+  .social-icons a:hover {
+    background-color: #f9ca24;
+    color: #1e1e1e;
+  }
+  
+  .footer-bottom {
+    text-align: center;
+    padding-top: 2rem;
+    margin-top: 2rem;
+    border-top: 1px solid #333;
+  }
+  
+  @media (max-width: 768px) {
+    .footer-content {
+      flex-direction: column;
+      gap: 1.5rem;
+    }
+  }
+</style>

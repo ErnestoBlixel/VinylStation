@@ -1,0 +1,379 @@
+---
+// Página de inicio - SOLO datos reales desde WordPress
+import MainLayout from '../layouts/MainLayout.astro';
+import { getSiteInfo, getPageData } from '../lib/wordpress';
+
+// Variables para controlar errores
+let hasError = false;
+let errorMessage = '';
+let siteInfo = null;
+let pageData = null;
+
+try {
+  console.log('🔄 Obteniendo datos desde WordPress...');
+  
+  // Obtener información del sitio
+  siteInfo = await getSiteInfo();
+  console.log('✅ SiteInfo obtenido:', siteInfo);
+  
+  // Obtener datos de la página home
+  pageData = await getPageData('home');
+  console.log('✅ PageData obtenido:', pageData);
+  
+  // Verificar que tenemos los datos mínimos necesarios
+  if (!siteInfo || !siteInfo.title) {
+    throw new Error('No se pudo obtener el título del sitio desde WordPress');
+  }
+  
+  if (!siteInfo.description) {
+    throw new Error('No se pudo obtener la descripción del sitio desde WordPress');
+  }
+  
+  console.log('✅ Todos los datos obtenidos correctamente');
+  
+} catch (error) {
+  console.error('❌ Error obteniendo datos de WordPress:', error);
+  hasError = true;
+  errorMessage = `Error conectando con WordPress: ${error.message}`;
+}
+
+// USAR SOLO DATOS REALES - Sin fallbacks inventados
+// Priorizar título del sitio sobre título de página para el H1
+const heroTitle = hasError ? null : (siteInfo?.title || pageData?.title);
+const heroDescription = hasError ? null : (siteInfo?.description || pageData?.excerpt);
+const logoImage = hasError ? null : (siteInfo?.logo?.url || pageData?.featuredImage?.url);
+const logoAlt = hasError ? null : (siteInfo?.logo?.altText || pageData?.featuredImage?.altText);
+
+// SEO usando datos reales
+const pageTitle = hasError ? 'Error - VinylStation' : (pageData?.seo?.title || `${siteInfo.title}`);
+const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.metaDesc || siteInfo.description);
+---
+
+<MainLayout title={pageTitle} description={pageDescription}>
+  <div class="container">
+    {hasError ? (
+      <!-- Vista de ERROR -->
+      <div class="error-container">
+        <div class="error-icon">⚠️</div>
+        <h1 class="error-title">Error de Conexión</h1>
+        <p class="error-message">{errorMessage}</p>
+        <div class="error-details">
+          <h3>Detalles técnicos:</h3>
+          <ul>
+            <li>Verificar conexión a: https://cms.vinylstation.es/graphql</li>
+            <li>Comprobar que WordPress esté funcionando</li>
+            <li>Revisar configuración de GraphQL</li>
+          </ul>
+        </div>
+        <div class="error-actions">
+          <button onclick="window.location.reload()" class="btn primary-btn">
+            🔄 Reintentar
+          </button>
+        </div>
+      </div>
+    ) : (
+      <!-- Vista NORMAL con datos reales -->
+      <header class="page-header">
+        {logoImage && (
+          <div class="site-icon-container">
+            <img src={logoImage} alt={logoAlt || 'Logo'} class="site-icon">
+          </div>
+        )}
+        
+        <h1>{heroTitle}</h1>
+        <p class="page-description">{heroDescription}</p>
+        
+        <!-- Mostrar información de debug -->
+        <div class="debug-info">
+          <details>
+            <summary>🔍 Debug Info (click para ver)</summary>
+            <div class="debug-content">
+              <p><strong>Título del sitio:</strong> {siteInfo?.title || 'No obtenido'}</p>
+              <p><strong>Descripción:</strong> {siteInfo?.description || 'No obtenido'}</p>
+              <p><strong>URL del logo:</strong> {siteInfo?.logo?.url || 'No obtenido'}</p>
+              <p><strong>Fuente del logo:</strong> {siteInfo?.logo?.source || 'No especificado'}</p>
+              {siteInfo?.logo?.errorMessage && (
+                <p><strong>Error del logo:</strong> {siteInfo.logo.errorMessage}</p>
+              )}
+              {siteInfo?.logo?.databaseId && (
+                <p><strong>ID del logo:</strong> {siteInfo.logo.databaseId}</p>
+              )}
+              <p><strong>Página obtenida:</strong> {pageData?.title || 'No obtenido'}</p>
+            </div>
+          </details>
+        </div>
+        
+        <div class="hero-actions">
+          <a href="/vinilos" class="btn primary-btn">Explorar Vinilos</a>
+          <a href="/programas" class="btn secondary-btn">Ver Programas</a>
+        </div>
+      </header>
+    )}
+  </div>
+</MainLayout>
+
+<style>
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 4rem 1rem;
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+  }
+  
+  /* === ESTILOS PARA ERROR === */
+  .error-container {
+    text-align: center;
+    width: 100%;
+    padding: 2rem;
+    background: #1a1a1a;
+    border-radius: 15px;
+    border: 2px solid #ff3333;
+  }
+  
+  .error-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+  
+  .error-title {
+    color: #ff3333;
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .error-message {
+    color: #fff;
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    background: #333;
+    padding: 1rem;
+    border-radius: 8px;
+    font-family: monospace;
+  }
+  
+  .error-details {
+    text-align: left;
+    max-width: 500px;
+    margin: 0 auto 2rem;
+    background: #2a2a2a;
+    padding: 1.5rem;
+    border-radius: 8px;
+  }
+  
+  .error-details h3 {
+    color: #ff3333;
+    margin-bottom: 1rem;
+  }
+  
+  .error-details ul {
+    color: #ccc;
+    list-style-position: inside;
+  }
+  
+  .error-details li {
+    margin-bottom: 0.5rem;
+  }
+  
+  /* === ESTILOS NORMALES === */
+  .page-header {
+    text-align: center;
+    width: 100%;
+  }
+  
+  .site-icon-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+  }
+  
+  .site-icon {
+    height: 120px;
+    width: auto;
+    animation: pulse 3s infinite ease-in-out;
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255, 51, 51, 0.5)); }
+    50% { transform: scale(1.05); filter: drop-shadow(0 0 8px rgba(255, 51, 51, 0.8)); }
+    100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255, 51, 51, 0.5)); }
+  }
+  
+  h1 {
+    font-size: 4rem;
+    margin: 0 0 1.5rem;
+    color: var(--color-primary, #ff3333);
+    position: relative;
+    display: inline-block;
+    font-weight: 800;
+  }
+  
+  h1::after {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 4px;
+    background: linear-gradient(90deg, 
+      transparent, 
+      var(--color-primary, #ff3333), 
+      transparent);
+    border-radius: 2px;
+  }
+  
+  .page-description {
+    max-width: 800px;
+    margin: 2rem auto 1rem;
+    color: #777;
+    font-size: 1.3rem;
+    line-height: 1.6;
+  }
+
+  /* === DEBUG INFO === */
+  .debug-info {
+    margin: 2rem auto;
+    max-width: 600px;
+  }
+  
+  .debug-info details {
+    background: #1a1a1a;
+    border-radius: 8px;
+    border: 1px solid #333;
+  }
+  
+  .debug-info summary {
+    padding: 1rem;
+    cursor: pointer;
+    color: #888;
+    font-size: 0.9rem;
+    transition: color 0.3s ease;
+  }
+  
+  .debug-info summary:hover {
+    color: #ff3333;
+  }
+  
+  .debug-content {
+    padding: 0 1rem 1rem;
+    border-top: 1px solid #333;
+    background: #0d0d0d;
+  }
+  
+  .debug-content p {
+    margin: 0.5rem 0;
+    font-size: 0.9rem;
+    color: #ccc;
+    font-family: monospace;
+  }
+  
+  .debug-content strong {
+    color: #ff3333;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 3rem;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    min-width: 180px;
+    text-align: center;
+    border: none;
+    cursor: pointer;
+  }
+
+  .primary-btn {
+    background: var(--color-primary, #ff3333);
+    color: #ffffff;
+    border: 2px solid var(--color-primary, #ff3333);
+  }
+
+  .primary-btn:hover {
+    background: var(--color-secondary, #bb2424);
+    border-color: var(--color-secondary, #bb2424);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
+  }
+
+  .secondary-btn {
+    background: transparent;
+    color: var(--color-primary, #ff3333);
+    border: 2px solid var(--color-primary, #ff3333);
+  }
+
+  .secondary-btn:hover {
+    background: var(--color-primary, #ff3333);
+    color: #ffffff;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
+  }
+  
+  @media (max-width: 768px) {
+    .container {
+      padding: 2rem 1rem;
+      min-height: 60vh;
+    }
+
+    .site-icon {
+      height: 80px;
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+    }
+    
+    .page-description {
+      font-size: 1.1rem;
+      margin: 1.5rem auto 1rem;
+    }
+
+    .hero-actions {
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .btn {
+      width: 200px;
+      padding: 0.9rem 1.5rem;
+      font-size: 1rem;
+    }
+
+    .error-title {
+      font-size: 2rem;
+    }
+    
+    .error-message {
+      font-size: 1rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    h1 {
+      font-size: 2rem;
+    }
+    
+    .page-description {
+      font-size: 1rem;
+    }
+    
+    .error-title {
+      font-size: 1.5rem;
+    }
+  }
+</style>

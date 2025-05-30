@@ -1,0 +1,313 @@
+---
+// src/pages/programas/[slug].astro
+import MainLayout from "../../layouts/MainLayout.astro";
+import { getSiteInfo, getProgramaBySlug, getProgramas } from "../../lib/wordpress";
+
+export async function getStaticPaths() {
+  const { programas } = await getProgramas({ limit: 100 });
+  return programas.map((p) => ({ params: { slug: p.slug }, props: { programa: p } }));
+}
+
+const { slug } = Astro.params;
+const { programa } = Astro.props;
+
+const siteInfo = await getSiteInfo();
+const data = programa || (await getProgramaBySlug(slug));
+if (!data) {
+  return Astro.redirect("/404");
+}
+
+const imagenPrograma =
+  data.imagenPrincipalUrl ||
+  data.imagenPrincipal?.sourceUrl ||
+  data.featuredImage?.node?.sourceUrl ||
+  "/images/placeholder-radio.jpg";
+
+const altImagen =
+  data.imagenPrincipal?.altText ||
+  data.featuredImage?.node?.altText ||
+  data.title;
+
+const pageTitle = data.seo?.title || `${data.title} - VinylStation`;
+const pageDescription =
+  data.seo?.metaDesc ||
+  data.camposPrograma?.vsDescripcion ||
+  `Escucha "${data.title}", programa en VinylStation Radio.`;
+---
+<MainLayout title={`${pageTitle} | ${siteInfo.title}`} description={pageDescription}}>
+  <div class="programa-page">
+    <nav class="breadcrumbs">
+      <div class="container">
+        <a href="/">Inicio</a>
+        <span class="separator">›</span>
+        <a href="/programas">Programas</a>
+        <span class="separator">›</span>
+        <span class="current">{data.title}</span>
+      </div>
+    </nav>
+
+    <section class="programa-details">
+      <div class="container">
+        <div class="programa-layout">
+          <div class="programa-image-section">
+            <div class="main-image">
+              <img
+                src={imagenPrograma}
+                alt={altImagen}
+                loading="lazy"
+                onerror="this.onerror=null;this.src='/images/placeholder-radio.jpg';"
+              />
+              <div class="programa-badge">PROGRAMA</div>
+            </div>
+          </div>
+
+          <div class="programa-info-section">
+            <header class="programa-header">
+              <h1>{data.title}</h1>
+            </header>
+
+            {data.camposPrograma?.vsDescripcion && (
+              <div class="programa-description">
+                <h4>Sobre el programa</h4>
+                <div class="content" set:html={data.camposPrograma.vsDescripcion}></div>
+              </div>
+            )}
+
+            <div class="programa-meta">
+              <h4>Equipo / Locutor</h4>
+              <div class="meta-grid">
+                {data.camposPrograma?.vsEquipo?.nodes?.length ? (
+                  data.camposPrograma.vsEquipo.nodes.map((m) => (
+                    <div class="meta-item" key={m.id}>
+                      <strong>{m.title}</strong>
+                    </div>
+                  ))
+                ) : (
+                  <div class="meta-item">Aún no tenemos equipo o locutor asignado.</div>
+                )}
+              </div>
+            </div>
+
+            <div class="programa-actions">
+              <a href="/programas" class="btn-back-programas">
+                ← Volver a todos los programas
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="programa-listas">
+      <div class="container">
+        <h2 class="programs-title">Listas de Canciones</h2>
+        {data.camposPrograma?.vsListasDeCanciones?.length ? (
+          <ul class="song-list">
+            {data.camposPrograma.vsListasDeCanciones.map((lista) => (
+              <li key={lista}>{lista}</li>
+            ))}
+          </ul>
+        ) : (
+          <p class="no-programs">Aún no tenemos lista de canciones.</p>
+        )}
+      </div>
+    </section>
+  </div>
+</MainLayout>
+
+<style>
+ /* ==== Contenedor principal ==== */
+.programa-page {
+  min-height: 100vh;
+  background: #0a0a0a;
+  color: #e0e0e0;
+  padding-bottom: 3rem;
+}
+
+/* ==== Breadcrumbs ==== */
+.breadcrumbs {
+  background: #111;
+  padding: 1rem 0;
+  border-bottom: 1px solid #222;
+}
+.breadcrumbs a {
+  color: #ccc;
+}
+.breadcrumbs .separator,
+.breadcrumbs .current {
+  color: #777;
+}
+
+/* ==== Grid principal ==== */
+.programa-details .container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 3rem 1rem;
+}
+.programa-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4rem;
+  align-items: stretch;
+}
+@media (max-width: 968px) {
+  .programa-layout {
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+
+/* ==== Imagen 1:1 ==== */
+.programa-image-section {
+  position: sticky;
+  top: 2rem;
+}
+.programa-image-section .main-image {
+  position: relative;
+  aspect-ratio: 1/1;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.7);
+}
+.programa-image-section .main-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* ==== Badge ==== */
+.programa-badge {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  background: #ff3333;
+  color: #fff;
+  padding: .5rem 1rem;
+  border-radius: 20px;
+  font-size: .8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+/* ==== Sección de info ==== */
+.programa-info-section {
+  background: #1a1a1a;
+  padding: 2rem;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+}
+.programa-header h1 {
+  font-size: 2.5rem;
+  color: #fff;
+  margin-bottom: 2rem;
+}
+@media (max-width: 480px) {
+  .programa-header h1 {
+    font-size: 1.8rem;
+  }
+}
+
+/* ==== Descripción ==== */
+.programa-description h4 {
+  font-size: 1.3rem;
+  color: #fff;
+  margin-bottom: 1rem;
+}
+.content,
+.programa-description p {
+  color: #ccc;
+  line-height: 1.6;
+  font-size: 1.05rem;
+  margin-bottom: 2rem;
+}
+
+/* ==== Meta ==== */
+.programa-meta h4 {
+  font-size: 1.3rem;
+  color: #fff;
+  margin-bottom: 1rem;
+}
+.meta-grid {
+  display: grid;
+  gap: .8rem;
+}
+.meta-item {
+  display: flex;
+  justify-content: space-between;
+  padding: .7rem 0;
+  border-bottom: 1px solid #333;
+}
+.meta-item strong {
+  color: #fff;
+}
+.meta-item span {
+  color: #bbb;
+}
+
+/* ==== Botón “volver” ==== */
+.programa-actions {
+  text-align: center;
+  padding-top: 1rem;
+  border-top: 1px solid #333;
+}
+.btn-back-programas {
+  background: #ff3333;
+  color: #fff;
+  padding: 1rem 2rem;
+  border-radius: 30px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background .3s, transform .3s;
+}
+.btn-back-programas:hover {
+  background: #cc2929;
+  transform: translateY(-2px);
+}
+
+/* ==== Equipo Relacionado & Listas ==== */
+.programa-equipo,
+.programa-listas {
+  padding: 3rem 0;
+}
+.programs-title {
+  color: #ff3333;
+  font-size: 2rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+.programs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 1.5rem;
+}
+.program-card {
+  background: #1a1a1a;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+  text-align: center;
+  color: #fff;
+}
+.program-card .program-image {
+  aspect-ratio: 1/1;
+  overflow: hidden;
+}
+.program-card .program-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.program-card .program-info {
+  padding: 1rem;
+}
+.program-card .program-title {
+  margin: .5rem 0;
+}
+
+/* Mensajes sin contenido */
+.no-programs {
+  text-align: center;
+  color: #777;
+  font-style: italic;
+}
+</style>

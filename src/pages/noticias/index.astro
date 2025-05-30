@@ -1,0 +1,856 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import { getSiteInfo, getPageData, getNoticias, getCategoriasNoticias } from '../../lib/wordpress.js';
+
+// Helper para convertir "<p>Hola</p>" → "Hola"
+const stripHtml = (html) =>
+  html?.replace?.(/<[^>]*>/g, '').trim() || '';
+
+// Helper para formatear fecha
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
+
+let hasError = false;
+let errorMessage = '';
+let siteInfo = null;
+let pageData = null;
+let noticiasData = null;
+let categoriasData = null;
+
+try {
+  siteInfo = await getSiteInfo();
+  pageData = await getPageData('noticias');
+  noticiasData = await getNoticias({ limit: 20000 });
+  categoriasData = await getCategoriasNoticias();
+
+  if (!siteInfo || !siteInfo.title) {
+    throw new Error('No se pudo obtener el título del sitio desde WordPress');
+  }
+} catch (error) {
+  hasError = true;
+  errorMessage = `Error conectando con WordPress: ${error.message}`;
+}
+
+const noticias = hasError ? [] : (noticiasData?.noticias || []);
+const categorias = hasError ? [] : (categoriasData?.categorias || []);
+const heroTitle = hasError ? null : (pageData?.title || "Últimas Noticias");
+const heroDescription = hasError ? null : (pageData?.excerpt || "Mantente al día con las últimas noticias de música, vinilo y cultura musical");
+
+const pageTitle = hasError ? 'Error - Noticias' : (pageData?.seo?.title || `${heroTitle} - VinylStation`);
+const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.metaDesc || heroDescription);
+
+// Agrupar noticias por categoría para estadísticas
+const noticiasPorCategoria = noticias.reduce((acc, noticia) => {
+  const cats = noticia.categorias?.nodes || [];
+  cats.forEach(cat => {
+    if (!acc[cat.name]) acc[cat.name] = 0;
+    acc[cat.name]++;
+  });
+  return acc;
+}, {});
+---
+
+<MainLayout title={`${pageTitle} | ${siteInfo?.title || 'VinylStation'}`} description={pageDescription}>
+  {hasError ? (
+    <div class="container">
+      <div class="error-container">
+        <div class="error-icon">📰</div>
+        <h1 class="error-title">Error Cargando Noticias</h1>
+        <p class="error-message">{errorMessage}</p>
+        <div class="error-details">
+          <h3>Posibles soluciones:</h3>
+          <ul>
+            <li>Verificar conexión a: https://cms.vinylstation.es/graphql</li>
+            <li>Comprobar que WordPress esté funcionando</li>
+            <li>Revisar configuración de GraphQL y ACF</li>
+            <li>Verificar que las noticias tengan campos configurados</li>
+          </ul>
+        </div>
+        <div class="error-actions">
+          <button onclick="window.location.reload()" class="btn primary-btn">
+            🔄 Reintentar
+          </button>
+          <a href="/" class="btn secondary-btn">← Volver al inicio</a>
+        </div>
+      </div>
+    </div>
+  ) : (
+    <>
+      <!-- Hero Section -->
+      <div class="container">
+        <header class="page-header">
+          {siteInfo.logo?.url && (
+            <div class="site-icon-container">
+              <img src={siteInfo.logo.url} alt={siteInfo.logo.altText || 'Logo'} class="site-icon" />
+            </div>
+          )}
+          <h1>{heroTitle}</h1>
+          <p class="page-description">{heroDescription}</p>
+          <div class="news-stats">
+            <div class="stat-card">
+              <span class="stat-number">{noticias.length}</span>
+              <span class="stat-label">Noticias</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-number">{categorias.length}</span>
+              <span class="stat-label">Categorías</span>
+            </div>
+            <div class="stat-card">
+              <span class="stat-number">24h</span>
+              <span class="stat-label">Actualizadas</span>
+            </div>
+          </div>
+          <div class="hero-actions">
+            <a href="/programas" class="btn secondary-btn">Ver Programas</a>
+            <a href="#noticias" class="btn primary-btn">Leer Noticias</a>
+          </div>
+        </header>
+      </div>
+
+      <!-- Filtros por Categoría -->
+      {categorias.length > 0 && (
+        <section class="categories-section">
+          <div class="categories-container">
+            <h3 class="categories-title">Explorar por Categoría</h3>
+            <div class="categories-grid">
+              <button class="category-filter active" data-category="all">
+                Todas las Noticias
+                <span class="category-count">{noticias.length}</span>
+              </button>
+              {categorias.map((categoria) => (
+                <button class="category-filter" data-category={categoria.slug}>
+                  {categoria.name}
+                  <span class="category-count">{noticiasPorCategoria[categoria.name] || 0}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      <!-- Sección de Noticias -->
+      <section id="noticias" class="news-section">
+        <div class="news-container">
+          <h2 class="news-title">Todas las Noticias</h2>
+          {noticias.length > 0 ? (
+            <div class="news-grid">
+              {noticias.map((noticia) => {
+                // imagen destacada
+                const imagen =
+                  noticia.imagenDestacadaUrl ||
+                  noticia.featuredImage?.node?.sourceUrl ||
+                  '/images/placeholder-news.jpg';
+
+                // descripción como texto limpio
+                const rawDesc =
+                  noticia.excerpt ||
+                  `Noticia "${noticia.title}" - Últimas noticias de VinylStation`;
+                const descripcion = stripHtml(rawDesc);
+
+                // categorías
+                const categoriasNoticia = noticia.categorias?.nodes || [];
+                const fechaPublicacion = formatDate(noticia.date);
+
+                return (
+                  <article class="news-card" data-categories={categoriasNoticia.map(c => c.slug).join(' ')}>
+                    <div class="news-image">
+                      <img
+                        src={imagen}
+                        alt={noticia.featuredImage?.node?.altText || noticia.title}
+                        loading="lazy"
+                        onerror="this.src='/images/placeholder-news.jpg'"
+                      />
+                      <div class="news-overlay">
+                        <a href={`/noticias/${noticia.slug || noticia.id}`} class="news-link">
+                          Leer Noticia
+                        </a>
+                      </div>
+                      {categoriasNoticia.length > 0 && (
+                        <div class="news-categories">
+                          {categoriasNoticia.slice(0, 2).map((cat) => (
+                            <span class="category-badge" key={cat.id}>{cat.name}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div class="news-info">
+                      <h3 class="news-title-card">{noticia.title}</h3>
+                      <p class="news-description">{descripcion}</p>
+                      <div class="news-meta">
+                        <time class="news-date">{fechaPublicacion}</time>
+                        {noticia.author?.node?.name && (
+                          <span class="news-author">Por {noticia.author.node.name}</span>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div class="no-news">
+              <div class="no-news-icon">📰</div>
+              <h3>No hay noticias disponibles</h3>
+              <p>Las noticias aparecerán aquí cuando sean publicadas en WordPress.</p>
+            </div>
+          )}
+        </div>
+      </section>
+    </>
+  )}
+</MainLayout>
+
+<script>
+  // Filtros de categorías
+  document.addEventListener('DOMContentLoaded', function() {
+    const filterButtons = document.querySelectorAll('.category-filter');
+    const newsCards = document.querySelectorAll('.news-card');
+    const newsTitle = document.querySelector('.news-title');
+
+    filterButtons.forEach(button => {
+      button.addEventListener('click', function() {
+        // Remover clase active de todos los botones
+        filterButtons.forEach(btn => btn.classList.remove('active'));
+        // Añadir clase active al botón clickeado
+        this.classList.add('active');
+
+        const selectedCategory = this.dataset.category;
+        let visibleCount = 0;
+
+        // Filtrar noticias
+        newsCards.forEach(card => {
+          const cardCategories = card.dataset.categories;
+          
+          if (selectedCategory === 'all' || cardCategories.includes(selectedCategory)) {
+            card.style.display = 'block';
+            visibleCount++;
+          } else {
+            card.style.display = 'none';
+          }
+        });
+
+        // Actualizar título de sección
+        if (selectedCategory === 'all') {
+          newsTitle.textContent = 'Todas las Noticias';
+        } else {
+          const categoryName = this.textContent.replace(/\d+/, '').trim();
+          newsTitle.textContent = `Noticias de ${categoryName}`;
+        }
+      });
+    });
+  });
+</script>
+
+<style>
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 4rem 1rem;
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+  }
+  
+  /* === ESTILOS PARA ERROR === */
+  .error-container {
+    text-align: center;
+    width: 100%;
+    padding: 2rem;
+    background: #1a1a1a;
+    border-radius: 15px;
+    border: 2px solid #ff3333;
+  }
+  
+  .error-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+  
+  .error-title {
+    color: #ff3333;
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .error-message {
+    color: #fff;
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    background: #333;
+    padding: 1rem;
+    border-radius: 8px;
+    font-family: monospace;
+  }
+  
+  .error-details {
+    text-align: left;
+    max-width: 500px;
+    margin: 0 auto 2rem;
+    background: #2a2a2a;
+    padding: 1.5rem;
+    border-radius: 8px;
+  }
+  
+  .error-details h3 {
+    color: #ff3333;
+    margin-bottom: 1rem;
+  }
+  
+  .error-details ul {
+    color: #ccc;
+    list-style-position: inside;
+  }
+  
+  .error-details li {
+    margin-bottom: 0.5rem;
+  }
+
+  .error-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  /* === ESTILOS NORMALES === */
+  .page-header {
+    text-align: center;
+    width: 100%;
+  }
+  
+  .site-icon-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+  }
+  
+  .site-icon {
+    height: 120px;
+    width: auto;
+    animation: pulse 3s infinite ease-in-out;
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255, 51, 51, 0.5)); }
+    50% { transform: scale(1.05); filter: drop-shadow(0 0 8px rgba(255, 51, 51, 0.8)); }
+    100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255, 51, 51, 0.5)); }
+  }
+  
+  h1 {
+    font-size: 4rem;
+    margin: 0 0 1.5rem;
+    color: var(--color-primary, #ff3333);
+    position: relative;
+    display: inline-block;
+    font-weight: 800;
+  }
+  
+  h1::after {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 4px;
+    background: linear-gradient(90deg, 
+      transparent, 
+      var(--color-primary, #ff3333), 
+      transparent);
+    border-radius: 2px;
+  }
+  
+  .page-description {
+    max-width: 800px;
+    margin: 2rem auto 1rem;
+    color: #777;
+    font-size: 1.3rem;
+    line-height: 1.6;
+  }
+
+  /* === ESTADÍSTICAS DE NOTICIAS === */
+  .news-stats {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin: 2rem auto;
+    flex-wrap: wrap;
+  }
+
+  .stat-card {
+    background: linear-gradient(135deg, rgba(255, 51, 51, 0.1), rgba(255, 51, 51, 0.05));
+    border: 2px solid rgba(255, 51, 51, 0.2);
+    border-radius: 15px;
+    padding: 1.5rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 120px;
+    transition: all 0.3s ease;
+  }
+
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.2);
+    border-color: var(--color-primary, #ff3333);
+  }
+
+  .stat-number {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--color-primary, #ff3333);
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 3rem;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    min-width: 180px;
+    text-align: center;
+    border: none;
+    cursor: pointer;
+  }
+
+  .primary-btn {
+    background: var(--color-primary, #ff3333);
+    color: #ffffff;
+    border: 2px solid var(--color-primary, #ff3333);
+  }
+
+  .primary-btn:hover {
+    background: var(--color-secondary, #bb2424);
+    border-color: var(--color-secondary, #bb2424);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
+  }
+
+  .secondary-btn {
+    background: transparent;
+    color: var(--color-primary, #ff3333);
+    border: 2px solid var(--color-primary, #ff3333);
+  }
+
+  .secondary-btn:hover {
+    background: var(--color-primary, #ff3333);
+    color: #ffffff;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
+  }
+
+  /* === FILTROS DE CATEGORÍAS === */
+  .categories-section {
+    background: #111;
+    padding: 2rem 0;
+    border-top: 1px solid #222;
+    border-bottom: 1px solid #222;
+  }
+
+  .categories-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+
+  .categories-title {
+    text-align: center;
+    color: #fff;
+    font-size: 1.5rem;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+  }
+
+  .categories-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+  }
+
+  .category-filter {
+    background: #222;
+    color: #ccc;
+    border: 2px solid #333;
+    padding: 0.8rem 1.5rem;
+    border-radius: 25px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .category-filter:hover {
+    background: #333;
+    border-color: var(--color-primary, #ff3333);
+    color: #fff;
+  }
+
+  .category-filter.active {
+    background: var(--color-primary, #ff3333);
+    color: #fff;
+    border-color: var(--color-primary, #ff3333);
+  }
+
+  .category-count {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+
+  .category-filter.active .category-count {
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  /* === SECCIÓN DE NOTICIAS === */
+  .news-section {
+    background: #0a0a0a;
+    padding: 4rem 0;
+    color: #ffffff;
+  }
+  
+  .news-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+  
+  .news-title {
+    text-align: center;
+    font-size: 2.5rem;
+    color: var(--color-primary, #ff3333);
+    margin-bottom: 3rem;
+    font-weight: 700;
+    transition: all 0.3s ease;
+  }
+  
+  .news-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+  
+  .news-card {
+    background: #1a1a1a;
+    border-radius: 15px;
+    overflow: hidden;
+    border: 1px solid #333;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  }
+  
+  .news-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.2);
+    border-color: var(--color-primary, #ff3333);
+  }
+  
+  .news-image {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+  }
+
+  .news-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+  
+  .news-card:hover .news-image img {
+    transform: scale(1.05);
+  }
+  
+  .news-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  .news-card:hover .news-overlay {
+    opacity: 1;
+  }
+  
+  .news-link {
+    background: var(--color-primary, #ff3333);
+    color: white;
+    padding: 0.8rem 1.5rem;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: 600;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+  }
+  
+  .news-card:hover .news-link {
+    transform: translateY(0);
+  }
+
+  .news-categories {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .category-badge {
+    background: var(--color-primary, #ff3333);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+  }
+  
+  .news-info {
+    padding: 1.5rem;
+  }
+  
+  .news-title-card {
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin: 0 0 0.8rem 0;
+    line-height: 1.3;
+  }
+  
+  .news-description {
+    color: #b3b3b3;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin: 0 0 1rem 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .news-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid #333;
+    font-size: 0.8rem;
+  }
+
+  .news-date {
+    color: var(--color-primary, #ff3333);
+    font-weight: 600;
+  }
+
+  .news-author {
+    color: #666;
+  }
+  
+  .no-news {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #666;
+  }
+  
+  .no-news-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+  
+  .no-news h3 {
+    color: #ffffff;
+    margin-bottom: 0.5rem;
+  }
+  
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    .container {
+      padding: 2rem 1rem;
+      min-height: 60vh;
+    }
+
+    .site-icon {
+      height: 80px;
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+    }
+    
+    .page-description {
+      font-size: 1.1rem;
+      margin: 1.5rem auto 1rem;
+    }
+
+    .news-stats {
+      gap: 1rem;
+    }
+
+    .stat-card {
+      padding: 1rem 1.5rem;
+      min-width: 100px;
+    }
+
+    .stat-number {
+      font-size: 2rem;
+    }
+
+    .stat-label {
+      font-size: 0.8rem;
+    }
+
+    .hero-actions {
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .btn {
+      width: 200px;
+      padding: 0.9rem 1.5rem;
+      font-size: 1rem;
+    }
+
+    .categories-grid {
+      justify-content: flex-start;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+    }
+
+    .category-filter {
+      flex-shrink: 0;
+      padding: 0.6rem 1.2rem;
+    }
+
+    .news-grid {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    
+    .news-card {
+      margin: 0 1rem;
+    }
+    
+    .news-title {
+      font-size: 2rem;
+    }
+    
+    .news-section {
+      padding: 2rem 0;
+    }
+  }
+
+  @media (max-width: 480px) {
+    h1 {
+      font-size: 2rem;
+    }
+    
+    .page-description {
+      font-size: 1rem;
+    }
+
+    .news-stats {
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .stat-card {
+      width: 200px;
+    }
+    
+    .error-title {
+      font-size: 1.5rem;
+    }
+
+    .news-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+
+    .categories-title {
+      font-size: 1.2rem;
+    }
+  }
+
+  /* Smooth scroll para el enlace a noticias */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Animación de entrada */
+  .page-header {
+    animation: fadeInUp 0.8s ease-out;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  .stat-card {
+    animation: fadeInUp 0.8s ease-out;
+  }
+
+  .stat-card:nth-child(1) { animation-delay: 0.1s; }
+  .stat-card:nth-child(2) { animation-delay: 0.2s; }
+  .stat-card:nth-child(3) { animation-delay: 0.3s; }
+
+  .news-card {
+    animation: fadeInUp 0.6s ease-out;
+  }
+
+  .news-card:nth-child(1) { animation-delay: 0.1s; }
+  .news-card:nth-child(2) { animation-delay: 0.2s; }
+  .news-card:nth-child(3) { animation-delay: 0.3s; }
+</style>

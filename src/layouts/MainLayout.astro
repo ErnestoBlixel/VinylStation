@@ -1,0 +1,258 @@
+---
+// src/layouts/MainLayout.astro
+// Layout principal que respeta el diseño original de VinylStation
+
+export interface Props {
+  title: string;
+  description: string;
+}
+
+const { title, description } = Astro.props;
+
+// Importar componentes originales
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import RadioPlayer from '../components/RadioPlayer.astro'; // Asegúrate que este componente exista y funcione como esperas
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title}</title>
+  <meta name="description" content={description} />
+  
+  {/* Theme color para la UI del navegador (basado en --color-bg) */}
+  <meta name="theme-color" content="#0a0a0a" /> 
+  
+  {/* Open Graph */}
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:type" content="website" />
+  {/* Considera añadir una imagen por defecto para Open Graph si la tienes:
+  <meta property="og:image" content="/images/default-og-image.png" /> 
+  <meta property="og:url" content={Astro.url.href} />
+  */}
+  
+  {/* Twitter Card */}
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+  {/* Considera añadir una imagen por defecto para Twitter Card si la tienes:
+  <meta name="twitter:image" content="/images/default-twitter-image.png" />
+  */}
+  
+  {/* Favicon */}
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  {/* Considera añadir otros favicons para compatibilidad:
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+  <link rel="manifest" href="/site.webmanifest">
+  */}
+  
+  {/* Estilos globales */}
+  {/* Asegúrate que la ruta a global.css es correcta y que el archivo existe */}
+  <link rel="stylesheet" href="/styles/global.css" />
+  
+  {/* Fuentes */}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+  {/* Header con reproductor de radio */}
+  <Header>
+    <RadioPlayer />
+  </Header>
+
+  {/* Contenido principal de la página */}
+  <main>
+    <slot /> {/* Aquí se renderiza el contenido de cada página individual */}
+  </main>
+
+  {/* Footer */}
+  <Footer />
+</body>
+</html>
+
+<style is:global>
+  /* Variables CSS originales de VinylStation (y ahora globales) */
+  :root {
+    --color-primary: #ff3333; /* Rojo vibrante, usado como color principal */
+    --color-secondary: #bb2424; /* Un rojo más oscuro, para variaciones o hover */
+    --color-accent: #f9ca24; /* Amarillo/dorado, para acentos y destaques */
+    --color-bg: #0a0a0a; /* Negro/gris muy oscuro para el fondo principal */
+    --color-surface: #1a1a1a; /* Gris oscuro para superficies de componentes como cards */
+    --color-text: #ffffff; /* Blanco para texto principal */
+    --color-text-secondary: #cccccc; /* Gris claro para texto secundario o menos importante */
+    --color-border: #333333; /* Gris para bordes sutiles */
+
+    /* Podrías añadir variables para fuentes si usas más de una o para tamaños base */
+    --font-family-base: 'Inter', sans-serif;
+  }
+
+  /* Reset y configuración base */
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    scroll-behavior: smooth; /* Para scroll suave en anclas */
+  }
+
+  body {
+    font-family: var(--font-family-base);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-size: 16px; /* Establecer un tamaño de fuente base */
+  }
+
+  main {
+    flex: 1; /* Asegura que el main ocupe el espacio disponible para que el footer quede abajo */
+    width: 100%; /* Asegura que main ocupe todo el ancho */
+  }
+
+  /* Enlaces globales */
+  a {
+    color: var(--color-primary);
+    text-decoration: none; /* Es común quitar el subrayado por defecto y manejarlo con hover/focus */
+    transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out;
+  }
+
+  a:hover,
+  a:focus { /* :focus es importante para accesibilidad */
+    color: var(--color-accent);
+    /* text-decoration: underline; Podrías añadir subrayado en hover/focus si lo deseas */
+  }
+
+  /* Headings */
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--color-text); /* Heredado de body, pero puede ser explícito */
+    font-weight: 700; /* Un poco más de peso para los headings */
+    line-height: 1.3; /* Mejorar espaciado vertical de headings */
+    margin-bottom: 0.75em; /* Espacio por defecto debajo de los headings */
+  }
+  
+  h1 { font-size: 2.5rem; } /* Ejemplo de escala tipográfica */
+  h2 { font-size: 2rem; }
+  h3 { font-size: 1.75rem; }
+  /* ... y así sucesivamente */
+
+
+  /* Imágenes responsivas por defecto */
+  img, video, svg {
+    max-width: 100%;
+    height: auto;
+    display: block; /* Evita espacio extra debajo de las imágenes inline */
+  }
+
+  /* Botones globales */
+  .btn {
+    display: inline-block;
+    padding: 0.875rem 1.75rem; /* Ajuste leve para mejor proporción */
+    border-radius: 0.5rem; /* Coherente con muchos diseños modernos */
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease-in-out; /* Transición más rápida */
+    border: 2px solid transparent; /* Borde base para evitar saltos en hover */
+    cursor: pointer;
+    font-family: inherit; /* Heredar la fuente del body */
+    text-align: center;
+    font-size: 1rem; /* Tamaño de fuente base para botones */
+  }
+
+  .btn-primary {
+    background-color: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+  }
+
+  .btn-primary:hover,
+  .btn-primary:focus {
+    background-color: var(--color-secondary);
+    border-color: var(--color-secondary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2); /* Añadir una sombra sutil en hover */
+  }
+
+  .btn-secondary {
+    background-color: transparent;
+    color: var(--color-primary);
+    border: 2px solid var(--color-primary);
+  }
+
+  .btn-secondary:hover,
+  .btn-secondary:focus {
+    background-color: var(--color-primary);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(147, 51, 234, 0.1); /* Sombra con color de acento si es apropiado */
+  }
+
+  /* Utilidades de espaciado */
+  .container {
+    width: 100%; /* Ocupa el ancho completo */
+    max-width: 1200px; /* Pero no más de 1200px */
+    margin-left: auto;  /* Centrado */
+    margin-right: auto; /* Centrado */
+    padding-left: 1rem;  /* Espacio interno en los lados */
+    padding-right: 1rem; /* Espacio interno en los lados */
+  }
+
+  .section {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+
+  /* Mejoras de accesibilidad para focus */
+  *:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+
+  /* Responsive */
+  @media (max-width: 992px) { /* Breakpoint para tablets */
+    .container {
+        max-width: 960px;
+    }
+    h1 { font-size: 2.25rem; }
+    h2 { font-size: 1.75rem; }
+  }
+
+  @media (max-width: 768px) { /* Breakpoint para tablets pequeñas y móviles grandes */
+    .container {
+      /* max-width: 720px; Ya es 100% con padding */
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+    
+    .section {
+      padding-top: 2rem;
+      padding-bottom: 2rem;
+    }
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.5rem; }
+    .btn {
+      padding: 0.75rem 1.25rem;
+      font-size: 0.9rem;
+    }
+  }
+
+  @media (max-width: 576px) { /* Breakpoint para móviles */
+     /* Ajustes más específicos para móviles si son necesarios */
+     body {
+        font-size: 15px; /* Podrías ajustar el tamaño de fuente base para móviles */
+     }
+  }
+</style>

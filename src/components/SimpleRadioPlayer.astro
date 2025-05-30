@@ -1,0 +1,304 @@
+---
+// SimpleRadioPlayer - Un reproductor simple y fiable que funciona con cualquier stream
+const STREAM_URL = 'https://stream.zeno.fm/4g7qxnxrloluv';
+---
+
+<div class="simple-radio-player">
+  <div class="player-status">
+    <div class="status-indicator">
+      <span class="live-dot"></span>
+      <span class="live-text">EN VIVO</span>
+    </div>
+  </div>
+  
+  <div class="player-controls">
+    <button id="play-button" class="play-button">
+      <span class="play-icon">▶</span>
+      <span class="pause-icon">❚❚</span>
+    </button>
+    
+    <div class="volume-control">
+      <button id="mute-button" class="mute-button">
+        <span class="volume-icon">🔊</span>
+        <span class="mute-icon">🔇</span>
+      </button>
+      <input type="range" id="volume-slider" min="0" max="100" value="80" class="volume-slider">
+    </div>
+  </div>
+  
+  <!-- Audio element - oculto pero funcional. ID asignado para acceder desde el Hero -->
+  <audio id="radio-stream" src={STREAM_URL} preload="none"></audio>
+</div>
+
+<script is:inline>
+  document.addEventListener('DOMContentLoaded', function() {
+    const audioElement = document.getElementById('radio-stream');
+    const playButton = document.getElementById('play-button');
+    const muteButton = document.getElementById('mute-button');
+    const volumeSlider = document.getElementById('volume-slider');
+    const liveDot = document.querySelector('.live-dot');
+    
+    let isPlaying = false;
+    let isMuted = false;
+    let lastVolume = 0.8;
+    
+    // Establecer volumen inicial
+    audioElement.volume = lastVolume;
+    
+    // Evento para reproducir/pausar
+    playButton.addEventListener('click', function() {
+      if (!isPlaying) {
+        startPlayback();
+      } else {
+        stopPlayback();
+      }
+    });
+    
+    // Evento para silenciar/activar sonido
+    muteButton.addEventListener('click', function() {
+      if (!isMuted) {
+        lastVolume = audioElement.volume;
+        audioElement.volume = 0;
+        isMuted = true;
+        muteButton.classList.add('muted');
+      } else {
+        audioElement.volume = lastVolume;
+        isMuted = false;
+        muteButton.classList.remove('muted');
+      }
+    });
+    
+    // Evento para cambiar volumen
+    volumeSlider.addEventListener('input', function() {
+      const volume = this.value / 100;
+      audioElement.volume = volume;
+      
+      if (volume > 0 && isMuted) {
+        isMuted = false;
+        muteButton.classList.remove('muted');
+      } else if (volume === 0 && !isMuted) {
+        isMuted = true;
+        muteButton.classList.add('muted');
+      }
+    });
+    
+    // Evento para detectar errores de reproducción
+    audioElement.addEventListener('error', function() {
+      console.error('Error en el stream de audio');
+      isPlaying = false;
+      playButton.classList.remove('playing');
+      liveDot.classList.remove('active');
+    });
+    
+    // Función para iniciar la reproducción
+    function startPlayback() {
+      audioElement.play()
+        .then(() => {
+          isPlaying = true;
+          playButton.classList.add('playing');
+          liveDot.classList.add('active');
+        })
+        .catch(error => {
+          console.error('Error al reproducir:', error);
+          alert('No se pudo reproducir el stream. Por favor, inténtalo de nuevo.');
+        });
+    }
+    
+    // Función para detener la reproducción
+    function stopPlayback() {
+      audioElement.pause();
+      isPlaying = false;
+      playButton.classList.remove('playing');
+      liveDot.classList.remove('active');
+    }
+    
+    // Exponemos las funciones al ámbito global para que puedan ser llamadas desde otros componentes
+    window.radioPlayer = {
+      play: startPlayback,
+      pause: stopPlayback,
+      toggle: function() {
+        if (isPlaying) {
+          stopPlayback();
+        } else {
+          startPlayback();
+        }
+      }
+    };
+  });
+</script>
+
+<style>
+  .simple-radio-player {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: #2a2a2a;
+    border-radius: 4px;
+    padding: 0 10px;
+    height: 100%;
+    width: 100%;
+    border: 2px solid #ff3333; /* Marco rojo brillante */
+    box-shadow: 0 0 8px rgba(255, 51, 51, 0.6); /* Brillo rojo alrededor */
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+
+  /* Efecto de brillo en el borde */
+  .simple-radio-player::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: -2px;
+    right: -2px;
+    bottom: -2px;
+    z-index: -1;
+    background: linear-gradient(45deg, #ff3333, #ff9966, #ff3333);
+    background-size: 200% 200%;
+    animation: gradient-animation 3s ease infinite;
+    border-radius: 6px;
+  }
+  
+  @keyframes gradient-animation {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+  
+  .player-status {
+    display: flex;
+    align-items: center;
+  }
+  
+  .status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #666;
+    transition: all 0.3s ease;
+  }
+  
+  .live-dot.active {
+    background-color: #ff5252;
+    box-shadow: 0 0 8px #ff5252;
+    animation: pulse 1.5s infinite;
+  }
+  
+  .live-text {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #ddd;
+    text-transform: uppercase;
+  }
+  
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7); }
+    70% { box-shadow: 0 0 0 5px rgba(255, 82, 82, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 82, 82, 0); }
+  }
+  
+  .player-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .play-button, .mute-button {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 5px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    position: relative;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .play-button:hover, .mute-button:hover {
+    background: rgba(255, 51, 51, 0.2); /* Cambiado a rojo para coincidir con el marco */
+    transform: scale(1.1);
+  }
+  
+  .play-icon, .pause-icon, .volume-icon, .mute-icon {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    transition: opacity 0.2s ease;
+  }
+  
+  .pause-icon, .mute-icon {
+    opacity: 0;
+  }
+  
+  .play-button.playing .play-icon {
+    opacity: 0;
+  }
+  
+  .play-button.playing .pause-icon {
+    opacity: 1;
+  }
+  
+  .mute-button.muted .volume-icon {
+    opacity: 0;
+  }
+  
+  .mute-button.muted .mute-icon {
+    opacity: 1;
+  }
+  
+  .volume-control {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  
+  .volume-slider {
+    -webkit-appearance: none;
+    width: 60px;
+    height: 4px;
+    border-radius: 2px;
+    background: #444;
+    outline: none;
+  }
+  
+  .volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ff3333; /* Cambiado a rojo para coincidir */
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  
+  .volume-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+  }
+  
+  .volume-slider::-moz-range-thumb {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #ff3333;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.2s;
+  }
+  
+  .volume-slider::-moz-range-thumb:hover {
+    transform: scale(1.2);
+  }
+</style>

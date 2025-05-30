@@ -1,0 +1,156 @@
+---
+// Header component for VinylStation
+import { getSiteInfo, getMenuNavegacion } from '../lib/wordpress';
+
+const siteInfo = await getSiteInfo();
+
+// Obtener menú dinámico desde WordPress
+let menuItems = [];
+try {
+  const menuData = await getMenuNavegacion('primary');
+  menuItems = menuData.items || [];
+  console.log('✅ Menú cargado dinámicamente:', menuItems.length, 'elementos');
+} catch (error) {
+  console.error('❌ Error cargando menú dinámico:', error.message);
+  // Fallback si falla
+  menuItems = [
+    { id: '1', label: 'Inicio', url: '/', target: '_self' },
+    { id: '2', label: 'Vinilos', url: '/vinilos/index', target: '_self' },
+    { id: '3', label: 'Programas', url: '/programas', target: '_self' },
+    { id: '4', label: 'Noticias', url: '/noticias', target: '_self' }
+  ];
+}
+---
+
+<header class="header">
+  <div class="header-content">
+    <div class="logo">
+      <a href="/">
+        <img src={siteInfo.logo.url} alt={siteInfo.logo.altText} class="logo-img" />
+        VinylStation
+      </a>
+    </div>
+    <nav class="main-nav">
+      <ul>
+        {menuItems.map((item) => (
+          <li key={item.id}>
+            <a 
+              href={item.url} 
+              target={item.target}
+              title={item.title || item.label}
+              class={item.cssClasses || ''}
+            >
+              {item.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+    <div class="radio-container">
+      <slot />
+    </div>
+  </div>
+</header>
+
+<style>
+  .header {
+    background: var(--color-bg); /* Usar variable de color de fondo */
+    padding: 1rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    color: var(--color-text); /* Asegurar color de texto por defecto */
+  }
+
+  .header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem; /* Espacio entre elementos */
+  }
+
+  .logo {
+    font-size: 1.8rem; /* Aumentar tamaño del logo */
+    font-weight: bold;
+  }
+
+  .logo a {
+    color: var(--color-primary); /* Usar color primario para el logo */
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .logo-img {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+  }
+
+  .main-nav ul {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    gap: 1.5rem;
+  }
+
+  .main-nav a {
+    color: var(--color-text); /* Usar color de texto para los enlaces */
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.3s ease;
+  }
+
+  .main-nav a:hover {
+    color: var(--color-primary);
+  }
+
+  .radio-container {
+    width: 100%;
+    max-width: 300px; /* Limitar ancho del contenedor del reproductor */
+  }
+
+  /* Estilos para el reproductor dentro del contenedor */
+  .radio-container iframe {
+    width: 100%;
+    height: 80px; /* Ajustar altura del iframe */
+    border: none;
+    border-radius: 0.5rem; /* Bordes redondeados */
+  }
+
+  .radio-container a {
+    display: block;
+    font-size: 0.8em;
+    line-height: 10px;
+    text-align: center;
+    margin-top: 0.5rem;
+    color: var(--color-text);
+    text-decoration: none;
+  }
+
+
+  @media (min-width: 768px) {
+    .header-content {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      gap: 2rem; /* Aumentar espacio entre elementos en escritorio */
+    }
+
+    .logo {
+      margin-bottom: 0;
+    }
+
+    .main-nav ul {
+      margin: 0;
+    }
+
+    .radio-container {
+      width: auto;
+      margin-top: 0;
+    }
+  }
+</style>

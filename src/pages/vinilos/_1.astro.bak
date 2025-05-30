@@ -1,0 +1,13 @@
+---
+// Redireccionar /vinilos/1 a /vinilos/ para la primera página
+const url = new URL(Astro.request.url);
+if (url.pathname === '/vinilos/1' || url.pathname === '/vinilos/1/') {
+  return Astro.redirect('/vinilos/', 301);
+}
+
+// Para todas las demás páginas, mostrar 404
+return new Response(null, {
+  status: 404,
+  statusText: 'Not found'
+});
+---

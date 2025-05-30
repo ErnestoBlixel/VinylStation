@@ -1,0 +1,306 @@
+---
+// PlyrRadioPlayer - Un reproductor de audio profesional para VinylStation Radio
+import { getEmisora } from '../lib/wordpress';
+
+// Usar directamente la URL de stream que sabemos que funciona
+const STREAM_URL = 'https://stream.zeno.fm/4g7qxnxrloluv';
+
+// Obtener datos de la emisora (para el título y otros metadatos)
+const emisora = await getEmisora();
+const RADIO_TITLE = emisora?.title || 'Vinyl Station Radio';
+---
+
+<div class="radio-player-container">
+  <div class="radio-player-card">
+    <div class="radio-player-content">
+      <div class="radio-info">
+        <div class="radio-player-header">
+          <h2>{RADIO_TITLE}</h2>
+          <div class="status-indicator">
+            <span class="live-dot"></span>
+            <span class="live-text">EN VIVO</span>
+          </div>
+        </div>
+        
+        <div class="now-playing">
+          <div class="track-info" id="track-info">
+            <span class="track-title" id="track-title">Transmisión en vivo</span>
+            <span class="track-artist" id="track-artist">Vinyl Station Radio</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="radio-player-wrapper">
+        <audio id="plyr-radio-player" controls>
+          <source src={STREAM_URL} type="audio/mpeg">
+          Tu navegador no soporta la reproducción de audio.
+        </audio>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Incluir los estilos y scripts de Plyr desde CDN -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/plyr/3.7.8/plyr.min.css" integrity="sha512-1z/+3n0BzDKpnuTw5yHa9E9IiCcyJGlzL3GJjnSUJlw/NuGLBtQzJFY2hF8KC/RvQxz7lOyMVXxdcSKOY7j+Eg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+<script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/plyr/3.7.8/plyr.min.js" integrity="sha512-nRwTN9nKAclHfEtGXc/4XuSYtFGsIYXoXEHxEXAuaP2lnXJ18mdn87jh+8nFPW1SRN5n6BRBTz+hNbDyI94ew==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+
+<script is:inline>
+  document.addEventListener('DOMContentLoaded', function() {
+    console.log('Inicializando Plyr Radio Player');
+    
+    // Configurar Plyr con opciones avanzadas
+    const player = new Plyr('#plyr-radio-player', {
+      controls: [
+        'play',
+        'mute',
+        'volume',
+      ],
+      volume: 0.8,
+      invertTime: false,
+      toggleInvert: false,
+      displayDuration: false,
+      hideControls: false,
+      keyboard: { focused: true, global: false },
+      tooltips: { controls: true, seek: true }
+    });
+
+    // Evento para mostrar estado de reproducción
+    const liveIndicator = document.querySelector('.live-dot');
+    const trackInfo = document.getElementById('track-info');
+    const trackTitle = document.getElementById('track-title');
+    const trackArtist = document.getElementById('track-artist');
+
+    player.on('play', function() {
+      console.log('Reproducción iniciada');
+      liveIndicator.classList.add('active');
+      trackTitle.textContent = 'Transmisión en vivo';
+      trackArtist.textContent = 'Vinyl Station Radio';
+      // Animación de texto
+      trackInfo.classList.add('animate-info');
+    });
+
+    player.on('pause', function() {
+      console.log('Reproducción pausada');
+      liveIndicator.classList.remove('active');
+      trackInfo.classList.remove('animate-info');
+    });
+
+    // Manejar errores de reproducción
+    player.on('error', function(e) {
+      console.error('Error de reproducción:', e);
+      trackTitle.textContent = 'Error de reproducción';
+      trackArtist.textContent = 'Intenta más tarde';
+      liveIndicator.classList.remove('active');
+    });
+
+    // Auto-play si el usuario hace clic en cualquier parte del reproductor
+    document.querySelector('.radio-player-card').addEventListener('click', function(e) {
+      if (!player.playing && e.target.tagName !== 'BUTTON') {
+        player.play();
+      }
+    });
+  });
+</script>
+
+<style>
+  .radio-player-container {
+    width: 100%;
+    height: 100%;
+  }
+
+  .radio-player-card {
+    background: var(--color-card-bg, #1e1e1e);
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    color: var(--color-text, #ffffff);
+    position: relative;
+    overflow: hidden;
+    height: 100%;
+    width: 100%;
+    display: flex;
+    align-items: center;
+  }
+
+  .radio-player-card::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0) 70%);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  .radio-player-content {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    padding: 0 10px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .radio-info {
+    flex: 1;
+    min-width: 0;
+    padding-right: 15px;
+  }
+
+  .radio-player-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+
+  .radio-player-header h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 600;
+    background: linear-gradient(90deg, #ff6b6b, #feca57);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: #666;
+    position: relative;
+    transition: background-color 0.3s ease;
+  }
+
+  .live-dot.active {
+    background-color: #ff5252;
+    box-shadow: 0 0 6px #ff5252;
+    animation: pulse 1.5s infinite;
+  }
+
+  .live-text {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #aaa;
+  }
+
+  @keyframes pulse {
+    0% {
+      box-shadow: 0 0 0 0 rgba(255, 82, 82, 0.7);
+    }
+    70% {
+      box-shadow: 0 0 0 5px rgba(255, 82, 82, 0);
+    }
+    100% {
+      box-shadow: 0 0 0 0 rgba(255, 82, 82, 0);
+    }
+  }
+
+  .radio-player-wrapper {
+    width: 180px;
+    flex-shrink: 0;
+  }
+
+  /* Estilos para sobrescribir algunos estilos por defecto de Plyr */
+  :global(.plyr) {
+    --plyr-color-main: #ff6b6b;
+    --plyr-range-fill-background: linear-gradient(90deg, #ff6b6b, #feca57);
+    border-radius: 6px;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  :global(.plyr--audio .plyr__control.plyr__control--pressed) {
+    background: #ff6b6b;
+  }
+
+  :global(.plyr__control) {
+    transition: all 0.25s ease;
+  }
+
+  :global(.plyr__control:hover) {
+    transform: scale(1.1);
+  }
+
+  :global(.plyr--audio .plyr__controls) {
+    padding: 5px;
+  }
+
+  .now-playing {
+    position: relative;
+    z-index: 1;
+  }
+
+  .track-info {
+    display: flex;
+    flex-direction: column;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .track-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #fff;
+    margin-bottom: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .track-artist {
+    font-size: 0.75rem;
+    color: #aaa;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Animación para texto largo */
+  @keyframes scroll-text {
+    0% { transform: translateX(0); }
+    40% { transform: translateX(0); }
+    80% { transform: translateX(calc(-100% + 120px)); }
+    100% { transform: translateX(0); }
+  }
+
+  .animate-info .track-title,
+  .animate-info .track-artist {
+    animation: scroll-text 15s infinite;
+    display: inline-block;
+  }
+
+  /* Media queries para ajustar tamaños en pantallas pequeñas */
+  @media (max-width: 480px) {
+    .radio-player-content {
+      flex-direction: column;
+      padding: 10px;
+    }
+    
+    .radio-info {
+      width: 100%;
+      padding-right: 0;
+      margin-bottom: 10px;
+      order: 2;
+    }
+    
+    .radio-player-wrapper {
+      width: 100%;
+      order: 1;
+      margin-bottom: 10px;
+    }
+  }
+</style>
