@@ -4,6 +4,7 @@ Este proyecto es el frontend de VinylStation, una plataforma para amantes de los
 
 ## Requisitos previos
 
+
 - Node.js (versión 16 o superior)
 - npm o yarn
 - WordPress con WPGraphQL instalado y configurado
@@ -76,3 +77,6 @@ Puedes personalizar el aspecto de la aplicación modificando los archivos CSS en
 ## Licencia
 
 Este proyecto está licenciado bajo la licencia MIT.
+=======
+# VinylStation
+>>>>>>> 5b8736ecec5af8f1975d0031aaf599144819a6a1
