@@ -100,7 +100,6 @@ export async function getSiteLogo() {
 export async function getSiteInfo() {
   console.log('🔄 Obteniendo información del sitio desde WordPress...');
   
-  // Consulta minimalista primero
   const BASIC_QUERY = gql`
     query GetBasicSiteInfo {
       generalSettings {
@@ -112,70 +111,66 @@ export async function getSiteInfo() {
   `;
   
   try {
-    console.log('📡 Intentando consulta básica...');
-    const { generalSettings } = await request(WORDPRESS_GRAPHQL_URL, BASIC_QUERY);
-
-    if (!generalSettings?.title) {
-      console.warn('⚠️ No se obtuvo el título desde generalSettings');
+    console.log('📡 Ejecutando consulta básica...');
+    const result = await request(WORDPRESS_GRAPHQL_URL, BASIC_QUERY);
+    console.log('📊 Resultado crudo:', JSON.stringify(result, null, 2));
+    
+    const { generalSettings } = result;
+    
+    if (!generalSettings) {
+      console.error('❌ generalSettings es null/undefined');
+      throw new Error('generalSettings is null');
+    }
+    
+    if (!generalSettings.title) {
+      console.error('❌ generalSettings.title es null/undefined');
       throw new Error('generalSettings.title is null');
     }
 
-    console.log('✅ Datos básicos obtenidos:', generalSettings);
+    console.log('✅ Título obtenido:', generalSettings.title);
     
-    // Intentar obtener campos adicionales
-    let timezone = 'Europe/Madrid';
-    let language = 'es-ES';
-    
-    try {
-      const EXTENDED_QUERY = gql`
-        query GetExtendedSiteInfo {
-          generalSettings {
-            timezone
-            language
-          }
-        }
-      `;
-      
-      const extendedResult = await request(WORDPRESS_GRAPHQL_URL, EXTENDED_QUERY);
-      timezone = extendedResult.generalSettings?.timezone || timezone;
-      language = extendedResult.generalSettings?.language || language;
-      console.log('✅ Datos extendidos obtenidos');
-    } catch (extError) {
-      console.log('⚠️ Campos extendidos no disponibles, usando defaults:', extError.message);
-    }
+    // Logo fallback simple
+    const logoFallback = {
+      url: '/images/logos/vinyl-station-logo.svg',
+      altText: 'VinylStation',
+      source: 'fallback',
+    };
 
-    const logo = await getSiteLogo();
-
-    const result = {
+    const siteInfo = {
       title: generalSettings.title,
       description: generalSettings.description || 'Tu emisora de vinilo 24/7',
-      url: generalSettings.url || import.meta.env.SITE || 'https://vinylstation.com',
-      timezone,
-      language,
-      logo: {
-        url: logo.url,
-        altText: logo.altText,
-        source: logo.source,
-      },
+      url: generalSettings.url || 'https://vinylstation.com',
+      timezone: 'Europe/Madrid',
+      language: 'es-ES',
+      logo: logoFallback
     };
     
-    console.log('🎉 getSiteInfo completado exitosamente:', result.title);
-    return result;
+    console.log('🎉 getSiteInfo completado exitosamente:', siteInfo.title);
+    return siteInfo;
     
   } catch (error) {
     console.error("❌ Error en getSiteInfo:", error.message);
-    console.error("📋 Error completo:", error);
+    console.error("📋 Stack trace:", error.stack);
     
-    // Log adicional para debugging
     if (error.response?.errors) {
       console.error('🔍 GraphQL Errors:', JSON.stringify(error.response.errors, null, 2));
     }
     
-    const logoFallback = await getSiteLogo();
+    if (error.response?.data) {
+      console.error('📋 Response data:', JSON.stringify(error.response.data, null, 2));
+    }
+    
+    // Logo fallback para error
+    const logoFallback = {
+      url: '/images/logos/vinyl-station-logo.svg',
+      altText: 'VinylStation',
+      source: 'fallback',
+    };
+    
     return {
       title: 'VinylStation (Error)',
       description: 'Error al cargar la información del sitio.',
-      url: import.meta.env.SITE || 'https://vinylstation.com',
+      url: 'https://vinylstation.com',
       timezone: 'Europe/Madrid',
       language: 'es-ES',
       logo: logoFallback,

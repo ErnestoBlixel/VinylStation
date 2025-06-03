@@ -1,0 +1,248 @@
+---
+// Test de debugging paso a paso
+const GRAPHQL_URL = import.meta.env.PUBLIC_WORDPRESS_GRAPHQL_URL || 'https://cms.vinylstation.es/graphql';
+
+let debugLog = [];
+let finalResult = null;
+let errorDetails = null;
+
+async function debugGetSiteInfo() {
+  debugLog.push("🚀 Iniciando debugGetSiteInfo...");
+  
+  try {
+    // Paso 1: Test de conectividad
+    debugLog.push("📡 Paso 1: Testing conectividad...");
+    const testResponse = await fetch(GRAPHQL_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: `query Test { __typename }`
+      })
+    });
+    debugLog.push(`✅ Conectividad OK: ${testResponse.status}`);
+    
+    // Paso 2: Consulta básica manual
+    debugLog.push("📡 Paso 2: Consulta básica manual...");
+    const basicResponse = await fetch(GRAPHQL_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        query: `
+          query GetBasicSiteInfo {
+            generalSettings {
+              title
+              description
+              url
+            }
+          }
+        `
+      })
+    });
+    
+    const basicData = await basicResponse.json();
+    debugLog.push(`✅ Respuesta básica: ${JSON.stringify(basicData, null, 2)}`);
+    
+    if (basicData.errors) {
+      debugLog.push(`❌ Errores en consulta básica: ${JSON.stringify(basicData.errors)}`);
+      throw new Error('Consulta básica falló');
+    }
+    
+    if (!basicData.data?.generalSettings?.title) {
+      debugLog.push(`❌ No hay título en la respuesta`);
+      throw new Error('No title in response');
+    }
+    
+    // Paso 3: Consulta usando graphql-request
+    debugLog.push("📡 Paso 3: Usando graphql-request...");
+    
+    // Importar graphql-request dinámicamente para debug
+    const { request, gql } = await import('graphql-request');
+    
+    const BASIC_QUERY = gql`
+      query GetBasicSiteInfo {
+        generalSettings {
+          title
+          description
+          url
+        }
+      }
+    `;
+    
+    debugLog.push("🔍 Ejecutando request con graphql-request...");
+    const { generalSettings } = await request(GRAPHQL_URL, BASIC_QUERY);
+    debugLog.push(`✅ GraphQL-request result: ${JSON.stringify(generalSettings, null, 2)}`);
+    
+    if (!generalSettings?.title) {
+      debugLog.push(`❌ GraphQL-request: No hay título`);
+      throw new Error('GraphQL-request: No title');
+    }
+    
+    // Paso 4: Test getSiteLogo
+    debugLog.push("🖼️ Paso 4: Testing getSiteLogo...");
+    let logoResult = {
+      url: '/images/logos/vinyl-station-logo.svg',
+      altText: 'VinylStation',
+      source: 'fallback'
+    };
+    
+    try {
+      // Intentar logo básico
+      const logoResponse = await fetch(GRAPHQL_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: `
+            query GetCustomLogo {
+              customLogo {
+                node {
+                  sourceUrl
+                  altText
+                }
+              }
+            }
+          `
+        })
+      });
+      
+      const logoData = await logoResponse.json();
+      debugLog.push(`🖼️ Logo response: ${JSON.stringify(logoData, null, 2)}`);
+      
+      if (logoData.data?.customLogo?.node?.sourceUrl) {
+        logoResult = {
+          url: logoData.data.customLogo.node.sourceUrl,
+          altText: logoData.data.customLogo.node.altText || 'VinylStation',
+          source: 'customLogo'
+        };
+        debugLog.push(`✅ Logo obtenido: ${logoResult.url}`);
+      } else {
+        debugLog.push(`⚠️ Logo no disponible, usando fallback`);
+      }
+    } catch (logoError) {
+      debugLog.push(`⚠️ Error obteniendo logo: ${logoError.message}`);
+    }
+    
+    // Paso 5: Construir resultado final
+    debugLog.push("🏗️ Paso 5: Construyendo resultado final...");
+    
+    finalResult = {
+      title: generalSettings.title,
+      description: generalSettings.description || 'Tu emisora de vinilo 24/7',
+      url: generalSettings.url || 'https://vinylstation.com',
+      timezone: 'Europe/Madrid',
+      language: 'es-ES',
+      logo: logoResult
+    };
+    
+    debugLog.push(`🎉 Resultado final construido: ${JSON.stringify(finalResult, null, 2)}`);
+    
+  } catch (error) {
+    debugLog.push(`❌ Error capturado: ${error.message}`);
+    debugLog.push(`📋 Error stack: ${error.stack}`);
+    errorDetails = {
+      message: error.message,
+      stack: error.stack,
+      name: error.name
+    };
+    
+    finalResult = {
+      title: 'VinylStation (Error)',
+      description: 'Error al cargar la información del sitio.',
+      url: 'https://vinylstation.com',
+      timezone: 'Europe/Madrid',
+      language: 'es-ES',
+      logo: {
+        url: '/images/logos/vinyl-station-logo.svg',
+        altText: 'VinylStation',
+        source: 'fallback'
+      }
+    };
+  }
+}
+
+// Ejecutar el debug
+await debugGetSiteInfo();
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Detallado - VinylStation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        pre {
+            background: #000;
+            padding: 15px;
+            overflow-x: auto;
+            border-radius: 5px;
+            font-size: 11px;
+            white-space: pre-wrap;
+        }
+        .error { color: #f44336; }
+        .success { color: #4caf50; }
+        .warning { color: #ff9800; }
+        .info { color: #2196f3; }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #2a2a2a;
+        }
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #666;
+            padding-left: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Detallado Step-by-Step</h1>
+    
+    <div class="section">
+        <h2>📋 Log de Debugging</h2>
+        {debugLog.map((entry, index) => (
+          <div class="log-entry">
+            <small>{index + 1}.</small> {entry}
+          </div>
+        ))}
+    </div>
+    
+    {errorDetails && (
+      <div class="section">
+        <h2 class="error">❌ Detalles del Error</h2>
+        <pre>{JSON.stringify(errorDetails, null, 2)}</pre>
+      </div>
+    )}
+    
+    <div class="section">
+        <h2>🎯 Resultado Final</h2>
+        <pre>{JSON.stringify(finalResult, null, 2)}</pre>
+        
+        {finalResult?.title === 'VinylStation (Error)' ? (
+          <p class="error">❌ Falló: Se devolvió el fallback</p>
+        ) : (
+          <p class="success">✅ Éxito: Datos obtenidos correctamente</p>
+        )}
+    </div>
+    
+    <div class="section">
+        <h2>🔧 Variables de Entorno</h2>
+        <pre>{JSON.stringify({
+          PUBLIC_WORDPRESS_API_URL: import.meta.env.PUBLIC_WORDPRESS_API_URL,
+          PUBLIC_WORDPRESS_GRAPHQL_URL: import.meta.env.PUBLIC_WORDPRESS_GRAPHQL_URL,
+          MODE: import.meta.env.MODE,
+          PROD: import.meta.env.PROD
+        }, null, 2)}</pre>
+    </div>
+</body>
+</html>
