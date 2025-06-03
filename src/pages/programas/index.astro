@@ -33,133 +33,150 @@ const pageTitle = hasError ? 'Error - Programas' : (pageData?.seo?.title || `${h
 const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.metaDesc || heroDescription);
 ---
 
-<MainLayout title={`${pageTitle} | ${siteInfo?.title || 'VinylStation'}`} description={pageDescription}>
-  {hasError ? (
-    <div class="container">
-      <div class="error-container">
-        <div class="error-icon">📻</div>
-        <h1 class="error-title">Error Cargando Programas</h1>
-        <p class="error-message">{errorMessage}</p>
-        <div class="error-details">
-          <h3>Posibles soluciones:</h3>
-          <ul>
-            <li>Verificar conexión a: https://cms.vinylstation.es/graphql</li>
-            <li>Comprobar que WordPress esté funcionando</li>
-            <li>Revisar configuración de GraphQL y ACF</li>
-            <li>Verificar que los programas tengan campos configurados</li>
-          </ul>
-        </div>
-        <div class="error-actions">
-          <button onclick="window.location.reload()" class="btn primary-btn">
-            🔄 Reintentar
-          </button>
-          <a href="/" class="btn secondary-btn">← Volver al inicio</a>
+<MainLayout title={pageTitle} description={pageDescription}>
+  <div class="main-content">
+    {hasError ? (
+      <div class="container hero-container">
+        <div class="error-container">
+          <div class="error-icon">📻</div>
+          <h1 class="error-title">Error Cargando Programas</h1>
+          <p class="error-message">{errorMessage}</p>
+          <div class="error-details">
+            <h3>Posibles soluciones:</h3>
+            <ul>
+              <li>Verificar conexión a: https://cms.vinylstation.es/graphql</li>
+              <li>Comprobar que WordPress esté funcionando</li>
+              <li>Revisar configuración de GraphQL y ACF</li>
+              <li>Verificar que los programas tengan campos configurados</li>
+            </ul>
+          </div>
+          <div class="error-actions">
+            <button onclick="window.location.reload()" class="btn primary-btn">
+              🔄 Reintentar
+            </button>
+            <a href="/" class="btn secondary-btn">← Volver al inicio</a>
+          </div>
         </div>
       </div>
-    </div>
-  ) : (
-    <>
-      <!-- Hero Section -->
-      <div class="container">
-        <header class="page-header">
-          {siteInfo.logo?.url && (
+    ) : (
+      <>
+        {/* HERO */}
+        <div class="container hero-container">
+          <header class="page-header">
             <div class="site-icon-container">
-              <img src={siteInfo.logo.url} alt={siteInfo.logo.altText || 'Logo'} class="site-icon" />
+              <img src="/images/logos/logo vinylstation.png" alt="VinylStation Logo" class="site-icon" />
             </div>
-          )}
-          <h1>{heroTitle}</h1>
-          <p class="page-description">{heroDescription}</p>
-          <div class="program-stats">
-            <div class="stat-card">
-              <span class="stat-number">{programas.length}</span>
-              <span class="stat-label">Programas</span>
+            <h1>{heroTitle}</h1>
+            <p class="page-description">{heroDescription}</p>
+            <div class="program-stats">
+              <div class="stat-card">
+                <span class="stat-number">{programas.length}</span>
+                <span class="stat-label">Programas</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-number">24h</span>
+                <span class="stat-label">Al Aire</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-number">7</span>
+                <span class="stat-label">Días</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-number">∞</span>
+                <span class="stat-label">Música</span>
+              </div>
             </div>
-            <div class="stat-card">
-              <span class="stat-number">24h</span>
-              <span class="stat-label">Al Aire</span>
+            <div class="hero-actions">
+              <a href="/vinilos" class="btn secondary-btn">Explorar Vinilos</a>
+              <a href="#programas" class="btn primary-btn">Ver Programas</a>
             </div>
-            <div class="stat-card">
-              <span class="stat-number">7</span>
-              <span class="stat-label">Días</span>
-            </div>
-          </div>
-          <div class="hero-actions">
-            <a href="/vinilos" class="btn secondary-btn">Explorar Vinilos</a>
-            <a href="#programas" class="btn primary-btn">Ver Programas</a>
-          </div>
-        </header>
-      </div>
+          </header>
+        </div>
 
-      <!-- Sección de Programas -->
-      <section id="programas" class="programs-section">
-        <div class="programs-container">
-          <h2 class="programs-title">Nuestros Programas</h2>
-          {programas.length > 0 ? (
-            <div class="programs-grid">
-              {programas.map((programa) => {
-                // imagen 1:1 perfecta
-                const imagen =
-                  programa.imagenPrincipalUrl ||
-                  programa.imagenPrincipal?.sourceUrl ||
-                  '/images/placeholder-radio.jpg';
+        {/* PROGRAMAS */}
+        <section id="programas" class="programs-section">
+          <div class="container">
+            <div class="section-header">
+              <h2>Todos los Programas</h2>
+              <p>
+                Descubre nuestra programación especializada. Cada programa es una experiencia única dedicada a explorar diferentes géneros, épocas y estilos de la música en vinilo.
+              </p>
+            </div>
+            {programas.length > 0 ? (
+              <div class="programs-grid">
+                {programas.map((programa, index) => {
+                  // imagen 1:1 perfecta
+                  const imagen =
+                    programa.imagenPrincipalUrl ||
+                    programa.imagenPrincipal?.sourceUrl ||
+                    '/images/placeholder-radio.jpg';
 
-                // descripción como texto limpio
-                const rawDesc =
-                  programa.camposPrograma?.vsDescripcion ||
-                  programa.excerpt ||
-                  `Programa "${programa.title}" - Música especializada en vinilo`;
-                const descripcion = stripHtml(rawDesc);
+                  // descripción como texto limpio
+                  const rawDesc =
+                    programa.camposPrograma?.vsDescripcion ||
+                    programa.excerpt ||
+                    `Programa "${programa.title}" - Música especializada en vinilo`;
+                  const descripcion = stripHtml(rawDesc);
 
-                return (
-                  <div class="program-card">
-                    <div class="program-image">
-                      <img
-                        src={imagen}
-                        alt={programa.imagenPrincipal?.altText || programa.title}
-                        loading="lazy"
-                        onerror="this.src='/images/placeholder-radio.jpg'"
-                      />
-                      <div class="program-overlay">
-                        <a href={`/programas/${programa.slug || programa.id}`} class="program-link">
-                          Ver Programa
-                        </a>
+                  return (
+                    <div class="program-card" style={`animation-delay: ${0.1 + index * 0.05}s`}>
+                      <div class="program-image">
+                        <img
+                          src={imagen}
+                          alt={programa.imagenPrincipal?.altText || programa.title}
+                          loading="lazy"
+                          onerror="this.src='/images/placeholder-radio.jpg'"
+                        />
+                        <div class="program-overlay">
+                          <a href={`/programas/${programa.slug || programa.id}`} class="program-link">
+                            Ver Programa
+                          </a>
+                        </div>
+                      </div>
+                      <div class="program-info">
+                        <h3 class="program-title-card">{programa.title}</h3>
                       </div>
                     </div>
-                    <div class="program-info">
-                      <h3 class="program-title">{programa.title}</h3>
-                      <p class="program-description">{descripcion}</p>
-                      {/* Fecha eliminada */}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div class="no-programs">
-              <div class="no-programs-icon">🎵</div>
-              <h3>No hay programas disponibles</h3>
-              <p>Los programas aparecerán aquí cuando sean configurados en WordPress.</p>
-            </div>
-          )}
-        </div>
-      </section>
-    </>
-  )}
+                  );
+                })}
+              </div>
+            ) : (
+              <div class="no-programs">
+                <div class="no-programs-icon">🎵</div>
+                <h3>No hay programas disponibles</h3>
+                <p>Los programas aparecerán aquí cuando sean configurados en WordPress.</p>
+              </div>
+            )}
+          </div>
+        </section>
+      </>
+    )}
+  </div>
 </MainLayout>
 
 <style>
-  /* --- (todo tu CSS original, sin cambios) --- */
-  .container { /* ... */ }
-  /* Resto de estilos tal cual los tenías */
-</style>
-
-
-
-
-<style>
+  /* Contenedor principal unificado - IGUAL QUE VINILOS */
+  .main-content {
+    background: linear-gradient(
+      135deg,
+      var(--color-bg) 0%,
+      rgba(0, 0, 0, 0.02) 50%,
+      var(--color-bg) 100%
+    );
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+  
   .container {
     max-width: 1200px;
     margin: 0 auto;
+    padding: 0 1rem;
+    position: relative;
+    z-index: 1;
+  }
+  
+  .hero-container {
     padding: 4rem 1rem;
     min-height: 70vh;
     display: flex;
@@ -182,7 +199,7 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
   }
   
   .error-title {
-    color: #ff3333;
+    color: var(--title-color);
     font-size: 2.5rem;
     margin-bottom: 1rem;
   }
@@ -207,7 +224,7 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
   }
   
   .error-details h3 {
-    color: #ff3333;
+    color: var(--title-color);
     margin-bottom: 1rem;
   }
   
@@ -219,15 +236,8 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
   .error-details li {
     margin-bottom: 0.5rem;
   }
-
-  .error-actions {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
   
-  /* === ESTILOS NORMALES (consistentes con index.astro) === */
+  /* === ESTILOS NORMALES === */
   .page-header {
     text-align: center;
     width: 100%;
@@ -254,7 +264,7 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
   h1 {
     font-size: 4rem;
     margin: 0 0 1.5rem;
-    color: var(--color-primary, #ff3333);
+    color: var(--title-color);
     position: relative;
     display: inline-block;
     font-weight: 800;
@@ -270,7 +280,7 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
     height: 4px;
     background: linear-gradient(90deg, 
       transparent, 
-      var(--color-primary, #ff3333), 
+      var(--title-color),
       transparent);
     border-radius: 2px;
   }
@@ -283,17 +293,17 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
     line-height: 1.6;
   }
 
-  /* === ESTADÍSTICAS DE PROGRAMAS === */
+  /* Stats específicos de programas */
   .program-stats {
     display: flex;
     justify-content: center;
     gap: 2rem;
-    margin: 2rem auto;
+    margin: 2rem auto 0 auto;
     flex-wrap: wrap;
   }
-
+  
   .stat-card {
-    background: linear-gradient(135deg, rgba(255, 51, 51, 0.1), rgba(255, 51, 51, 0.05));
+    background: linear-gradient(135deg, rgba(255,51,51,0.10), rgba(255,51,51,0.05));
     border: 2px solid rgba(255, 51, 51, 0.2);
     border-radius: 15px;
     padding: 1.5rem 2rem;
@@ -304,20 +314,20 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
     min-width: 120px;
     transition: all 0.3s ease;
   }
-
+  
   .stat-card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.2);
-    border-color: var(--color-primary, #ff3333);
+    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
+    border-color: var(--title-color);
   }
-
+  
   .stat-number {
-    font-size: 2.5rem;
+    font-size: 2.1rem;
     font-weight: 800;
-    color: var(--color-primary, #ff3333);
+    color: var(--title-color);
     line-height: 1;
   }
-
+  
   .stat-label {
     font-size: 0.9rem;
     color: #666;
@@ -376,89 +386,160 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
     box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
   }
 
-  /* === SECCIÓN DE PROGRAMAS OSCURA === */
+  /* ===== SECCIÓN PROGRAMAS ===== */
   .programs-section {
-    background: #0a0a0a;
-    padding: 4rem 0;
-    color: #ffffff;
+    padding: 0;
+    background: transparent;
+    position: relative;
+    z-index: 1;
+    margin-top: -2rem;
   }
-  
-  .programs-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 1rem;
+
+  .programs-section .container {
+    padding: 4rem 1rem 6rem;
   }
-  
-  .programs-title {
-    text-align: center;
-    font-size: 2.5rem;
-    color: var(--color-primary, #ff3333);
+
+  .section-header {
+    text-align: left;
     margin-bottom: 3rem;
-    font-weight: 700;
+    position: relative;
   }
-  
+
+  .section-header h2 {
+    font-size: 3.2rem;
+    margin: 0 0 2rem 0;
+    color: var(--title-color);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    position: relative;
+    display: inline-block;
+    animation: titleSlideIn 1s ease-out;
+  }
+
+  @keyframes titleSlideIn {
+    0% { transform: translateX(-30px); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+  }
+
+  .section-header p {
+    font-size: 1.3rem;
+    color: #777;
+    max-width: 800px;
+    line-height: 1.6;
+    margin: 0;
+    animation: textFadeIn 1s ease-out 0.3s both;
+  }
+
+  @keyframes textFadeIn {
+    0% { transform: translateY(20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+
   .programs-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-    gap: 2rem;
+    grid-template-columns: repeat(4, 1fr); /* 4 columnas desktop */
+    gap: 1.5rem;
     margin-top: 2rem;
   }
-  
-  .program-card {
-    background: #1a1a1a;
-    border-radius: 15px;
-    overflow: hidden;
-    border: 1px solid #333;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-  }
-  
-  .program-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.2);
-    border-color: var(--color-primary, #ff3333);
-  }
-  
-  .program-image {
-  position: relative;
-  /* relación cuadrada */
-  aspect-ratio: 1 / 1;
-  overflow: hidden;
-  border-radius: 12px;
-}
-.program-image img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
 
-  
-  .program-card:hover .program-image img {
-    transform: scale(1.05);
+  @media (max-width: 1200px) {
+    .programs-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
   }
-  
-  .program-overlay {
+
+  @media (max-width: 900px) {
+    .programs-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+
+  @media (max-width: 600px) {
+    .programs-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+
+  .program-card {
+    background: var(--color-card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    border: 1px solid rgba(255, 51, 51, 0.1);
+    animation: cardSlideIn 0.6s ease-out both;
+  }
+
+  @keyframes cardSlideIn {
+    0% { transform: translateY(30px) scale(0.9); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
+
+  .program-card::before {
+    content: '';
     position: absolute;
     top: 0;
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: linear-gradient(45deg, transparent 30%, rgba(255, 51, 51, 0.05) 50%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .program-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25), 0 0 15px rgba(255, 51, 51, 0.2);
+    border-color: rgba(255, 51, 51, 0.3);
+  }
+
+  .program-card:hover::before {
+    opacity: 1;
+  }
+
+  .program-image {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .program-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .program-card:hover .program-image img {
+    transform: scale(1.05) rotate(2deg);
+  }
+
+  .program-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.70);
     display: flex;
     align-items: center;
     justify-content: center;
     opacity: 0;
     transition: opacity 0.3s ease;
   }
-  
+
   .program-card:hover .program-overlay {
     opacity: 1;
   }
-  
+
   .program-link {
-    background: var(--color-primary, #ff3333);
+    background: linear-gradient(135deg, var(--title-color) 0%, #ff6b6b 100%);
     color: white;
     padding: 0.8rem 1.5rem;
     border-radius: 25px;
@@ -466,67 +547,92 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
     font-weight: 600;
     transform: translateY(10px);
     transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 51, 51, 0.4);
   }
-  
+
   .program-card:hover .program-link {
     transform: translateY(0);
   }
-  
+
   .program-info {
-    padding: 1.5rem;
+    padding: 1rem;
+    text-align: center;
   }
-  
-  .program-title {
-    font-size: 1.3rem;
+
+  .program-title-card {
+    font-size: 1rem;
     font-weight: 700;
-    color: #ffffff;
-    margin: 0 0 0.5rem 0;
-  }
-  
-  .program-description {
-    color: #b3b3b3;
-    font-size: 0.9rem;
-    line-height: 1.5;
-    margin: 0 0 1rem 0;
+    color: var(--title-color);
+    margin: 0;
+    line-height: 1.3;
+    transition: color 0.3s ease;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  
-  .program-meta {
-    padding-top: 1rem;
-    border-top: 1px solid #333;
+
+  .program-card:hover .program-title-card {
+    color: #ff6b6b;
   }
-  
-  .program-date {
-    color: #666;
-    font-size: 0.8rem;
-    font-weight: 500;
-  }
-  
+
   .no-programs {
     text-align: center;
     padding: 4rem 2rem;
     color: #666;
   }
-  
+
   .no-programs-icon {
     font-size: 4rem;
     margin-bottom: 1rem;
     opacity: 0.5;
   }
-  
+
   .no-programs h3 {
-    color: #ffffff;
+    color: #fff;
     margin-bottom: 0.5rem;
   }
-  
-  /* === RESPONSIVE === */
+
+  /* ===== ANIMACIONES ENTRADA ===== */
+  .page-header,
+  .stat-card,
+  .program-card {
+    animation: fadeInUp 0.8s ease-out;
+  }
+
+  .stat-card:nth-child(1) { animation-delay: 0.1s; }
+  .stat-card:nth-child(2) { animation-delay: 0.2s; }
+  .stat-card:nth-child(3) { animation-delay: 0.3s; }
+  .stat-card:nth-child(4) { animation-delay: 0.4s; }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Responsive - igual que vinilos */
   @media (max-width: 768px) {
-    .container {
+    .main-content {
+      min-height: auto;
+    }
+    
+    .hero-container {
       padding: 2rem 1rem;
       min-height: 60vh;
+    }
+    
+    .programs-section {
+      margin-top: -1rem;
+    }
+    
+    .programs-section .container {
+      padding: 2rem 1rem 4rem;
     }
 
     .site-icon {
@@ -540,23 +646,6 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
     .page-description {
       font-size: 1.1rem;
       margin: 1.5rem auto 1rem;
-    }
-
-    .program-stats {
-      gap: 1rem;
-    }
-
-    .stat-card {
-      padding: 1rem 1.5rem;
-      min-width: 100px;
-    }
-
-    .stat-number {
-      font-size: 2rem;
-    }
-
-    .stat-label {
-      font-size: 0.8rem;
     }
 
     .hero-actions {
@@ -578,40 +667,16 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
     .error-message {
       font-size: 1rem;
     }
-
-    .error-actions {
-      flex-direction: column;
-      align-items: center;
-    }
-
-
-    .programs-grid {
-      grid-template-columns: 1fr;
-      gap: 1.5rem;
+    
+    .section-header h2 {
+      font-size: 2.5rem;
     }
     
-    .program-card {
-      margin: 0 1rem;
-    }
-    
-    .programs-title {
-      font-size: 2rem;
-    }
-    
-    .programs-section {
-      padding: 2rem 0;
-    }
-    
-    .programs-grid {
-      grid-template-columns: 1fr;
-      gap: 1rem;
-    }
-    
-    .program-image {
-      height: 150px;
+    .section-header p {
+      font-size: 1.1rem;
     }
   }
-
+  
   @media (max-width: 480px) {
     h1 {
       font-size: 2rem;
@@ -620,48 +685,14 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
     .page-description {
       font-size: 1rem;
     }
-
-    .program-stats {
-      flex-direction: column;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .stat-card {
-      width: 200px;
-    }
     
     .error-title {
       font-size: 1.5rem;
     }
   }
 
-  /* Smooth scroll para el enlace a la parrilla */
+  /* ===== SMOOTH SCROLL ===== */
   html {
     scroll-behavior: smooth;
   }
-
-  /* Animación de entrada */
-  .page-header {
-    animation: fadeInUp 0.8s ease-out;
-  }
-
-  @keyframes fadeInUp {
-    from {
-      opacity: 0;
-      transform: translateY(30px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-680 lineas
-  .stat-card {
-    animation: fadeInUp 0.8s ease-out;
-  }
-
-  .stat-card:nth-child(1) { animation-delay: 0.1s; }
-  .stat-card:nth-child(2) { animation-delay: 0.2s; }
-  .stat-card:nth-child(3) { animation-delay: 0.3s; }
-</style> 
+</style>

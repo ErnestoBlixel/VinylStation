@@ -36,7 +36,9 @@ const pageDescription =
   `Descubre "${data.title}" en VinylStation.`;
 ---
 <MainLayout title={`${pageTitle} | ${siteInfo.title}`} description={pageDescription}>
-  <div class="vinilo-page">
+  <!-- Contenedor principal unificado -->
+  <div class="main-content">
+    <!-- Breadcrumbs -->
     <nav class="breadcrumbs">
       <div class="container">
         <a href="/">Inicio</a>
@@ -105,7 +107,7 @@ const pageDescription =
             </div>
 
             <div class="vinilo-actions">
-              <a href="/vinilos" class="btn-back-vinilos">
+              <a href="/vinilos" class="btn primary-btn">
                 ← Volver a todos los vinilos
               </a>
             </div>
@@ -126,211 +128,493 @@ const pageDescription =
 </MainLayout>
 
 <style>
- /* ==== Contenedor principal ==== */
-.vinilo-page {
-  min-height: 100vh;
-  background: #0a0a0a;
-  color: #e0e0e0;
-  padding-bottom: 3rem;
-}
+  /* === CONTENEDOR PRINCIPAL UNIFICADO === */
+  .main-content {
+    background: linear-gradient(
+      135deg,
+      var(--color-bg) 0%,
+      rgba(0, 0, 0, 0.02) 50%,
+      var(--color-bg) 100%
+    );
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .main-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -50%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(
+      45deg, 
+      transparent 30%, 
+      rgba(255, 51, 51, 0.02) 50%, 
+      transparent 70%
+    );
+    animation: backgroundShimmer 20s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  @keyframes backgroundShimmer {
+    0%, 100% { transform: translateX(-100%) rotate(0deg); opacity: 0.3; }
+    50% { transform: translateX(0%) rotate(1deg); opacity: 0.7; }
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    position: relative;
+    z-index: 1;
+  }
 
-/* ==== Breadcrumbs ==== */
-.breadcrumbs {
-  background: #111;
-  padding: 1rem 0;
-  border-bottom: 1px solid #222;
-}
-.breadcrumbs a {
-  color: #ccc;
-}
-.breadcrumbs .separator,
-.breadcrumbs .current {
-  color: #777;
-}
+  /* === BREADCRUMBS === */
+  .breadcrumbs {
+    background: var(--color-card-bg);
+    padding: 1rem 0;
+    border-bottom: 1px solid rgba(255, 51, 51, 0.1);
+    position: relative;
+    z-index: 2;
+  }
 
-/* ==== Grid principal ==== */
-.vinilo-details .container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 3rem 1rem;
-}
-.vinilo-layout {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
-  align-items: stretch;
-}
-@media (max-width: 968px) {
+  .breadcrumbs .container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .breadcrumbs a {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    transition: color 0.3s ease;
+  }
+
+  .breadcrumbs a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumbs .separator {
+    color: var(--color-text-secondary);
+    opacity: 0.5;
+  }
+
+  .breadcrumbs .current {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  /* === GRID PRINCIPAL === */
+  .vinilo-details {
+    position: relative;
+    z-index: 1;
+    padding: 3rem 0 6rem;
+  }
+  
+  .vinilo-details .container {
+    margin: 0 auto;
+  }
+  
   .vinilo-layout {
-    grid-template-columns: 1fr;
-    gap: 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 4rem;
+    align-items: stretch;
+    height: 600px;
   }
-}
+  
+  @media (max-width: 968px) {
+    .vinilo-layout {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      height: auto;
+    }
+    
+    .vinilo-image-section {
+      height: auto;
+    }
+    
+    .vinilo-info-section {
+      height: auto;
+      overflow-y: visible;
+    }
+  }
 
-/* ==== Imagen 1:1 ==== */
-.vinilo-image-section {
-  position: sticky;
-  top: 2rem;
-}
-.vinilo-image-section .main-image {
-  position: relative;
-  aspect-ratio: 1/1;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.7);
-}
-.vinilo-image-section .main-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
+  /* === IMAGEN 1:1 === */
+  .vinilo-image-section {
+    position: sticky;
+    top: 2rem;
+    animation: fadeInUp 0.8s ease-out;
+    height: 600px;
+  }
+  
+  .vinilo-image-section .main-image {
+    position: relative;
+    aspect-ratio: 1/1;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 51, 51, 0.1);
+    transition: transform 0.3s ease;
+  }
+  
+  .vinilo-image-section .main-image:hover {
+    transform: scale(1.02);
+  }
+  
+  .vinilo-image-section .main-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
 
-/* ==== Badge ==== */
-.vinilo-badge {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  background: #9333ea;
-  color: #fff;
-  padding: .5rem 1rem;
-  border-radius: 20px;
-  font-size: .8rem;
-  font-weight: bold;
-  text-transform: uppercase;
-}
+  /* === BADGE === */
+  .vinilo-badge {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    background: linear-gradient(135deg, var(--title-color) 0%, #ff6b6b 100%);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(255, 51, 51, 0.3);
+    backdrop-filter: blur(10px);
+  }
 
-/* ==== Sección de info ==== */
-.vinilo-info-section {
-  background: #1a1a1a;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-}
-.vinilo-header h1 {
-  font-size: 2.5rem;
-  color: #fff;
-  margin-bottom: 2rem;
-}
-@media (max-width: 480px) {
+  /* === SECCIÓN DE INFO === */
+  .vinilo-info-section {
+    background: var(--color-card-bg);
+    padding: 2.5rem;
+    border-radius: 20px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 51, 51, 0.1);
+    animation: fadeInUp 0.8s ease-out 0.2s both;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 600px;
+    overflow-y: auto;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer 10+ */
+  }
+  
+  /* Ocultar scrollbar en Webkit browsers (Chrome, Safari, Edge) */
+  .vinilo-info-section::-webkit-scrollbar {
+    display: none;
+  }
+  
   .vinilo-header h1 {
-    font-size: 1.8rem;
+    font-size: 2.2rem;
+    color: var(--title-color);
+    margin-bottom: 1.5rem;
+    line-height: 1.2;
+    font-weight: 800;
+    position: relative;
   }
-}
+  
+  .vinilo-header h1::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(90deg, 
+      var(--title-color),
+      transparent);
+    border-radius: 2px;
+  }
+  
+  @media (max-width: 480px) {
+    .vinilo-header h1 {
+      font-size: 2.2rem;
+    }
+  }
 
-/* ==== Descripción ==== */
-.vinilo-description h4 {
-  font-size: 1.3rem;
-  color: #fff;
-  margin-bottom: 1rem;
-}
-.content,
-.vinilo-description p {
-  color: #ccc;
-  line-height: 1.6;
-  font-size: 1.05rem;
-  margin-bottom: 2rem;
-}
+  /* === DESCRIPCIÓN === */
+  .vinilo-description {
+    margin-bottom: 2.5rem;
+  }
+  
+  .vinilo-description h4 {
+    font-size: 1.4rem;
+    color: var(--title-color);
+    margin-bottom: 1rem;
+    font-weight: 700;
+  }
+  
+  .content,
+  .vinilo-description p {
+    color: var(--color-text);
+    line-height: 1.7;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
 
-/* ==== Meta ==== */
-.vinilo-meta h4 {
-  font-size: 1.3rem;
-  color: #fff;
-  margin-bottom: 1rem;
-}
-.meta-grid {
-  display: grid;
-  gap: .8rem;
-}
-.meta-item {
-  display: flex;
-  justify-content: space-between;
-  padding: .7rem 0;
-  border-bottom: 1px solid #333;
-}
-.meta-item strong {
-  color: #fff;
-}
-.meta-item span {
-  color: #bbb;
-}
+  /* === META === */
+  .vinilo-meta {
+    margin-bottom: 2.5rem;
+    flex-grow: 1;
+  }
+  
+  .vinilo-meta h4 {
+    font-size: 1.4rem;
+    color: var(--title-color);
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+  }
+  
+  .meta-grid {
+    display: grid;
+    gap: 1rem;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 1.5rem;
+    border-radius: 15px;
+    border-left: 4px solid var(--title-color);
+  }
+  
+  .meta-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid var(--color-text-secondary);
+    opacity: 0.9;
+  }
+  
+  .meta-item:last-child {
+    border-bottom: none;
+  }
+  
+  .meta-item strong {
+    color: var(--color-text);
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  
+  .meta-item span {
+    color: var(--color-text-secondary);
+    font-weight: 500;
+  }
 
-/* ==== Botón "volver" ==== */
-.vinilo-actions {
-  text-align: center;
-  padding-top: 1rem;
-  border-top: 1px solid #333;
-}
-.btn-back-vinilos {
-  background: #9333ea;
-  color: #fff;
-  padding: 1rem 2rem;
-  border-radius: 30px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: background .3s, transform .3s;
-}
-.btn-back-vinilos:hover {
-  background: #7c3aed;
-  transform: translateY(-2px);
-}
+  /* === BOTÓN "VOLVER" === */
+  .vinilo-actions {
+    text-align: center;
+    padding-top: 2rem;
+    border-top: 1px solid var(--color-text-secondary);
+  }
 
-/* ==== Contenido completo ==== */
-.vinilo-content {
-  padding: 3rem 0;
-}
-.content-title {
-  color: #9333ea;
-  font-size: 2rem;
-  text-align: center;
-  margin-bottom: 1.5rem;
-}
-.content-body {
-  max-width: 800px;
-  margin: 0 auto;
-  background: #1a1a1a;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-}
-.content-body p {
-  color: #ccc;
-  line-height: 1.6;
-  margin-bottom: 1rem;
-}
-.content-body h1,
-.content-body h2,
-.content-body h3,
-.content-body h4,
-.content-body h5,
-.content-body h6 {
-  color: #fff;
-  margin-top: 2rem;
-  margin-bottom: 1rem;
-}
-.content-body img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 8px;
-  margin: 1rem 0;
-}
-.content-body ul,
-.content-body ol {
-  color: #ccc;
-  padding-left: 1.5rem;
-  margin-bottom: 1rem;
-}
-.content-body blockquote {
-  border-left: 4px solid #9333ea;
-  padding-left: 1rem;
-  margin: 1rem 0;
-  font-style: italic;
-  color: #bbb;
-}
+  .btn {
+    display: inline-block;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    min-width: 220px;
+    text-align: center;
+    border: none;
+    cursor: pointer;
+  }
 
-/* Mensajes sin contenido */
-.no-content {
-  text-align: center;
-  color: #777;
-  font-style: italic;
-}
+  .primary-btn {
+    background: var(--color-primary, #ff3333);
+    color: #ffffff;
+    border: 2px solid var(--color-primary, #ff3333);
+  }
+
+  .primary-btn:hover {
+    background: var(--color-secondary, #bb2424);
+    border-color: var(--color-secondary, #bb2424);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
+  }
+
+  /* === CONTENIDO COMPLETO === */
+  .vinilo-content {
+    padding: 4rem 0;
+    position: relative;
+    z-index: 1;
+    animation: fadeInUp 0.8s ease-out 0.4s both;
+  }
+  
+  .content-title {
+    color: var(--title-color);
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 2rem;
+    font-weight: 800;
+    position: relative;
+  }
+  
+  .content-title::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 4px;
+    background: linear-gradient(90deg, 
+      var(--title-color),
+      transparent);
+    border-radius: 2px;
+  }
+  
+  .content-body {
+    max-width: 900px;
+    margin: 0 auto;
+    background: var(--color-card-bg);
+    padding: 3rem;
+    border-radius: 20px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 51, 51, 0.1);
+  }
+  
+  .content-body p {
+    color: var(--color-text);
+    line-height: 1.7;
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+  }
+  
+  .content-body h1,
+  .content-body h2,
+  .content-body h3,
+  .content-body h4,
+  .content-body h5,
+  .content-body h6 {
+    color: var(--color-text);
+    margin-top: 2.5rem;
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+  }
+  
+  .content-body h2 {
+    font-size: 2rem;
+    border-bottom: 2px solid var(--color-text-secondary);
+    padding-bottom: 0.5rem;
+  }
+  
+  .content-body h3 {
+    font-size: 1.6rem;
+    position: relative;
+    padding-left: 1rem;
+  }
+  
+  .content-body h3::before {
+    content: '▎';
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: var(--color-text-secondary);
+  }
+  
+  .content-body img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 15px;
+    margin: 2rem 0;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 51, 51, 0.1);
+  }
+  
+  .content-body ul,
+  .content-body ol {
+    color: var(--color-text);
+    padding-left: 2rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.7;
+  }
+  
+  .content-body blockquote {
+    border-left: 4px solid var(--color-text-secondary);
+    padding-left: 1.5rem;
+    margin: 2rem 0;
+    font-style: italic;
+    color: var(--color-text-secondary);
+    background: rgba(0, 0, 0, 0.05);
+    padding: 1.5rem;
+    border-radius: 0 15px 15px 0;
+  }
+
+  /* === MENSAJE SIN CONTENIDO === */
+  .no-content {
+    text-align: center;
+    color: var(--color-text-secondary);
+    font-style: italic;
+    padding: 4rem;
+    background: var(--color-card-bg);
+    border-radius: 15px;
+    border: 2px dashed rgba(255, 51, 51, 0.2);
+  }
+
+  /* === ANIMACIONES === */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    .vinilo-details {
+      padding: 2rem 0 4rem;
+    }
+    
+    .vinilo-info-section {
+      padding: 2rem;
+      height: auto;
+    }
+    
+    .content-body {
+      padding: 2rem;
+      margin: 0 1rem;
+    }
+    
+    .content-title {
+      font-size: 2rem;
+    }
+    
+    .meta-grid {
+      padding: 1rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .vinilo-info-section {
+      padding: 1.5rem;
+      height: auto;
+    }
+    
+    .content-body {
+      padding: 1.5rem;
+    }
+    
+    .breadcrumbs .current {
+      display: none;
+    }
+  }
+  
+  /* === SMOOTH SCROLL === */
+  html {
+    scroll-behavior: smooth;
+  }
 </style>

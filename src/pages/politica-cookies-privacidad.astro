@@ -1,0 +1,1066 @@
+---
+// Página de Política de Cookies y Privacidad - VinylStation Radio
+import MainLayout from '../layouts/MainLayout.astro';
+import { Fragment } from 'astro/components';
+
+// SEO y metadatos
+const pageTitle = 'Política de Cookies y Privacidad | VinylStation Radio';
+const pageDescription = 'Política de Cookies y Privacidad de VinylStation Radio - Información sobre el tratamiento de datos personales y uso de cookies en nuestra web y tienda online.';
+
+// Configurar como noindex
+const noIndex = true;
+---
+
+<MainLayout title={pageTitle} description={pageDescription}>
+  {noIndex && (
+    <Fragment slot="head">
+      <meta name="robots" content="noindex, nofollow" />
+      <meta name="googlebot" content="noindex, nofollow" />
+    </Fragment>
+  )}
+  <div class="legal-page">
+    <div class="container">
+      <div class="legal-header">
+        <div class="site-icon-container">
+          <img src="/images/logos/logo vinylstation.png" alt="VinylStation Logo" class="site-icon" />
+        </div>
+        <h1>Política de Cookies y Privacidad</h1>
+        <p class="page-description">
+          Información sobre el tratamiento de sus datos personales y el uso de cookies
+        </p>
+      </div>
+
+      <div class="legal-content">
+        <section class="legal-section">
+          <h2>🛡️ Responsable del Tratamiento</h2>
+          <div class="info-card">
+            <div class="info-grid">
+              <div class="info-item">
+                <strong>Responsable:</strong>
+                <span>Asociación Dacrepro Salud</span>
+              </div>
+              <div class="info-item">
+                <strong>CIF:</strong>
+                <span>G/29992282</span>
+              </div>
+              <div class="info-item">
+                <strong>Dirección:</strong>
+                <span>Fuensalida - 45510 - Toledo, España</span>
+              </div>
+              <div class="info-item">
+                <strong>Teléfono:</strong>
+                <span>+34 722 41 50 33</span>
+              </div>
+              <div class="info-item">
+                <strong>Delegado de Protección:</strong>
+                <span>dpo@vinylstation.es</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="legal-section">
+          <h2>📊 Datos Personales que Recopilamos</h2>
+          <div class="content-card">
+            <h3>Datos de Navegación</h3>
+            <ul class="data-list">
+              <li>Dirección IP y datos de conexión</li>
+              <li>Tipo de navegador y sistema operativo</li>
+              <li>Páginas visitadas y tiempo de permanencia</li>
+              <li>Referencia de acceso al sitio web</li>
+              <li>Configuración de idioma y zona horaria</li>
+            </ul>
+
+            <h3>Datos de Contacto (Formularios)</h3>
+            <ul class="data-list">
+              <li>Nombre y apellidos</li>
+              <li>Dirección de correo electrónico</li>
+              <li>Teléfono (opcional)</li>
+              <li>Mensaje o consulta</li>
+            </ul>
+
+            <h3>Datos de Compra (Tienda Online)</h3>
+            <ul class="data-list">
+              <li>Datos de facturación y envío</li>
+              <li>Información de pago (procesada por terceros seguros)</li>
+              <li>Historial de pedidos</li>
+              <li>Preferencias de productos</li>
+            </ul>
+
+            <h3>Datos de la Radio Online</h3>
+            <ul class="data-list">
+              <li>Estadísticas de escucha agregadas</li>
+              <li>Preferencias de programas</li>
+              <li>Comentarios en programas (si los hay)</li>
+            </ul>
+          </div>
+        </section>
+
+        <section class="legal-section">
+          <h2>🎯 Finalidades del Tratamiento</h2>
+          <div class="content-card">
+            <div class="purpose-grid">
+              <div class="purpose-item">
+                <h4>🌐 Funcionamiento del Sitio Web</h4>
+                <p><strong>Base legal:</strong> Interés legítimo</p>
+                <p>Garantizar el correcto funcionamiento de la web, resolver incidencias técnicas y mejorar la experiencia de usuario.</p>
+              </div>
+
+              <div class="purpose-item">
+                <h4>📻 Servicio de Radio Online</h4>
+                <p><strong>Base legal:</strong> Ejecución de contrato / Interés legítimo</p>
+                <p>Proporcionar el servicio de streaming de radio, gestionar la programación y medir audiencias.</p>
+              </div>
+
+              <div class="purpose-item">
+                <h4>🛒 Gestión de Compras</h4>
+                <p><strong>Base legal:</strong> Ejecución de contrato</p>
+                <p>Procesar pedidos, gestionar pagos, realizar envíos y proporcionar atención al cliente.</p>
+              </div>
+
+              <div class="purpose-item">
+                <h4>📧 Comunicación Comercial</h4>
+                <p><strong>Base legal:</strong> Consentimiento</p>
+                <p>Enviar newsletters, promociones y comunicaciones sobre nuevos productos o servicios.</p>
+              </div>
+
+              <div class="purpose-item">
+                <h4>📈 Análisis y Estadísticas</h4>
+                <p><strong>Base legal:</strong> Interés legítimo</p>
+                <p>Analizar el uso del sitio web y mejorar nuestros servicios mediante estadísticas anonimizadas.</p>
+              </div>
+
+              <div class="purpose-item">
+                <h4>⚖️ Cumplimiento Legal</h4>
+                <p><strong>Base legal:</strong> Obligación legal</p>
+                <p>Cumplir con las obligaciones fiscales, contables y de otra índole exigidas por la legislación.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="legal-section">
+          <h2>🍪 Política de Cookies</h2>
+          <div class="content-card">
+            <h3>¿Qué son las Cookies?</h3>
+            <p>
+              Las cookies son pequeños archivos de texto que se almacenan en su dispositivo cuando visita 
+              nuestro sitio web. Nos permiten reconocer su navegador y capturar cierta información para 
+              mejorar su experiencia de navegación.
+            </p>
+
+            <h3>Tipos de Cookies que Utilizamos</h3>
+
+            <div class="cookie-type">
+              <h4>🔧 Cookies Técnicas (Necesarias)</h4>
+              <p><strong>Finalidad:</strong> Funcionamiento básico del sitio web</p>
+              <p><strong>Duración:</strong> Sesión / 1 año</p>
+              <p><strong>Consentimiento:</strong> No requerido (interés legítimo)</p>
+              <ul class="cookie-list">
+                <li>Cookies de sesión de usuario</li>
+                <li>Configuración de idioma y preferencias</li>
+                <li>Cookies de seguridad y autenticación</li>
+                <li>Carrito de compra (tienda online)</li>
+              </ul>
+            </div>
+
+            <div class="cookie-type">
+              <h4>📊 Cookies Analíticas</h4>
+              <p><strong>Finalidad:</strong> Análisis del comportamiento de los usuarios</p>
+              <p><strong>Duración:</strong> 2 años</p>
+              <p><strong>Consentimiento:</strong> Requerido</p>
+              <ul class="cookie-list">
+                <li>Google Analytics (tráfico web)</li>
+                <li>Estadísticas de reproducción de radio</li>
+                <li>Métricas de rendimiento del sitio</li>
+              </ul>
+            </div>
+
+            <div class="cookie-type">
+              <h4>🎯 Cookies de Marketing</h4>
+              <p><strong>Finalidad:</strong> Publicidad personalizada</p>
+              <p><strong>Duración:</strong> 1-2 años</p>
+              <p><strong>Consentimiento:</strong> Requerido</p>
+              <ul class="cookie-list">
+                <li>Seguimiento de conversiones</li>
+                <li>Publicidad en redes sociales</li>
+                <li>Remarketing y retargeting</li>
+              </ul>
+            </div>
+
+            <div class="cookie-type">
+              <h4>🔗 Cookies de Terceros</h4>
+              <p><strong>Finalidad:</strong> Servicios externos integrados</p>
+              <p><strong>Duración:</strong> Variable según tercero</p>
+              <p><strong>Consentimiento:</strong> Requerido</p>
+              <ul class="cookie-list">
+                <li>YouTube (vídeos integrados)</li>
+                <li>Redes sociales (botones compartir)</li>
+                <li>Servicios de pago (Stripe, PayPal)</li>
+                <li>Mapas integrados</li>
+              </ul>
+            </div>
+
+            <h3>Gestión de Cookies</h3>
+            <p>
+              Puede gestionar sus preferencias de cookies utilizando nuestro panel de configuración 
+              que aparece al acceder por primera vez al sitio web, o modificando la configuración 
+              de su navegador.
+            </p>
+
+            <div class="cookie-control">
+              <button id="openCookieSettings" class="btn primary-btn">⚙️ Configurar Cookies</button>
+              <button id="acceptAllCookies" class="btn secondary-btn">✅ Aceptar Todas</button>
+              <button id="rejectAllCookies" class="btn secondary-btn">❌ Rechazar Opcionales</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="legal-section">
+          <h2>👥 Comunicación de Datos a Terceros</h2>
+          <div class="content-card">
+            <p>Sus datos personales pueden ser comunicados a terceros en los siguientes casos:</p>
+
+            <div class="third-party-grid">
+              <div class="third-party-item">
+                <h4>💳 Procesadores de Pago</h4>
+                <p><strong>Empresas:</strong> Stripe, PayPal, Redsys</p>
+                <p><strong>Finalidad:</strong> Procesamiento seguro de pagos</p>
+                <p><strong>Ubicación:</strong> UE y EE.UU. (con garantías adecuadas)</p>
+              </div>
+
+              <div class="third-party-item">
+                <h4>📦 Empresas de Envío</h4>
+                <p><strong>Empresas:</strong> Correos, MRW, SEUR</p>
+                <p><strong>Finalidad:</strong> Entrega de productos</p>
+                <p><strong>Ubicación:</strong> España</p>
+              </div>
+
+              <div class="third-party-item">
+                <h4>📧 Servicios de Email</h4>
+                <p><strong>Empresas:</strong> Mailchimp, SendGrid</p>
+                <p><strong>Finalidad:</strong> Envío de newsletters y comunicaciones</p>
+                <p><strong>Ubicación:</strong> EE.UU. (con garantías adecuadas)</p>
+              </div>
+
+              <div class="third-party-item">
+                <h4>☁️ Servicios en la Nube</h4>
+                <p><strong>Empresas:</strong> AWS, Google Cloud</p>
+                <p><strong>Finalidad:</strong> Hosting y almacenamiento</p>
+                <p><strong>Ubicación:</strong> UE</p>
+              </div>
+
+              <div class="third-party-item">
+                <h4>📊 Herramientas de Análisis</h4>
+                <p><strong>Empresas:</strong> Google Analytics, Hotjar</p>
+                <p><strong>Finalidad:</strong> Análisis web y mejora UX</p>
+                <p><strong>Ubicación:</strong> EE.UU. (con garantías adecuadas)</p>
+              </div>
+            </div>
+
+            <div class="third-party-item">
+              <h4>🤝 Programas de Afiliación</h4>
+              <p><strong>Empresas:</strong> Amazon, Ticketmaster, El Corte Inglés</p>
+              <p><strong>Finalidad:</strong> Seguimiento de conversiones y comisiones</p>
+              <p><strong>Ubicación:</strong> EE.UU. y España</p>
+            </div>
+
+            <p>
+              <strong>Importante:</strong> Nunca vendemos, alquilamos o cedemos sus datos personales 
+              a terceros con fines comerciales sin su consentimiento expreso.
+            </p>
+          </div>
+        </section>
+
+        <section class="legal-section">
+          <h2>🔒 Seguridad de los Datos</h2>
+          <div class="content-card">
+            <p>
+              Implementamos medidas técnicas y organizativas apropiadas para proteger sus datos personales:
+            </p>
+
+            <div class="security-grid">
+              <div class="security-item">
+                <div class="security-icon">🔐</div>
+                <h4>Cifrado SSL/TLS</h4>
+                <p>Todas las comunicaciones están cifradas mediante protocolo HTTPS</p>
+              </div>
+
+              <div class="security-item">
+                <div class="security-icon">🛡️</div>
+                <h4>Firewall y Antimalware</h4>
+                <p>Protección activa contra ataques y software malicioso</p>
+              </div>
+
+              <div class="security-item">
+                <div class="security-icon">🔑</div>
+                <h4>Control de Acceso</h4>
+                <p>Acceso restringido a datos mediante autenticación de doble factor</p>
+              </div>
+
+              <div class="security-item">
+                <div class="security-icon">💾</div>
+                <h4>Copias de Seguridad</h4>
+                <p>Backups automáticos y cifrados de todos los datos</p>
+              </div>
+
+              <div class="security-item">
+                <div class="security-icon">📋</div>
+                <h4>Auditorías Regulares</h4>
+                <p>Revisiones periódicas de seguridad y accesos</p>
+              </div>
+
+              <div class="security-item">
+                <div class="security-icon">👨‍🏫</div>
+                <h4>Formación del Personal</h4>
+                <p>Capacitación continua en protección de datos</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="legal-section">
+          <h2>⏱️ Conservación de Datos</h2>
+          <div class="content-card">
+            <div class="retention-grid">
+              <div class="retention-item">
+                <h4>📊 Datos de Navegación</h4>
+                <p><strong>Período:</strong> 2 años desde la última visita</p>
+                <p>Se conservan para análisis de tráfico y mejora del servicio</p>
+              </div>
+
+              <div class="retention-item">
+                <h4>🛒 Datos de Compra</h4>
+                <p><strong>Período:</strong> 6 años</p>
+                <p>Obligación legal fiscal y contable</p>
+              </div>
+
+              <div class="retention-item">
+                <h4>📧 Suscripciones Newsletter</h4>
+                <p><strong>Período:</strong> Hasta la baja voluntaria</p>
+                <p>Mientras mantenga el consentimiento activo</p>
+              </div>
+
+              <div class="retention-item">
+                <h4>📞 Consultas y Contacto</h4>
+                <p><strong>Período:</strong> 3 años</p>
+                <p>Para dar seguimiento y resolver incidencias</p>
+              </div>
+
+              <div class="retention-item">
+                <h4>📻 Datos de Radio</h4>
+                <p><strong>Período:</strong> 1 año</p>
+                <p>Estadísticas agregadas para programación</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="legal-section">
+          <h2>⚖️ Sus Derechos</h2>
+          <div class="content-card">
+            <p>
+              Como titular de los datos, usted tiene los siguientes derechos que puede ejercer 
+              contactando con nosotros:
+            </p>
+
+            <div class="rights-grid">
+              <div class="right-item">
+                <div class="right-icon">👁️</div>
+                <h4>Derecho de Acceso</h4>
+                <p>Conocer qué datos personales tratamos sobre usted</p>
+              </div>
+
+              <div class="right-item">
+                <div class="right-icon">✏️</div>
+                <h4>Derecho de Rectificación</h4>
+                <p>Corregir datos inexactos o incompletos</p>
+              </div>
+
+              <div class="right-item">
+                <div class="right-icon">🗑️</div>
+                <h4>Derecho de Supresión</h4>
+                <p>Solicitar la eliminación de sus datos</p>
+              </div>
+
+              <div class="right-item">
+                <div class="right-icon">⛔</div>
+                <h4>Derecho de Oposición</h4>
+                <p>Oponerse al tratamiento de sus datos</p>
+              </div>
+
+              <div class="right-item">
+                <div class="right-icon">🔒</div>
+                <h4>Derecho de Limitación</h4>
+                <p>Restringir el tratamiento en ciertos casos</p>
+              </div>
+
+              <div class="right-item">
+                <div class="right-icon">📱</div>
+                <h4>Derecho de Portabilidad</h4>
+                <p>Obtener sus datos en formato digital</p>
+              </div>
+            </div>
+
+            <h3>📧 Cómo Ejercer sus Derechos</h3>
+            <div class="exercise-rights">
+              <p>Para ejercer cualquiera de estos derechos, puede contactar con nosotros:</p>
+              <ul class="contact-methods">
+                <li><strong>📧 Email:</strong> dpo@vinylstation.es</li>
+                <li><strong>📞 Teléfono:</strong> +34 722 41 50 33</li>
+                <li><strong>📮 Correo postal:</strong> Fuensalida - 45510 - Toledo</li>
+              </ul>
+              <p>
+                <strong>Documentación requerida:</strong> Deberá acreditar su identidad mediante DNI, 
+                pasaporte o documento equivalente.
+              </p>
+            </div>
+
+            <h3>🏛️ Derecho de Reclamación</h3>
+            <p>
+              Si considera que el tratamiento de sus datos no es conforme a la normativa, 
+              puede presentar una reclamación ante la <strong>Agencia Española de Protección de Datos (AEPD)</strong>:
+            </p>
+            <div class="aepd-info">
+              <p><strong>Web:</strong> <a href="https://www.aepd.es" target="_blank">www.aepd.es</a></p>
+              <p><strong>Dirección:</strong> C/ Jorge Juan, 6 - 28001 Madrid</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="legal-section">
+          <h2>🔄 Modificaciones de la Política</h2>
+          <div class="content-card">
+            <p>
+              Esta Política de Cookies y Privacidad puede ser modificada para adaptarse a cambios 
+              normativos, técnicos o en nuestros servicios. Cualquier modificación será publicada 
+              en esta página con la fecha de última actualización.
+            </p>
+            <p>
+              Le recomendamos revisar periódicamente esta política. En caso de cambios sustanciales 
+              que afecten al uso de sus datos, le notificaremos por email si disponemos de su dirección.
+            </p>
+          </div>
+        </section>
+      </div>
+
+      <div class="legal-footer">
+        <div class="update-info">
+          <p><strong>Última actualización:</strong> Junio 2025</p>
+          <p><strong>Versión:</strong> 2.0</p>
+        </div>
+        <div class="back-actions">
+          <a href="/" class="btn primary-btn">🏠 Volver al Inicio</a>
+          <a href="/contacto" class="btn secondary-btn">📧 Contactar</a>
+          <a href="/aviso-legal" class="btn secondary-btn">⚖️ Aviso Legal</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</MainLayout>
+
+<script>
+  // Script para gestión de cookies
+  document.addEventListener('DOMContentLoaded', function() {
+    // Elementos del panel de cookies
+    const openCookieSettings = document.getElementById('openCookieSettings');
+    const acceptAllCookies = document.getElementById('acceptAllCookies');
+    const rejectAllCookies = document.getElementById('rejectAllCookies');
+    
+    // Simulación de panel de cookies (aquí integrarías tu solución real)
+    openCookieSettings?.addEventListener('click', function() {
+      alert('Panel de configuración de cookies - Aquí integrarías tu solución de gestión de cookies (ej: OneTrust, Cookiebot, etc.)');
+    });
+    
+    acceptAllCookies?.addEventListener('click', function() {
+      // Aquí establecerías las cookies aceptadas
+      localStorage.setItem('cookieConsent', 'all');
+      alert('Todas las cookies han sido aceptadas');
+    });
+    
+    rejectAllCookies?.addEventListener('click', function() {
+      // Aquí establecerías solo las cookies necesarias
+      localStorage.setItem('cookieConsent', 'necessary');
+      alert('Solo se han aceptado las cookies necesarias');
+    });
+  });
+</script>
+
+<style>
+  /* Estilos heredados de aviso-legal.astro + específicos para cookies/privacidad */
+  .legal-page {
+    background: linear-gradient(
+      135deg,
+      var(--color-bg) 0%,
+      rgba(0, 0, 0, 0.02) 50%,
+      var(--color-bg) 100%
+    );
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .legal-page::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -50%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(
+      45deg, 
+      transparent 30%, 
+      rgba(197, 173, 123, 0.02) 50%, 
+      transparent 70%
+    );
+    animation: backgroundShimmer 20s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  @keyframes backgroundShimmer {
+    0%, 100% { transform: translateX(-100%) rotate(0deg); opacity: 0.3; }
+    50% { transform: translateX(0%) rotate(1deg); opacity: 0.7; }
+  }
+  
+  .container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    position: relative;
+    z-index: 1;
+  }
+  
+  /* Header */
+  .legal-header {
+    text-align: center;
+    padding: 4rem 0 3rem;
+    animation: fadeInUp 0.8s ease-out;
+  }
+  
+  @keyframes fadeInUp {
+    0% { transform: translateY(30px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+  
+  .site-icon-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+  }
+  
+  .site-icon {
+    height: 80px;
+    width: auto;
+    animation: pulse 3s infinite ease-in-out;
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(197, 173, 123, 0.5)); }
+    50% { transform: scale(1.05); filter: drop-shadow(0 0 8px rgba(197, 173, 123, 0.8)); }
+    100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(197, 173, 123, 0.5)); }
+  }
+  
+  .legal-header h1 {
+    font-size: 3.5rem;
+    margin: 0 0 1.5rem;
+    color: var(--title-color);
+    position: relative;
+    display: inline-block;
+    font-weight: 800;
+  }
+  
+  .legal-header h1::after {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 4px;
+    background: linear-gradient(90deg, 
+      transparent, 
+      var(--title-color),
+      transparent);
+    border-radius: 2px;
+  }
+  
+  .page-description {
+    max-width: 600px;
+    margin: 2rem auto 0;
+    color: #777;
+    font-size: 1.2rem;
+    line-height: 1.6;
+  }
+  
+  /* Content */
+  .legal-content {
+    animation: fadeIn 1s ease-out 0.3s both;
+  }
+  
+  .legal-section {
+    margin-bottom: 3rem;
+    animation: slideInLeft 0.8s ease-out both;
+  }
+  
+  .legal-section:nth-child(odd) { animation-delay: 0.1s; }
+  .legal-section:nth-child(even) { animation-delay: 0.2s; }
+  
+  @keyframes slideInLeft {
+    0% { transform: translateX(-30px); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+  }
+  
+  .legal-section h2 {
+    font-size: 2rem;
+    margin-bottom: 1.5rem;
+    color: var(--title-color);
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .legal-section h3 {
+    font-size: 1.4rem;
+    margin: 2rem 0 1rem;
+    color: var(--title-color);
+    font-weight: 600;
+  }
+  
+  /* Cards */
+  .info-card,
+  .content-card {
+    background: var(--color-card-bg);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(197, 173, 123, 0.1);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  
+  .info-card::before,
+  .content-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+      transparent, 
+      rgba(197, 173, 123, 0.05), 
+      transparent
+    );
+    transition: left 0.6s ease;
+  }
+  
+  .info-card:hover::before,
+  .content-card:hover::before {
+    left: 100%;
+  }
+  
+  .info-card:hover,
+  .content-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    border-color: rgba(197, 173, 123, 0.2);
+  }
+  
+  /* Info Grid */
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+  }
+  
+  .info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+    border-left: 4px solid var(--title-color);
+  }
+  
+  .info-item strong {
+    color: var(--title-color);
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .info-item span {
+    color: var(--color-text);
+    font-size: 1.1rem;
+    font-weight: 500;
+  }
+  
+  /* Data lists */
+  .data-list {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+  }
+  
+  .data-list li {
+    position: relative;
+    padding: 0.5rem 0 0.5rem 2rem;
+    margin-bottom: 0.3rem;
+    border-left: 2px solid rgba(197, 173, 123, 0.3);
+    padding-left: 1rem;
+    transition: all 0.3s ease;
+  }
+  
+  .data-list li::before {
+    content: '📋';
+    position: absolute;
+    left: -1.2rem;
+    top: 0.5rem;
+  }
+  
+  .data-list li:hover {
+    border-left-color: var(--title-color);
+    padding-left: 1.5rem;
+  }
+  
+  /* Purpose Grid */
+  .purpose-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+  }
+  
+  .purpose-item {
+    padding: 1.5rem;
+    background: rgba(197, 173, 123, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(197, 173, 123, 0.2);
+    transition: all 0.3s ease;
+  }
+  
+  .purpose-item:hover {
+    background: rgba(197, 173, 123, 0.1);
+    border-color: var(--title-color);
+    transform: translateY(-2px);
+  }
+  
+  .purpose-item h4 {
+    color: var(--title-color);
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+  }
+  
+  .purpose-item p:first-of-type {
+    font-weight: 600;
+    color: #666;
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  /* Cookie types */
+  .cookie-type {
+    margin: 2rem 0;
+    padding: 1.5rem;
+    background: rgba(26, 52, 89, 0.05);
+    border-radius: 12px;
+    border-left: 4px solid var(--color-primary);
+  }
+  
+  .cookie-type h4 {
+    color: var(--title-color);
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+  }
+  
+  .cookie-type p {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+  }
+  
+  .cookie-list {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+  }
+  
+  .cookie-list li {
+    position: relative;
+    padding: 0.3rem 0 0.3rem 1.5rem;
+    font-size: 0.9rem;
+  }
+  
+  .cookie-list li::before {
+    content: '🍪';
+    position: absolute;
+    left: 0;
+    top: 0.3rem;
+  }
+  
+  /* Cookie control buttons */
+  .cookie-control {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: rgba(197, 173, 123, 0.05);
+    border-radius: 8px;
+  }
+  
+  /* Third party and security grids */
+  .third-party-grid,
+  .security-grid,
+  .retention-grid,
+  .rights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+  }
+  
+  .third-party-item,
+  .security-item,
+  .retention-item,
+  .right-item {
+    padding: 1.5rem;
+    background: rgba(197, 173, 123, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(197, 173, 123, 0.2);
+    transition: all 0.3s ease;
+  }
+  
+  .third-party-item:hover,
+  .security-item:hover,
+  .retention-item:hover,
+  .right-item:hover {
+    background: rgba(197, 173, 123, 0.1);
+    border-color: var(--title-color);
+    transform: translateY(-2px);
+  }
+  
+  .third-party-item h4,
+  .security-item h4,
+  .retention-item h4,
+  .right-item h4 {
+    color: var(--title-color);
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+  }
+  
+  /* Security icons */
+  .security-item {
+    text-align: center;
+  }
+  
+  .security-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+  
+  /* Rights icons */
+  .right-item {
+    text-align: center;
+  }
+  
+  .right-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+  
+  /* Exercise rights section */
+  .exercise-rights {
+    margin-top: 1.5rem;
+    padding: 1.5rem;
+    background: rgba(26, 52, 89, 0.05);
+    border-radius: 8px;
+    border-left: 4px solid var(--color-primary);
+  }
+  
+  .contact-methods {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+  }
+  
+  .contact-methods li {
+    padding: 0.5rem 0;
+    font-weight: 500;
+  }
+  
+  .aepd-info {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: rgba(144, 65, 57, 0.05);
+    border-radius: 8px;
+    border-left: 4px solid var(--color-secondary);
+  }
+  
+  .aepd-info a {
+    color: var(--color-primary);
+    text-decoration: none;
+    font-weight: 500;
+  }
+  
+  .aepd-info a:hover {
+    color: var(--title-color);
+    text-decoration: underline;
+  }
+  
+  /* Footer */
+  .legal-footer {
+    text-align: center;
+    padding: 3rem 0 4rem;
+    border-top: 1px solid rgba(197, 173, 123, 0.2);
+    margin-top: 3rem;
+  }
+  
+  .update-info {
+    margin-bottom: 2rem;
+  }
+  
+  .update-info p {
+    color: #777;
+    font-size: 0.9rem;
+    font-style: italic;
+    margin-bottom: 0.5rem;
+  }
+  
+  .back-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  
+  /* Buttons */
+  .btn {
+    display: inline-block;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    min-width: 160px;
+    text-align: center;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .primary-btn {
+    background: var(--color-primary, #1a3459);
+    color: #ffffff;
+    border: 2px solid var(--color-primary, #1a3459);
+  }
+  
+  .primary-btn:hover {
+    background: var(--color-secondary, #904139);
+    border-color: var(--color-secondary, #904139);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(26, 52, 89, 0.3);
+  }
+  
+  .secondary-btn {
+    background: transparent;
+    color: var(--color-primary, #1a3459);
+    border: 2px solid var(--color-primary, #1a3459);
+  }
+  
+  .secondary-btn:hover {
+    background: var(--color-primary, #1a3459);
+    color: #ffffff;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(26, 52, 89, 0.3);
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .legal-header {
+      padding: 2rem 0;
+    }
+    
+    .legal-header h1 {
+      font-size: 2.5rem;
+    }
+    
+    .page-description {
+      font-size: 1.1rem;
+    }
+    
+    .site-icon {
+      height: 60px;
+    }
+    
+    .legal-section h2 {
+      font-size: 1.6rem;
+    }
+    
+    .info-card,
+    .content-card {
+      padding: 1.5rem;
+    }
+    
+    .info-grid,
+    .purpose-grid,
+    .third-party-grid,
+    .security-grid,
+    .retention-grid,
+    .rights-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .cookie-control {
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .back-actions {
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .btn {
+      width: 200px;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .legal-header h1 {
+      font-size: 2rem;
+    }
+    
+    .page-description {
+      font-size: 1rem;
+    }
+    
+    .legal-section h2 {
+      font-size: 1.4rem;
+      flex-direction: column;
+      text-align: center;
+    }
+    
+    .info-card,
+    .content-card {
+      padding: 1rem;
+    }
+    
+    .purpose-item,
+    .third-party-item,
+    .security-item,
+    .retention-item,
+    .right-item {
+      padding: 1rem;
+    }
+  }
+</style>

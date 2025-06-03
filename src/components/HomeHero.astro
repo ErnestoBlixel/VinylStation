@@ -1,24 +1,18 @@
 ---
-// HomeHero.astro - Componente para mostrar el header de la página principal
+// HomeHero.astro
 import { getSiteInfo } from '../lib/wordpress';
-
-// Obtener la información del sitio desde WordPress via GraphQL
 const siteInfo = await getSiteInfo();
 const title = siteInfo?.title || 'Vinyl Station Radio';
-const description = siteInfo?.description || "Emisora online dedicada a la diversidad musical, el talento emergente y la cultura del vinilo."; // Obtener descripción de la API
+const description =
+  siteInfo?.description ||
+  "Emisora online dedicada a la diversidad musical, el talento emergente y la cultura del vinilo.";
 ---
 
 <section class="home-hero">
-  <!-- Contenedor de partículas -->
   <div id="particles-js" class="particles-container"></div>
-  
-  <div class="vinyl-animation">
-    <div class="vinyl-record">
-      <div class="vinyl-label"></div>
-    </div>
-  </div>
-  
+
   <div class="hero-content">
+    <img src="/images/logos/logo vinylstation.png" alt="VinylStation Logo" class="hero-main-logo" />
     <h1>{title}</h1>
     <p>{description}</p>
     <div class="cta-buttons">
@@ -27,345 +21,106 @@ const description = siteInfo?.description || "Emisora online dedicada a la diver
   </div>
 </section>
 
-<!-- Importar script de partículas -->
+<!-- Particles.js -->
 <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js" is:inline></script>
-
 <script is:inline>
   document.addEventListener('DOMContentLoaded', function() {
-    // Configuración para las partículas
     particlesJS('particles-js', {
-      "particles": {
-        "number": {
-          "value": 80,
-          "density": {
-            "enable": true,
-            "value_area": 800
-          }
+      particles: {
+        number: { value: 32, density: { enable: true, value_area: 600 } },
+        color: { value: "#ffffff" }, // Blancas
+        shape: {
+          type: "circle",
         },
-        "color": {
-          "value": ["#ff3333", "#ff6b6b", "#feca57"]
+        opacity: {
+          value: 0.17,
+          random: true,
         },
-        "shape": {
-          "type": ["circle", "triangle"],
-          "stroke": {
-            "width": 0,
-            "color": "#000000"
-          },
+        size: {
+          value: 26,
+          random: { enable: true, minimumValue: 12 }
         },
-        "opacity": {
-          "value": 0.3,
-          "random": true,
-          "anim": {
-            "enable": true,
-            "speed": 1,
-            "opacity_min": 0.1,
-            "sync": false
-          }
-        },
-        "size": {
-          "value": 3,
-          "random": true,
-          "anim": {
-            "enable": true,
-            "speed": 2,
-            "size_min": 0.1,
-            "sync": false
-          }
-        },
-        "line_linked": {
-          "enable": true,
-          "distance": 150,
-          "color": "#ff3333",
-          "opacity": 0.2,
-          "width": 1
-        },
-        "move": {
-          "enable": true,
-          "speed": 1.5,
-          "direction": "none",
-          "random": true,
-          "straight": false,
-          "out_mode": "out",
-          "bounce": false,
+        line_linked: { enable: false }, // No líneas
+        move: {
+          enable: true,
+          speed: 1.4,
+          direction: "none",
+          random: true,
+          straight: false,
+          out_mode: "out",
+          bounce: false
         }
       },
-      "interactivity": {
-        "detect_on": "canvas",
-        "events": {
-          "onhover": {
-            "enable": true,
-            "mode": "grab"
-          },
-          "onclick": {
-            "enable": true,
-            "mode": "push"
-          },
-          "resize": true
-        },
-        "modes": {
-          "grab": {
-            "distance": 140,
-            "line_linked": {
-              "opacity": 0.5
-            }
-          },
-          "push": {
-            "particles_nb": 3
-          }
+      interactivity: {
+        detect_on: "canvas",
+        events: {
+          onhover: { enable: true, mode: "repulse" },
+          onclick: { enable: false }
         }
       },
-      "retina_detect": true
+      retina_detect: true
     });
-    
-    // Evento para iniciar la reproducción cuando se hace clic en "Escuchar en vivo"
+    // Extra: play automático
     document.getElementById('listen-live-btn').addEventListener('click', function() {
-      // Encontrar el reproductor de audio
       const audioPlayer = document.getElementById('radio-stream');
-      const playButton = document.getElementById('play-button');
-      
-      if (audioPlayer) {
-        // Si existe el reproductor, iniciar la reproducción
-        audioPlayer.play()
-          .then(() => {
-            console.log('Reproducción iniciada desde el botón del hero');
-            // Si hay un botón play en el reproductor, actualizarlo también
-            if (playButton) {
-              playButton.classList.add('playing');
-            }
-          })
-          .catch(error => {
-            console.error('Error al iniciar la reproducción:', error);
-            alert('No se pudo iniciar la reproducción. Por favor, inténtalo directamente en el reproductor.');
-          });
-      } else {
-        console.error('No se encontró el reproductor de audio');
-        // Alternativa: hacer scroll al reproductor
-        const radioPlayer = document.querySelector('.simple-radio-player');
-        if (radioPlayer) {
-          radioPlayer.scrollIntoView({ behavior: 'smooth' });
-          // Destacar visualmente el reproductor
-          radioPlayer.classList.add('highlight-player');
-          setTimeout(() => {
-            radioPlayer.classList.remove('highlight-player');
-          }, 2000);
-        }
-      }
-      
-      // Añadir efecto al botón
-      this.classList.add('clicked');
-      setTimeout(() => {
-        this.classList.remove('clicked');
-      }, 300);
+      if (audioPlayer) audioPlayer.play().catch(() => {});
     });
   });
 </script>
 
 <style>
-  .home-hero {
-    position: relative;
-    padding: 7rem 2rem; /* Aumentar padding vertical */
-    margin-bottom: 0; /* Eliminar margen inferior */
-    text-align: center;
-    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
-    border-radius: 0;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    min-height: 400px; /* Aumentar altura mínima */
-  }
-  
-  /* Contenedor de partículas */
-  .particles-container {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 1;
-  }
-  
-  .hero-content {
-    position: relative;
-    z-index: 3;
-    max-width: 800px;
-    margin: 0 auto;
-  }
+.home-hero {
+  position: relative;
+  padding: 7rem 2rem;
+  text-align: center;
+  background: linear-gradient(135deg, #1a1a1a 0%, #232323 100%);
+  overflow: hidden;
+  min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.particles-container {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 1; /* Debajo del hero-content */
+  pointer-events: none;
+}
+.hero-content {
+  position: relative;
+  z-index: 2;
+}
+/* Logo principal del hero con animación */
+.hero-main-logo {
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+  margin-bottom: 1.5rem;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+  transition: all 0.3s ease;
+  animation: logoGlow 3s ease-in-out infinite alternate;
+}
 
-  .home-hero h1 {
-    font-size: 3.5rem;
-    font-weight: 700;
-    margin-bottom: 1rem; /* Reducido el espacio */
-    background: linear-gradient(90deg, var(--color-primary) 0%, #ff9966 50%, var(--color-accent) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    animation: fadeIn 1s ease, slideUp 1s ease;
-  }
+.hero-main-logo:hover {
+  transform: scale(1.05);
+}
 
-  .home-hero p {
-    font-size: 1.2rem;
-    margin-bottom: 1.5rem; /* Reducido el espacio */
-    max-width: 700px;
-    margin-left: auto;
-    margin-right: auto;
-    color: var(--color-text-light);
-    animation: fadeIn 1s ease 0.3s both, slideUp 1s ease 0.3s both;
-    line-height: 1.4; /* Líneas más juntas */
+/* Animación sutil de resplandor */
+@keyframes logoGlow {
+  0% {
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 10px rgba(255, 255, 255, 0.1));
   }
+  100% {
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
+  }
+}
 
-  .cta-buttons {
-    display: flex;
-    justify-content: center;
-    gap: 1rem;
-    animation: fadeIn 1s ease 0.6s both, slideUp 1s ease 0.6s both;
+/* Tamaños responsivos */
+@media (min-width: 768px) {
+  .hero-main-logo {
+    width: 120px;
+    height: 120px;
+    margin-bottom: 2rem;
   }
-
-  .btn {
-    display: inline-block;
-    padding: 0.9rem 2rem;
-    border-radius: 50px;
-    text-decoration: none;
-    font-weight: 600;
-    letter-spacing: 0.5px;
-    transition: all 0.3s ease;
-    border: none;
-    position: relative;
-    overflow: hidden;
-    z-index: 1;
-    cursor: pointer;
-  }
-
-  .primary-btn {
-    background: linear-gradient(90deg, var(--color-primary) 0%, var(--color-secondary) 100%);
-    color: white;
-    box-shadow: 0 4px 15px rgba(255, 51, 51, 0.3);
-  }
-
-  .primary-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.4);
-  }
-  
-  /* Efecto al hacer clic en el botón */
-  .primary-btn.clicked {
-    transform: scale(0.95);
-    box-shadow: 0 2px 10px rgba(255, 51, 51, 0.2);
-  }
-  
-  /* Efecto de brillo al pasar el cursor */
-  .primary-btn::before {
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: radial-gradient(circle, rgba(255,255,255,0.3) 0%, transparent 60%);
-    transform: translate(-100%, -100%);
-    transition: transform 0.6s ease;
-    z-index: -1;
-  }
-  
-  .primary-btn:hover::before {
-    transform: translate(50%, 50%);
-  }
-  
-  /* Efecto para destacar el reproductor */
-  :global(.highlight-player) {
-    animation: pulse-highlight 2s ease;
-  }
-  
-  @keyframes pulse-highlight {
-    0% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0.7); }
-    50% { box-shadow: 0 0 30px 0 rgba(255, 51, 51, 0.7); }
-    100% { box-shadow: 0 0 0 0 rgba(255, 51, 51, 0); }
-  }
-  
-  /* Efecto de vinilo giratorio */
-  .vinyl-animation {
-    position: absolute;
-    right: 10%;
-    bottom: -50px;
-    width: 160px; /* Tamaño reducido */
-    height: 160px; /* Tamaño reducido */
-    z-index: 2;
-    opacity: 0.6;
-    display: none; /* Oculto por defecto en móvil */
-  }
-  
-  .vinyl-record {
-    width: 100%;
-    height: 100%;
-    background-color: #111;
-    border-radius: 50%;
-    position: relative;
-    animation: rotate 10s linear infinite;
-    box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
-  }
-  
-  .vinyl-record::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    border-radius: 50%;
-    background: repeating-radial-gradient(
-      circle at center,
-      #222,
-      #222 2px,
-      #111 3px,
-      #111 4px
-    );
-    opacity: 0.7;
-  }
-  
-  .vinyl-label {
-    position: absolute;
-    width: 30%;
-    height: 30%;
-    top: 35%;
-    left: 35%;
-    border-radius: 50%;
-    background: radial-gradient(circle at center, #ff3333, #ff6b6b);
-  }
-  
-  @keyframes rotate {
-    from { transform: rotate(0deg); }
-    to { transform: rotate(360deg); }
-  }
-  
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-  
-  @keyframes slideUp {
-    from { transform: translateY(30px); }
-    to { transform: translateY(0); }
-  }
-
-  @media (min-width: 768px) {
-    .home-hero {
-      padding: 4rem 2rem; /* Reducido el padding */
-    }
-    
-    .vinyl-animation {
-      display: block; /* Mostrar solo en pantallas más grandes */
-    }
-  }
-  
-  @media (max-width: 768px) {
-    .home-hero h1 {
-      font-size: 2.5rem;
-    }
-    
-    .home-hero p {
-      font-size: 1.1rem;
-    }
-  }
-</style>
+}

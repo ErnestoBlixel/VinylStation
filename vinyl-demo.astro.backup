@@ -1,0 +1,557 @@
+---
+// Demo minimalista de VinylParticles
+// Prueba las nuevas funcionalidades: huida, explosiones, máximo 6 vinilos
+
+import MainLayout from '../layouts/MainLayout.astro';
+---
+
+<MainLayout title="Demo Minimalista VinylParticles" description="Prueba los efectos avanzados de vinilos flotantes">
+  <div class="demo-container">
+    <div class="container">
+      <!-- Header de la demo -->
+      <header class="demo-header">
+        <h1>🎵 VinylParticles Minimalista</h1>
+        <p>Efectos sutiles y elegantes con interacciones avanzadas</p>
+      </header>
+
+      <!-- Instrucciones principales -->
+      <div class="instructions-main">
+        <div class="instruction-card">
+          <div class="instruction-icon">🖱️</div>
+          <h3>Mueve el Cursor</h3>
+          <p>Los vinilos huyen suavemente del cursor cuando te acercas</p>
+        </div>
+        
+        <div class="instruction-card">
+          <div class="instruction-icon">👆</div>
+          <h3>Haz Click/Toca</h3>
+          <p>Todos los vinilos salen corriendo con efecto de pánico</p>
+        </div>
+        
+        <div class="instruction-card">
+          <div class="instruction-icon">💥</div>
+          <h3>Colisiones</h3>
+          <p>Cuando 2 vinilos se tocan, explotan y se dividen en más pequeños</p>
+        </div>
+      </div>
+
+      <!-- Panel de control minimalista -->
+      <div class="control-panel-mini">
+        <h3>⚡ Controles</h3>
+        <div class="controls-mini">
+          <button id="toggle-animation" class="btn-mini primary">⏸️ Pausar</button>
+          <button id="regenerate-vinyls" class="btn-mini">🔄 Regenerar</button>
+          <button id="force-explosion" class="btn-mini">💥 Forzar Explosión</button>
+          <button id="flee-all" class="btn-mini">🏃 Huir Todos</button>
+        </div>
+      </div>
+
+      <!-- Info de estado minimalista -->
+      <div class="status-mini">
+        <div class="status-item-mini">
+          <span class="status-label">Vinilos Activos:</span>
+          <span id="active-vinyls" class="status-value">6</span>
+        </div>
+        <div class="status-item-mini">
+          <span class="status-label">Estado:</span>
+          <span id="animation-status" class="status-value">Activo</span>
+        </div>
+        <div class="status-item-mini">
+          <span class="status-label">Tema:</span>
+          <span id="current-theme" class="status-value">Noche</span>
+        </div>
+      </div>
+
+      <!-- Características -->
+      <div class="features">
+        <h3>✨ Características Implementadas</h3>
+        <div class="features-grid">
+          <div class="feature">
+            <div class="feature-icon">🎯</div>
+            <h4>Máximo 6 Vinilos</h4>
+            <p>Diseño minimalista con cantidad limitada</p>
+          </div>
+          
+          <div class="feature">
+            <div class="feature-icon">🌫️</div>
+            <h4>Efecto Difuminado</h4>
+            <p>Opacidad muy baja, como fondo sutil</p>
+          </div>
+          
+          <div class="feature">
+            <div class="feature-icon">🏃</div>
+            <h4>Huida Inteligente</h4>
+            <p>Los vinilos detectan el cursor y huyen</p>
+          </div>
+          
+          <div class="feature">
+            <div class="feature-icon">💥</div>
+            <h4>Explosiones Físicas</h4>
+            <p>Colisiones crean efectos de partículas</p>
+          </div>
+          
+          <div class="feature">
+            <div class="feature-icon">🎨</div>
+            <h4>Colores Adaptativos</h4>
+            <p>Cambian según el tema día/noche</p>
+          </div>
+          
+          <div class="feature">
+            <div class="feature-icon">📱</div>
+            <h4>Touch Optimizado</h4>
+            <p>Funciona perfectamente en móvil</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Zona de pruebas -->
+      <div class="test-zone">
+        <h3>🧪 Zona de Pruebas</h3>
+        <p>Mueve el cursor por esta área para ver los efectos de huida:</p>
+        <div class="test-area" id="test-area">
+          <div class="test-area-content">
+            <p>🖱️ Área de Interacción</p>
+            <p>Los vinilos deberían huir cuando pases el cursor por aquí</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Configuración actual -->
+      <div class="current-config">
+        <h3>⚙️ Configuración Actual</h3>
+        <div class="config-grid">
+          <div class="config-item">
+            <strong>Cantidad Máxima:</strong> 6 vinilos
+          </div>
+          <div class="config-item">
+            <strong>Opacidad Base:</strong> 0.1 (muy sutil)
+          </div>
+          <div class="config-item">
+            <strong>Velocidad:</strong> 0.05 - 0.3 (lenta)
+          </div>
+          <div class="config-item">
+            <strong>Radio de Huida:</strong> 100px
+          </div>
+          <div class="config-item">
+            <strong>Velocidad de Huida:</strong> 3x normal
+          </div>
+          <div class="config-item">
+            <strong>Z-Index:</strong> -2 (fondo profundo)
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</MainLayout>
+
+<script>
+// Variables globales
+let animationActive = true;
+
+// Inicializar demo cuando esté todo cargado
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(initDemo, 1000); // Esperar a que VinylParticles se cargue
+});
+
+function initDemo() {
+  console.log('🎵 Iniciando Demo VinylParticles Minimalista');
+  
+  // Verificar que VinylParticles esté disponible
+  if (!window.vinylParticles) {
+    console.warn('⚠️ VinylParticles no está disponible. Asegúrate de que esté cargado.');
+    return;
+  }
+  
+  setupControls();
+  updateStatus();
+  updateThemeDisplay();
+  setupTestZone();
+  
+  // Observar cambios de tema
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (mutation.attributeName === 'data-theme') {
+        updateThemeDisplay();
+      }
+    });
+  });
+  
+  observer.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-theme']
+  });
+  
+  // Actualizar estado cada segundo
+  setInterval(updateStatus, 1000);
+}
+
+function setupControls() {
+  const toggleBtn = document.getElementById('toggle-animation');
+  const regenerateBtn = document.getElementById('regenerate-vinyls');
+  const explosionBtn = document.getElementById('force-explosion');
+  const fleeBtn = document.getElementById('flee-all');
+  
+  // Control de pausa/reanudar
+  toggleBtn?.addEventListener('click', () => {
+    if (animationActive) {
+      window.vinylParticles.pause();
+      toggleBtn.innerHTML = '▶️ Reanudar';
+      animationActive = false;
+      document.getElementById('animation-status').textContent = 'Pausado';
+    } else {
+      window.vinylParticles.resume();
+      toggleBtn.innerHTML = '⏸️ Pausar';
+      animationActive = true;
+      document.getElementById('animation-status').textContent = 'Activo';
+    }
+  });
+  
+  // Regenerar vinilos
+  regenerateBtn?.addEventListener('click', () => {
+    window.vinylParticles.createVinyls();
+    updateStatus();
+    
+    // Feedback visual
+    regenerateBtn.style.transform = 'scale(0.95)';
+    regenerateBtn.style.background = 'var(--color-accent)';
+    setTimeout(() => {
+      regenerateBtn.style.transform = '';
+      regenerateBtn.style.background = '';
+    }, 200);
+  });
+  
+  // Forzar explosión
+  explosionBtn?.addEventListener('click', () => {
+    if (window.vinylParticles.vinyls.length >= 2) {
+      // Forzar que dos vinilos se acerquen y exploten
+      const vinyl1 = window.vinylParticles.vinyls[0];
+      const vinyl2 = window.vinylParticles.vinyls[1];
+      
+      if (vinyl1 && vinyl2) {
+        window.vinylParticles.explodeVinyls(vinyl1, vinyl2, 0, 1);
+        console.log('💥 Explosión forzada!');
+      }
+    }
+    
+    // Feedback visual
+    explosionBtn.style.transform = 'scale(1.1)';
+    explosionBtn.style.background = '#ff6b6b';
+    setTimeout(() => {
+      explosionBtn.style.transform = '';
+      explosionBtn.style.background = '';
+    }, 300);
+  });
+  
+  // Hacer huir a todos
+  fleeBtn?.addEventListener('click', () => {
+    // Simular click en el centro de la pantalla
+    window.vinylParticles.mouse.x = window.innerWidth / 2;
+    window.vinylParticles.mouse.y = window.innerHeight / 2;
+    window.vinylParticles.triggerFlee();
+    
+    // Feedback visual
+    fleeBtn.style.transform = 'scale(0.9)';
+    fleeBtn.style.background = '#4ecdc4';
+    setTimeout(() => {
+      fleeBtn.style.transform = '';
+      fleeBtn.style.background = '';
+    }, 400);
+  });
+}
+
+function setupTestZone() {
+  const testArea = document.getElementById('test-area');
+  
+  testArea?.addEventListener('mouseenter', () => {
+    testArea.style.background = 'rgba(var(--color-accent-rgb, 197, 173, 123), 0.1)';
+    testArea.style.borderColor = 'var(--color-accent)';
+  });
+  
+  testArea?.addEventListener('mouseleave', () => {
+    testArea.style.background = 'rgba(255, 255, 255, 0.05)';
+    testArea.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+  });
+}
+
+function updateStatus() {
+  const activeVinyls = window.vinylParticles?.vinyls?.length || 0;
+  const statusElement = document.getElementById('active-vinyls');
+  if (statusElement) {
+    statusElement.textContent = activeVinyls;
+    
+    // Color según la cantidad
+    if (activeVinyls <= 3) {
+      statusElement.style.color = '#ff6b6b'; // Pocos vinilos
+    } else if (activeVinyls <= 5) {
+      statusElement.style.color = '#f9ca24'; // Cantidad media
+    } else {
+      statusElement.style.color = '#4ecdc4'; // Cantidad óptima
+    }
+  }
+}
+
+function updateThemeDisplay() {
+  const theme = document.documentElement.getAttribute('data-theme');
+  const themeText = theme === 'day' ? 'Día ☀️' : 'Noche 🌙';
+  const themeElement = document.getElementById('current-theme');
+  if (themeElement) {
+    themeElement.textContent = themeText;
+  }
+}
+</script>
+
+<style>
+.demo-container {
+  padding: 2rem 0 4rem;
+  position: relative;
+  z-index: 10;
+}
+
+.demo-header {
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+.demo-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  background: linear-gradient(45deg, var(--color-accent), #4ecdc4);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.demo-header p {
+  font-size: 1.1rem;
+  color: var(--color-text-secondary);
+}
+
+.instructions-main {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 3rem;
+}
+
+.instruction-card {
+  background: rgba(var(--color-bg-rgb), 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 15px;
+  padding: 2rem;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.instruction-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  border-color: var(--color-accent);
+}
+
+.instruction-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.instruction-card h3 {
+  color: var(--color-accent);
+  margin-bottom: 0.5rem;
+  font-size: 1.2rem;
+}
+
+.instruction-card p {
+  color: var(--color-text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.control-panel-mini {
+  background: rgba(var(--color-bg-rgb), 0.9);
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.control-panel-mini h3 {
+  color: var(--color-accent);
+  margin-bottom: 1rem;
+  font-size: 1.1rem;
+}
+
+.controls-mini {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.btn-mini {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  font-size: 0.85rem;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--color-text);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.btn-mini:hover {
+  transform: translateY(-2px);
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.btn-mini.primary {
+  background: var(--color-accent);
+  color: var(--color-bg);
+}
+
+.status-mini {
+  display: flex;
+  gap: 2rem;
+  background: rgba(var(--color-bg-rgb), 0.6);
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.status-item-mini {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.status-label {
+  color: var(--color-text-secondary);
+  font-size: 0.85rem;
+}
+
+.status-value {
+  color: var(--color-accent);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.features {
+  margin-bottom: 3rem;
+}
+
+.features h3 {
+  color: var(--color-accent);
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.feature {
+  background: rgba(var(--color-bg-rgb), 0.6);
+  border-radius: 8px;
+  padding: 1.5rem;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.feature-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.feature h4 {
+  color: var(--color-text);
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.feature p {
+  color: var(--color-text-secondary);
+  font-size: 0.8rem;
+  line-height: 1.3;
+}
+
+.test-zone {
+  margin-bottom: 3rem;
+}
+
+.test-zone h3 {
+  color: var(--color-accent);
+  margin-bottom: 1rem;
+}
+
+.test-area {
+  background: rgba(255, 255, 255, 0.05);
+  border: 2px dashed rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 3rem;
+  text-align: center;
+  transition: all 0.3s ease;
+  cursor: crosshair;
+  margin: 1rem 0;
+}
+
+.test-area-content p {
+  color: var(--color-text-secondary);
+  margin-bottom: 0.5rem;
+}
+
+.current-config {
+  background: rgba(var(--color-bg-rgb), 0.8);
+  border-radius: 10px;
+  padding: 1.5rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.current-config h3 {
+  color: var(--color-accent);
+  margin-bottom: 1rem;
+}
+
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 0.8rem;
+}
+
+.config-item {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.8rem;
+  border-radius: 5px;
+  font-size: 0.85rem;
+}
+
+.config-item strong {
+  color: var(--color-accent);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .instructions-main {
+    grid-template-columns: 1fr;
+  }
+  
+  .controls-mini {
+    flex-direction: column;
+  }
+  
+  .status-mini {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .config-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>

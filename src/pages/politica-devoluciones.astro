@@ -1,0 +1,502 @@
+---
+// Página de Política de Devoluciones - VinylStation Radio
+import MainLayout from '../layouts/MainLayout.astro';
+import { Fragment } from 'astro/components';
+
+// SEO y metadatos
+const pageTitle = 'Política de Devoluciones | VinylStation Radio Store';
+const pageDescription = 'Política de Devoluciones de la tienda de merchandising VinylStation Radio - Información sobre cambios, devoluciones y garantías de nuestros productos.';
+
+// Configurar como noindex
+const noIndex = true;
+---
+
+<MainLayout title={pageTitle} description={pageDescription}>
+  {noIndex && (
+    <Fragment slot="head">
+      <meta name="robots" content="noindex, nofollow" />
+      <meta name="googlebot" content="noindex, nofollow" />
+    </Fragment>
+  )}
+  
+  <!-- Contenedor principal unificado -->
+  <div class="main-content">
+    <!-- Breadcrumbs -->
+    <nav class="breadcrumbs">
+      <div class="container">
+        <a href="/">Inicio</a>
+        <span class="separator">›</span>
+        <span class="current">Política de Devoluciones</span>
+      </div>
+    </nav>
+
+    <article class="noticia-details">
+      <div class="container">
+        
+        <!-- Header de la página -->
+        <header class="noticia-header">
+          <h1 class="noticia-title">Política de Devoluciones</h1>
+          <div class="noticia-excerpt">
+            <p>Información sobre cambios, devoluciones y garantías de nuestros productos de merchandising</p>
+          </div>
+        </header>
+
+        <!-- Contenido legal -->
+        <div class="noticia-content">
+          <div class="content-body">
+            
+            <h2>Información General</h2>
+            <p><strong>Vinyl Station Radio Store</strong> es nuestra tienda online de merchandising oficial que ofrece productos exclusivos de <strong>Vinyl Station Radio</strong>, incluyendo camisetas, tazas, vinilos coleccionables y otros artículos promocionales de alta calidad.</p>
+
+            <h3>Resumen de Políticas</h3>
+            <ul>
+              <li><strong>Plazo de Devolución:</strong> 14 días naturales desde la recepción</li>
+              <li><strong>Reembolso:</strong> 100% del importe (gastos de envío excluidos)</li>
+              <li><strong>Estado del Producto:</strong> Sin usar y embalaje original</li>
+              <li><strong>Envío de Devolución:</strong> A cargo del cliente (salvo defecto)</li>
+            </ul>
+
+            <h2>Derecho de Desistimiento</h2>
+            <h3>Legislación Aplicable</h3>
+            <p>De conformidad con la <strong>Ley General para la Defensa de los Consumidores y Usuarios</strong> y la normativa de <strong>comercio electrónico</strong> vigente en España, usted tiene derecho a desistir de su compra sin necesidad de justificación.</p>
+
+            <h3>Plazo de Desistimiento</h3>
+            <p>El plazo de desistimiento es de <strong>14 días naturales</strong> que comienzan cuando usted o un tercero designado recibe físicamente el producto. Durante este período, debe notificarnos su decisión de desistir mediante declaración inequívoca.</p>
+
+            <h3>Cómo Ejercer el Derecho de Desistimiento</h3>
+            <p>Puede contactar con nosotros por los siguientes medios:</p>
+            <ul>
+              <li><strong>Email:</strong> tienda@vinylstation.es (incluya número de pedido, nombre completo y motivo opcional)</li>
+              <li><strong>Teléfono:</strong> +34 722 41 50 33 (Lunes a Viernes de 10:00 a 18:00h)</li>
+              <li><strong>WhatsApp:</strong> +34 722 41 50 33 (respuesta en horario comercial)</li>
+              <li><strong>Formulario Web:</strong> Disponible en su área de cliente</li>
+            </ul>
+
+            <h2>Condiciones para Devoluciones</h2>
+            <h3>Productos Aptos para Devolución</h3>
+            <p><strong>Ropa y Textil:</strong> Camisetas, sudaderas, gorras sin etiquetas cortadas, sin usar ni lavar, con embalaje original conservado.</p>
+            <p><strong>Accesorios:</strong> Tazas, bolsos, pins con embalaje original intacto, sin signos de uso y todos los elementos incluidos.</p>
+            <p><strong>Vinilos Sellados:</strong> Vinilos nuevos sin abrir, plástico protector intacto, sin daños en carátula (solo ediciones estándar).</p>
+
+            <h3>Productos NO Aptos para Devolución</h3>
+            <ul>
+              <li><strong>Vinilos Abiertos:</strong> No pueden devolverse por motivos de higiene e integridad del producto</li>
+              <li><strong>Productos Personalizados:</strong> Artículos con personalizaciones, nombres grabados o diseños específicos</li>
+              <li><strong>Ediciones Limitadas:</strong> Productos de edición limitada o coleccionables especiales</li>
+              <li><strong>Productos Dañados por Uso:</strong> Artículos con signos evidentes de uso, manchas, roturas o deterioro</li>
+            </ul>
+
+            <h3>Requisitos Obligatorios</h3>
+            <ol>
+              <li><strong>Estado Original:</strong> El producto debe estar en las mismas condiciones en que lo recibió</li>
+              <li><strong>Embalaje Completo:</strong> Incluir caja original, bolsas, etiquetas, manuales y accesorios</li>
+              <li><strong>Documentación:</strong> Adjuntar copia de la factura o albarán de entrega</li>
+              <li><strong>Formulario de Devolución:</strong> Completar el formulario incluido en el paquete original</li>
+            </ol>
+
+            <h2>Proceso de Devolución</h2>
+            <h3>Paso a Paso</h3>
+            <p><strong>1. Solicitud de Devolución:</strong> Contacte con nosotros comunicando su deseo de devolver el producto. Proporcione número de pedido, nombre completo y especifique los artículos a devolver.</p>
+            <p><strong>2. Autorización de Devolución:</strong> Le enviaremos un número de autorización de devolución (RMA) único, dirección de devolución y etiqueta de envío si aplica.</p>
+            <p><strong>3. Preparación del Envío:</strong> Embale cuidadosamente el producto con todos sus componentes originales, incluya el número RMA visible y el formulario de devolución completado.</p>
+            <p><strong>4. Envío de la Devolución:</strong> Envíe el paquete mediante el transportista que prefiera, conserve el justificante de envío y notifíquenos el número de seguimiento.</p>
+            <p><strong>5. Inspección y Reembolso:</strong> Inspeccionaremos el producto en 48-72h y procesaremos su reembolso en máximo 14 días con confirmación por email.</p>
+
+            <h3>Dirección de Devolución</h3>
+            <p><strong>Envíe sus devoluciones a:</strong></p>
+            <p>Vinyl Station Radio - Devoluciones<br>
+            Asociación Dacrepro Salud<br>
+            Fuensalida - 45510 - Toledo<br>
+            España</p>
+            
+            <p><strong>Importante:</strong> Incluya siempre el número RMA en el exterior del paquete, use un servicio de envío con seguimiento y asegure el paquete por su valor si considera necesario.</p>
+
+            <h2>Reembolsos y Tiempos</h2>
+            <h3>Métodos de Reembolso</h3>
+            <ul>
+              <li><strong>Tarjeta de Crédito/Débito:</strong> 3-5 días laborables (reembolso automático a la tarjeta original)</li>
+              <li><strong>Transferencia Bancaria:</strong> 1-3 días laborables (necesario proporcionar IBAN)</li>
+              <li><strong>Vale de Regalo:</strong> Inmediato (opción con 5% extra de bonificación)</li>
+            </ul>
+
+            <h3>Qué se Reembolsa</h3>
+            <p><strong>Incluido:</strong> Precio completo del producto, IVA correspondiente, gastos de embalaje y promociones aplicadas originalmente.</p>
+            <p><strong>NO Incluido:</strong> Gastos de envío original (salvo defecto), gastos de devolución del cliente, costes de gestión bancaria y diferencias de cambio de divisa.</p>
+
+            <h2>Cambios de Productos</h2>
+            <h3>Política de Cambios</h3>
+            <p>Ofrecemos la posibilidad de cambiar productos por <strong>talla incorrecta</strong> o <strong>modelo diferente</strong> dentro de los mismos plazos que las devoluciones.</p>
+            <ul>
+              <li><strong>Cambio de Talla:</strong> Gratuito para ropa y accesorios del mismo producto</li>
+              <li><strong>Cambio de Modelo/Color:</strong> Sujeto a disponibilidad en stock y diferencia de precio si aplica</li>
+            </ul>
+
+            <h2>Productos Defectuosos</h2>
+            <h3>Garantía de Calidad</h3>
+            <p>Todos nuestros productos están sujetos a un riguroso control de calidad. En caso de recibir un producto defectuoso, nos hacemos cargo de todos los gastos.</p>
+
+            <h3>Procedimiento para Productos Defectuosos</h3>
+            <p><strong>Acción Inmediata (48 horas):</strong> Contactar con fotos claras del defecto para recibir envío inmediato de reemplazo.</p>
+            <p><strong>Proceso:</strong> Autorización de devolución prioritaria, envío gratuito del producto de reemplazo, recolección del producto defectuoso sin coste e investigación de la incidencia.</p>
+
+            <h3>Compensaciones por Defectos</h3>
+            <ul>
+              <li><strong>Reembolso Completo:</strong> Precio del producto + gastos de envío originales + gastos de devolución</li>
+              <li><strong>Producto de Reemplazo:</strong> Envío prioritario gratuito + vale de descuento del 10% para próxima compra</li>
+              <li><strong>Vale de Regalo:</strong> Valor del producto + 15% extra como disculpa por las molestias</li>
+            </ul>
+
+            <h2>Atención al Cliente</h2>
+            <h3>Nuestro Compromiso</h3>
+            <p>En Vinyl Station Radio nos comprometemos a ofrecer una experiencia de compra excepcional y un servicio post-venta de calidad. Nuestro equipo está disponible para resolver cualquier incidencia relacionada con su pedido.</p>
+
+            <h3>Canales de Soporte</h3>
+            <ul>
+              <li><strong>WhatsApp Prioritario:</strong> +34 722 41 50 33 (respuesta < 2 horas para incidencias urgentes)</li>
+              <li><strong>Email Especializado:</strong> tienda@vinylstation.es (respuesta < 24 horas)</li>
+              <li><strong>Teléfono Directo:</strong> +34 722 41 50 33 (Lun-Vie: 10:00-18:00)</li>
+            </ul>
+
+            <p><strong>Seguimiento:</strong> Todas las solicitudes reciben un número de seguimiento único con notificaciones automáticas por email y consulta de estado 24/7 online.</p>
+
+            <p><strong>Última actualización:</strong> Junio 2025</p>
+
+          </div>
+        </div>
+
+        <!-- Footer de la página -->
+        <footer class="noticia-footer">
+          <div class="noticia-actions">
+            <a href="/" class="btn primary-btn">← Volver al Inicio</a>
+          </div>
+        </footer>
+      </div>
+    </article>
+  </div>
+</MainLayout>
+
+<style>
+  /* Usando exactamente los mismos estilos que las páginas de noticias y aviso legal */
+  .main-content {
+    background: linear-gradient(
+      135deg,
+      var(--color-bg) 0%,
+      rgba(0, 0, 0, 0.02) 50%,
+      var(--color-bg) 100%
+    );
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .main-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -50%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(
+      45deg, 
+      transparent 30%, 
+      rgba(255, 51, 51, 0.02) 50%, 
+      transparent 70%
+    );
+    animation: backgroundShimmer 20s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  @keyframes backgroundShimmer {
+    0%, 100% { transform: translateX(-100%) rotate(0deg); opacity: 0.3; }
+    50% { transform: translateX(0%) rotate(1deg); opacity: 0.7; }
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .breadcrumbs {
+    background: var(--color-card-bg);
+    padding: 1rem 0;
+    border-bottom: 1px solid rgba(255, 51, 51, 0.1);
+    position: relative;
+    z-index: 2;
+  }
+
+  .breadcrumbs .container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .breadcrumbs a {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    transition: color 0.3s ease;
+  }
+
+  .breadcrumbs a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumbs .separator {
+    color: var(--color-text-secondary);
+    opacity: 0.5;
+  }
+
+  .breadcrumbs .current {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  .noticia-details {
+    position: relative;
+    z-index: 1;
+    padding: 3rem 0 6rem;
+  }
+  
+  .noticia-details .container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .noticia-header {
+    margin-bottom: 3rem;
+    animation: fadeInUp 0.8s ease-out;
+  }
+
+  .noticia-title {
+    font-size: 3.5rem;
+    color: var(--color-text);
+    margin-bottom: 2rem;
+    line-height: 1.2;
+    font-weight: 800;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: relative;
+  }
+  
+  .noticia-title::after {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    left: 0;
+    width: 100px;
+    height: 4px;
+    background: linear-gradient(90deg, 
+      var(--color-text-secondary),
+      transparent);
+    border-radius: 2px;
+  }
+
+  .noticia-excerpt {
+    font-size: 1.3rem;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    padding: 2rem;
+    background: rgba(0, 0, 0, 0.05);
+    border-left: 4px solid var(--color-text-secondary);
+    border-radius: 0 15px 15px 0;
+    backdrop-filter: blur(10px);
+  }
+
+  .noticia-content {
+    margin: 4rem 0;
+    animation: fadeInUp 0.8s ease-out 0.4s both;
+  }
+
+  .content-body {
+    color: var(--color-text);
+    line-height: 1.8;
+    font-size: 1.1rem;
+  }
+
+  .content-body h2 {
+    font-size: 2.5rem !important;
+    color: var(--title-color) !important;
+    font-weight: 800 !important;
+    border-bottom: 3px solid var(--title-color) !important;
+    padding-bottom: 1rem !important;
+    margin: 3rem 0 2rem 0 !important;
+    line-height: 1.2 !important;
+    text-shadow: none !important;
+  }
+
+  .content-body h3 {
+    font-size: 2rem !important;
+    color: var(--title-color) !important;
+    font-weight: 700 !important;
+    margin: 2.5rem 0 1.5rem 0 !important;
+    padding-left: 1.5rem !important;
+    position: relative !important;
+    line-height: 1.3 !important;
+    text-shadow: none !important;
+  }
+
+  .content-body h3::before {
+    content: '▎' !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    font-size: 2rem !important;
+    color: var(--title-color) !important;
+  }
+
+  .content-body h4 {
+    font-size: 1.6rem !important;
+    color: var(--title-color) !important;
+    font-weight: 600 !important;
+    background: linear-gradient(90deg, var(--title-color), transparent) !important;
+    border-left: 4px solid var(--title-color) !important;
+    padding: 1rem 0 1rem 1.5rem !important;
+    margin: 2rem 0 1.5rem 0 !important;
+    border-radius: 0 10px 10px 0 !important;
+    line-height: 1.3 !important;
+    opacity: 0.9 !important;
+    text-shadow: none !important;
+  }
+
+  .content-body p {
+    margin: 1.5rem 0;
+    text-align: justify;
+  }
+
+  .content-body a {
+    color: var(--color-text);
+    text-decoration: underline;
+    transition: opacity 0.3s ease;
+    font-weight: 500;
+  }
+
+  .content-body a:hover {
+    opacity: 0.7;
+  }
+
+  .content-body ul,
+  .content-body ol {
+    margin: 1.5rem 0;
+    padding-left: 2rem;
+  }
+
+  .content-body li {
+    margin: 0.8rem 0;
+    color: var(--color-text);
+  }
+
+  .noticia-footer {
+    margin-top: 4rem;
+    padding-top: 3rem;
+    border-top: 2px solid var(--color-text-secondary);
+    animation: fadeInUp 0.8s ease-out 0.6s both;
+  }
+
+  .noticia-actions {
+    text-align: center;
+    padding-top: 2rem;
+    border-top: 1px solid var(--color-text-secondary);
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    min-width: 220px;
+    text-align: center;
+  }
+
+  .primary-btn {
+    background: var(--color-primary, #ff3333);
+    color: #ffffff;
+    border: 2px solid var(--color-primary, #ff3333);
+  }
+
+  .primary-btn:hover {
+    background: var(--color-secondary, #bb2424);
+    border-color: var(--color-secondary, #bb2424);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .noticia-details {
+      padding: 2rem 0 4rem;
+    }
+    
+    .noticia-details .container {
+      max-width: 100%;
+    }
+
+    .noticia-title {
+      font-size: 2.5rem;
+    }
+
+    .noticia-excerpt {
+      font-size: 1.1rem;
+      padding: 1.5rem;
+    }
+
+    .content-body {
+      font-size: 1rem;
+    }
+
+    .content-body h2 {
+      font-size: 2rem !important;
+    }
+
+    .content-body h3 {
+      font-size: 1.7rem !important;
+    }
+
+    .content-body h4 {
+      font-size: 1.4rem !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .noticia-title {
+      font-size: 2rem;
+    }
+
+    .noticia-excerpt {
+      font-size: 1rem;
+      padding: 1rem;
+    }
+
+    .breadcrumbs .current {
+      display: none;
+    }
+
+    .content-body h2 {
+      font-size: 1.8rem !important;
+    }
+
+    .content-body h3 {
+      font-size: 1.5rem !important;
+    }
+
+    .content-body h4 {
+      font-size: 1.3rem !important;
+    }
+  }
+</style>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Modo Noche/Día</title>
+    <style>
+        :root {
+            /* Colores base */
+            --color-darkest: #05021f;
+            --color-black: #020202;
+            --color-gold: #c5ad7b;
+            --color-white: #ffffff;
+            --color-light-blue: #d5e6ff;
+
+            /* Modo Noche (por defecto) */
+            --bg-color: var(--color-darkest);
+            --title-color: var(--color-gold);
+            --text-color: var(--color-white);
+        }
+
+        /* Modo Día */
+        [data-theme="day"] {
+            --bg-color: var(--color-light-blue);
+            --title-color: var(--color-darkest);
+            --text-color: var(--color-black);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 2rem;
+            min-height: 100vh;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        h1, h2, h3 {
+            color: var(--title-color);
+            transition: color 0.3s ease;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--title-color);
+            color: var(--bg-color);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.5rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .theme-toggle:hover {
+            transform: scale(1.1);
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .demo-section {
+            margin: 2rem 0;
+            padding: 2rem;
+            border: 2px solid var(--title-color);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema">
+        <span id="themeIcon">🌙</span>
+    </button>
+
+    <div class="container">
+        <h1>🎵 VinylStation - Test Modo Noche/Día</h1>
+        
+        <div class="demo-section">
+            <h2>🌙 Modo Noche</h2>
+            <p>Fondo: #05021f (azul muy oscuro)</p>
+            <p>Títulos: #c5ad7b (dorado)</p>
+            <p>Párrafos: #ffffff (blanco)</p>
+        </div>
+
+        <div class="demo-section">
+            <h2>☀️ Modo Día</h2>
+            <p>Fondo: #d5e6ff (azul claro)</p>
+            <p>Títulos: #05021f (azul oscuro)</p>
+            <p>Párrafos: #020202 (negro)</p>
+        </div>
+
+        <div class="demo-section">
+            <h3>✨ Características</h3>
+            <p>✅ Transición suave entre temas</p>
+            <p>✅ Persiste la preferencia en localStorage</p>
+            <p>✅ Respeta la preferencia del sistema</p>
+            <p>✅ Botón flotante para cambio rápido</p>
+            <p>✅ Iconos que cambian según el tema</p>
+        </div>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            const newTheme = currentTheme === 'day' ? 'night' : 'day';
+            const themeIcon = document.getElementById('themeIcon');
+            
+            html.setAttribute('data-theme', newTheme);
+            localStorage.setItem('vinylstation-theme', newTheme);
+            
+            themeIcon.textContent = newTheme === 'day' ? '☀️' : '🌙';
+        }
+
+        function initTheme() {
+            const savedTheme = localStorage.getItem('vinylstation-theme');
+            const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const defaultTheme = savedTheme || (prefersDark ? 'night' : 'day');
+            const themeIcon = document.getElementById('themeIcon');
+            
+            document.documentElement.setAttribute('data-theme', defaultTheme);
+            themeIcon.textContent = defaultTheme === 'day' ? '☀️' : '🌙';
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initTheme();
+            document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,47 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+---
+
+<MainLayout title="Test Títulos" description="Página de prueba para títulos">
+  <div class="container">
+    <div class="content">
+      <h1>Título H1 - Debería ser dorado en noche, azul oscuro en día</h1>
+      <h2>Título H2 - Debería ser dorado en noche, azul oscuro en día</h2>
+      <h3>Título H3 - Debería ser dorado en noche, azul oscuro en día</h3>
+      
+      <p>Este es un párrafo normal que debería ser blanco en modo noche y negro en modo día.</p>
+      
+      <div class="test-box">
+        <h4>Título H4 dentro de una caja</h4>
+        <p>Más texto para verificar que los colores están funcionando correctamente.</p>
+      </div>
+      
+      <strong>Texto en negrita que debería heredar el color del párrafo</strong>
+    </div>
+  </div>
+</MainLayout>
+
+<style>
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 4rem 1rem;
+  }
+  
+  .content {
+    text-align: center;
+  }
+  
+  .test-box {
+    margin: 2rem 0;
+    padding: 2rem;
+    border: 2px solid var(--title-color);
+    border-radius: 10px;
+    background: var(--color-surface);
+  }
+  
+  p {
+    margin: 1rem 0;
+    line-height: 1.6;
+  }
+</style>

@@ -1,0 +1,798 @@
+/* ===============================================
+   GRAVITY FORMS ENHANCED STYLES - VINYLSTATION
+   =============================================== */
+
+/* ===== VARIABLES CSS ===== */
+:root {
+  --gf-primary: #ff3333;
+  --gf-primary-dark: #bb2424;
+  --gf-primary-light: rgba(255, 51, 51, 0.1);
+  --gf-secondary: #ffffff;
+  --gf-bg-card: rgba(255, 255, 255, 0.03);
+  --gf-bg-input: rgba(255, 255, 255, 0.05);
+  --gf-border: rgba(255, 51, 51, 0.15);
+  --gf-border-hover: rgba(255, 51, 51, 0.3);
+  --gf-border-focus: var(--gf-primary);
+  --gf-text: #ffffff;
+  --gf-text-muted: #888888;
+  --gf-text-placeholder: #555555;
+  --gf-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  --gf-shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.4);
+  --gf-shadow-focus: 0 0 0 4px rgba(255, 51, 51, 0.1);
+  --gf-radius: 12px;
+  --gf-radius-large: 20px;
+  --gf-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  --gf-backdrop: blur(15px);
+}
+
+/* ===== FORMULARIO PRINCIPAL MEJORADO ===== */
+.contact-form-container {
+  background: linear-gradient(
+    135deg, 
+    rgba(255, 255, 255, 0.05) 0%, 
+    rgba(255, 51, 51, 0.03) 25%,
+    rgba(0, 0, 0, 0.02) 50%,
+    rgba(255, 51, 51, 0.02) 75%,
+    rgba(255, 255, 255, 0.03) 100%
+  );
+  padding: 3.5rem;
+  border-radius: var(--gf-radius-large);
+  border: 1px solid var(--gf-border);
+  box-shadow: 
+    var(--gf-shadow),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.1);
+  backdrop-filter: var(--gf-backdrop);
+  position: relative;
+  overflow: hidden;
+  transform: translateZ(0); /* Optimización para GPU */
+}
+
+/* Efecto de brillo animado de fondo */
+.contact-form-container::before {
+  content: '';
+  position: absolute;
+  top: -100%;
+  left: -100%;
+  width: 300%;
+  height: 300%;
+  background: conic-gradient(
+    from 0deg at 50% 50%,
+    transparent 0deg,
+    rgba(255, 51, 51, 0.05) 60deg,
+    rgba(255, 51, 51, 0.1) 120deg,
+    transparent 180deg,
+    rgba(255, 51, 51, 0.03) 240deg,
+    transparent 360deg
+  );
+  animation: rotateGlow 20s linear infinite;
+  pointer-events: none;
+  z-index: -1;
+}
+
+@keyframes rotateGlow {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Partículas flotantes decorativas */
+.contact-form-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 20% 20%, rgba(255, 51, 51, 0.1) 1px, transparent 1px),
+    radial-gradient(circle at 80% 40%, rgba(255, 51, 51, 0.05) 1px, transparent 1px),
+    radial-gradient(circle at 40% 80%, rgba(255, 51, 51, 0.08) 1px, transparent 1px);
+  background-size: 100px 100px, 150px 150px, 80px 80px;
+  animation: floatParticles 25s ease-in-out infinite;
+  pointer-events: none;
+  opacity: 0.6;
+  z-index: -1;
+}
+
+@keyframes floatParticles {
+  0%, 100% { transform: translate(0, 0); }
+  33% { transform: translate(10px, -15px); }
+  66% { transform: translate(-5px, 10px); }
+}
+
+/* ===== TÍTULOS MEJORADOS ===== */
+.contact-form-container h2 {
+  font-size: 3rem;
+  margin-bottom: 1.5rem;
+  color: var(--gf-primary);
+  font-weight: 900;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  background: linear-gradient(
+    135deg, 
+    var(--gf-primary) 0%, 
+    #ff6666 50%, 
+    var(--gf-primary) 100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-size: 200% 200%;
+  animation: gradientShift 3s ease-in-out infinite;
+}
+
+@keyframes gradientShift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.contact-form-container > p {
+  color: var(--gf-text-muted);
+  font-size: 1.2rem;
+  margin-bottom: 2.5rem;
+  line-height: 1.7;
+  text-align: center;
+  position: relative;
+  z-index: 1;
+  font-weight: 300;
+  letter-spacing: 0.3px;
+}
+
+/* ===== FORMULARIO MEJORADO ===== */
+.contact-form {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  position: relative;
+  z-index: 1;
+}
+
+/* Grupos de campos con efectos */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  opacity: 0;
+  transform: translateY(30px);
+  animation: slideInForm 0.6s ease-out both;
+  position: relative;
+}
+
+.form-group:nth-child(1) { animation-delay: 0.1s; }
+.form-group:nth-child(2) { animation-delay: 0.2s; }
+.form-group:nth-child(3) { animation-delay: 0.3s; }
+.form-group:nth-child(4) { animation-delay: 0.4s; }
+.form-group:nth-child(5) { animation-delay: 0.5s; }
+
+@keyframes slideInForm {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Etiquetas mejoradas */
+.form-group label {
+  color: var(--gf-primary);
+  font-weight: 700;
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+  position: relative;
+  margin-bottom: 0.3rem;
+}
+
+.form-group label::before {
+  content: '';
+  width: 4px;
+  height: 20px;
+  background: linear-gradient(135deg, var(--gf-primary), var(--gf-primary-dark));
+  border-radius: 2px;
+  animation: labelPulse 2s ease-in-out infinite;
+}
+
+@keyframes labelPulse {
+  0%, 100% { opacity: 1; transform: scaleY(1); }
+  50% { opacity: 0.7; transform: scaleY(1.2); }
+}
+
+.form-group label::after {
+  content: '';
+  height: 2px;
+  flex: 1;
+  background: linear-gradient(
+    90deg, 
+    var(--gf-primary) 0%, 
+    rgba(255, 51, 51, 0.3) 50%, 
+    transparent 100%
+  );
+  opacity: 0.3;
+  transition: var(--gf-transition);
+}
+
+.form-group:focus-within label::after {
+  opacity: 0.8;
+  background: linear-gradient(
+    90deg, 
+    var(--gf-primary) 0%, 
+    rgba(255, 51, 51, 0.6) 70%, 
+    transparent 100%
+  );
+}
+
+/* ===== CAMPOS DE ENTRADA MEJORADOS ===== */
+.form-group input,
+.form-group select,
+.form-group textarea {
+  background: var(--gf-bg-input);
+  border: 2px solid var(--gf-border);
+  border-radius: var(--gf-radius);
+  padding: 1.2rem 1.5rem;
+  color: var(--gf-text);
+  font-size: 1.1rem;
+  font-family: inherit;
+  font-weight: 400;
+  transition: var(--gf-transition);
+  position: relative;
+  backdrop-filter: blur(10px);
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.1),
+    0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+/* Efectos hover */
+.form-group input:hover,
+.form-group select:hover,
+.form-group textarea:hover {
+  border-color: var(--gf-border-hover);
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.1),
+    0 8px 20px rgba(255, 51, 51, 0.1);
+}
+
+/* Efectos focus */
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--gf-border-focus);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    inset 0 2px 4px rgba(0, 0, 0, 0.1),
+    var(--gf-shadow-focus),
+    0 12px 30px rgba(255, 51, 51, 0.15);
+  transform: translateY(-3px) scale(1.01);
+}
+
+/* Estados de validación mejorados */
+.form-group input:valid:not(:placeholder-shown),
+.form-group select:valid,
+.form-group textarea:valid:not(:placeholder-shown) {
+  border-color: #4caf50;
+  background: rgba(76, 175, 80, 0.05);
+}
+
+.form-group input:invalid:not(:placeholder-shown):not(:focus),
+.form-group select:invalid:not(:focus),
+.form-group textarea:invalid:not(:placeholder-shown):not(:focus) {
+  border-color: #ff6b6b;
+  background: rgba(255, 107, 107, 0.05);
+  animation: shake 0.4s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-8px); }
+  75% { transform: translateX(8px); }
+}
+
+/* Placeholders mejorados */
+.form-group input::placeholder,
+.form-group textarea::placeholder {
+  color: var(--gf-text-placeholder);
+  opacity: 0.8;
+  font-style: italic;
+  font-weight: 300;
+  transition: var(--gf-transition);
+}
+
+.form-group input:focus::placeholder,
+.form-group textarea:focus::placeholder {
+  opacity: 0.5;
+  transform: translateX(5px);
+}
+
+/* ===== SELECT MEJORADO ===== */
+.form-group select {
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff3333' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 1.2rem center;
+  background-size: 1.2rem;
+  padding-right: 3.5rem;
+  position: relative;
+}
+
+.form-group select:focus {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+}
+
+.form-group select option {
+  background: #1a1a1a;
+  color: var(--gf-text);
+  padding: 1rem;
+  border: none;
+  font-weight: 400;
+}
+
+.form-group select option:hover,
+.form-group select option:focus {
+  background: var(--gf-primary);
+  color: white;
+}
+
+/* ===== TEXTAREA MEJORADO ===== */
+.form-group textarea {
+  resize: vertical;
+  min-height: 150px;
+  line-height: 1.6;
+  font-family: inherit;
+}
+
+.form-group textarea:focus {
+  min-height: 180px;
+}
+
+/* ===== BOTÓN DE ENVÍO MEJORADO ===== */
+.form-actions {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: center;
+  position: relative;
+  opacity: 0;
+  transform: translateY(20px);
+  animation: slideInForm 0.6s ease-out 0.6s both;
+}
+
+.form-actions .btn {
+  min-width: 260px;
+  padding: 1.4rem 3rem;
+  font-size: 1.3rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  position: relative;
+  overflow: hidden;
+  border: none;
+  cursor: pointer;
+  background: linear-gradient(
+    135deg, 
+    var(--gf-primary) 0%, 
+    var(--gf-primary-dark) 100%
+  );
+  color: white;
+  border-radius: 50px;
+  transition: var(--gf-transition);
+  transform-style: preserve-3d;
+  perspective: 1000px;
+}
+
+/* Efecto de ondas en el botón */
+.form-actions .btn::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transform: translate(-50%, -50%);
+  transition: width 0.8s ease, height 0.8s ease;
+  z-index: 0;
+}
+
+.form-actions .btn:hover::before {
+  width: 400px;
+  height: 400px;
+}
+
+/* Efecto de brillo */
+.form-actions .btn::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg, 
+    transparent, 
+    rgba(255, 255, 255, 0.3), 
+    transparent
+  );
+  transition: left 0.8s ease;
+  z-index: 1;
+}
+
+.form-actions .btn:hover::after {
+  left: 100%;
+}
+
+.form-actions .btn span {
+  position: relative;
+  z-index: 2;
+  display: inline-block;
+  transition: var(--gf-transition);
+}
+
+.form-actions .btn:hover {
+  transform: translateY(-4px) rotateX(5deg);
+  box-shadow: 
+    0 15px 40px rgba(255, 51, 51, 0.4),
+    0 0 0 8px rgba(255, 51, 51, 0.1);
+  background: linear-gradient(
+    135deg, 
+    #ff4444 0%, 
+    var(--gf-primary) 100%
+  );
+}
+
+.form-actions .btn:hover span {
+  transform: scale(1.05);
+}
+
+.form-actions .btn:active {
+  transform: translateY(-2px) rotateX(2deg);
+  transition: transform 0.1s ease;
+}
+
+/* Estados del botón */
+.form-actions .btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+  background: #666;
+}
+
+.form-actions .btn:disabled:hover {
+  transform: none;
+  box-shadow: none;
+  background: #666;
+}
+
+.form-actions .btn.loading {
+  pointer-events: none;
+  background: linear-gradient(
+    135deg, 
+    var(--gf-primary) 0%, 
+    var(--gf-primary-dark) 100%
+  );
+}
+
+/* ===== SPINNER PARA CARGA ===== */
+.spinner-small {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  margin-right: 0.5rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ===== MENSAJES DE RESPUESTA ===== */
+.form-message {
+  padding: 1.5rem 2rem;
+  border-radius: var(--gf-radius);
+  margin-top: 2rem;
+  font-weight: 600;
+  text-align: center;
+  animation: messageSlideIn 0.6s ease-out;
+  backdrop-filter: blur(10px);
+  font-size: 1.1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes messageSlideIn {
+  from {
+    transform: translateY(-20px) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.form-message::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  animation: messageShine 2s ease-in-out infinite;
+}
+
+@keyframes messageShine {
+  0% { left: -100%; }
+  50% { left: 100%; }
+  100% { left: 100%; }
+}
+
+.form-message.success {
+  background: linear-gradient(135deg, rgba(76, 175, 80, 0.15), rgba(76, 175, 80, 0.05));
+  border: 2px solid #4caf50;
+  color: #4caf50;
+  box-shadow: 
+    0 8px 25px rgba(76, 175, 80, 0.2),
+    inset 0 1px 0 rgba(76, 175, 80, 0.2);
+}
+
+.form-message.error {
+  background: linear-gradient(135deg, rgba(255, 51, 51, 0.15), rgba(255, 51, 51, 0.05));
+  border: 2px solid var(--gf-primary);
+  color: var(--gf-primary);
+  box-shadow: 
+    0 8px 25px rgba(255, 51, 51, 0.2),
+    inset 0 1px 0 rgba(255, 51, 51, 0.2);
+}
+
+/* Iconos para mensajes */
+.success-icon,
+.error-icon {
+  font-size: 3.5rem;
+  margin-bottom: 1rem;
+  display: block;
+  animation: iconPop 0.6s ease-out;
+}
+
+@keyframes iconPop {
+  0% { transform: scale(0) rotate(-180deg); }
+  50% { transform: scale(1.2) rotate(-90deg); }
+  100% { transform: scale(1) rotate(0deg); }
+}
+
+.success-icon {
+  color: #4caf50;
+}
+
+.error-icon {
+  color: var(--gf-primary);
+}
+
+/* ===== ESTADOS DE CARGA ===== */
+.form-loading .loading-message {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: var(--gf-bg-card);
+  border-radius: var(--gf-radius);
+  backdrop-filter: var(--gf-backdrop);
+}
+
+.spinner {
+  animation: rotate 2s linear infinite;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 1.5rem;
+}
+
+.spinner .path {
+  stroke: var(--gf-primary);
+  stroke-linecap: round;
+  animation: dash 1.5s ease-in-out infinite;
+  stroke-width: 3;
+}
+
+@keyframes rotate {
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes dash {
+  0% {
+    stroke-dasharray: 1, 150;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -35;
+  }
+  100% {
+    stroke-dasharray: 90, 150;
+    stroke-dashoffset: -124;
+  }
+}
+
+.loading-message p {
+  color: var(--gf-text-muted);
+  font-size: 1.2rem;
+  margin: 0;
+  animation: loadingPulse 2s ease-in-out infinite;
+}
+
+@keyframes loadingPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* ===== MENSAJE DE ERROR ===== */
+.error-message {
+  text-align: center;
+  padding: 3rem 2rem;
+  background: rgba(255, 51, 51, 0.05);
+  border: 2px solid rgba(255, 51, 51, 0.2);
+  border-radius: var(--gf-radius);
+  backdrop-filter: var(--gf-backdrop);
+}
+
+.error-message .error-text {
+  color: var(--gf-primary);
+  font-size: 1.4rem;
+  margin-bottom: 1.5rem;
+  font-weight: 700;
+}
+
+.error-message p {
+  color: var(--gf-text-muted);
+  margin: 0.8rem 0;
+  line-height: 1.6;
+}
+
+.error-message a {
+  color: var(--gf-primary);
+  text-decoration: none;
+  font-weight: 600;
+  transition: var(--gf-transition);
+}
+
+.error-message a:hover {
+  text-decoration: underline;
+  color: #ff6666;
+}
+
+/* ===== RESPONSIVE DESIGN ===== */
+@media (max-width: 768px) {
+  .contact-form-container {
+    padding: 2.5rem 2rem;
+    border-radius: 15px;
+  }
+  
+  .contact-form-container h2 {
+    font-size: 2.2rem;
+  }
+  
+  .contact-form-container > p {
+    font-size: 1.1rem;
+  }
+  
+  .form-group {
+    gap: 0.6rem;
+  }
+  
+  .form-group label {
+    font-size: 1rem;
+  }
+  
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    padding: 1rem 1.2rem;
+    font-size: 16px; /* Evita zoom en iOS */
+  }
+  
+  .form-actions .btn {
+    width: 100%;
+    min-width: unset;
+    font-size: 1.1rem;
+    padding: 1.2rem 2rem;
+  }
+  
+  .form-message {
+    padding: 1.2rem 1.5rem;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .contact-form-container {
+    padding: 2rem 1.5rem;
+  }
+  
+  .contact-form-container h2 {
+    font-size: 1.8rem;
+  }
+  
+  .form-group {
+    gap: 0.5rem;
+  }
+  
+  .form-group label {
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+  }
+  
+  .form-group label::before {
+    width: 3px;
+    height: 16px;
+  }
+  
+  .form-actions .btn {
+    font-size: 1rem;
+    letter-spacing: 1px;
+  }
+}
+
+/* ===== MODO OSCURO MEJORADO ===== */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --gf-bg-input: rgba(255, 255, 255, 0.08);
+    --gf-text-placeholder: #666666;
+  }
+}
+
+/* ===== REDUCIR MOVIMIENTO ===== */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===== MEJORAS DE ACCESIBILIDAD ===== */
+.form-group input:focus-visible,
+.form-group select:focus-visible,
+.form-group textarea:focus-visible {
+  outline: 3px solid var(--gf-primary);
+  outline-offset: 2px;
+}
+
+.form-actions .btn:focus-visible {
+  outline: 3px solid rgba(255, 51, 51, 0.8);
+  outline-offset: 4px;
+}
+
+/* ===== IMPRESIÓN ===== */
+@media print {
+  .contact-form-container::before,
+  .contact-form-container::after {
+    display: none;
+  }
+  
+  .contact-form-container {
+    background: white;
+    border: 2px solid #333;
+    box-shadow: none;
+  }
+  
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    border: 1px solid #333;
+    background: white;
+    color: black;
+  }
+}

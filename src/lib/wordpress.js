@@ -223,7 +223,7 @@ export async function getProgramas({ limit = 10 } = {}) {
 // ===============================
 export async function getPageData(slug) {
   console.log(`📄 Obteniendo página (corregido v2): ${slug || 'home'}`);
-  const slugToId = { inicio: 1, home: 1, programas: 8034, vinilos: 8038 }; 
+  const slugToId = { inicio: 1, home: 1, programas: 8034, vinilos: 8038, noticias: 8040 }; 
   let query, vars = {};
 
   const PAGE_FIELDS = gql`
@@ -273,12 +273,12 @@ export async function getPageData(slug) {
     query = gql`
       ${PAGE_FIELDS}
       query GetPageBySlug($slug: ID!) {
-        page(id: $slug, idType: SLUG) {
+        page(id: $slug, idType: URI) {
           ...PageFields
         }
       }
     `;
-    vars = { slug };
+    vars = { slug: `/${slug}/` }; // Usar formato URI
   }
 
   try {
@@ -313,18 +313,46 @@ export async function getPageData(slug) {
     if (error.response?.errors) {
         console.error('GraphQL Errors (getPageData):', JSON.stringify(error.response.errors, null, 2));
     }
-    const pageTitleFallback = slug ? (slug.charAt(0).toUpperCase() + slug.slice(1)) : 'VinylStation';
+    // Fallbacks específicos por página
+    const pageFallbacks = {
+      noticias: {
+        title: 'Últimas Noticias',
+        content: '<p>Mantente al día con las últimas noticias de música, vinilo y cultura musical.</p>',
+        excerpt: 'Mantente al día con las últimas noticias de música, vinilo y cultura musical',
+        metaDesc: 'Últimas noticias de música, vinilo y cultura musical en VinylStation Radio'
+      },
+      vinilos: {
+        title: 'Vinilos recomendados por VinylStation Radio',
+        content: '<p>Descubre nuestra selección cuidada de vinilos clásicos, ediciones limitadas y novedades.</p>',
+        excerpt: 'Descubre nuestra selección cuidada de vinilos clásicos, ediciones limitadas y novedades.',
+        metaDesc: 'Vinilos clásicos, ediciones limitadas y novedades recomendadas por VinylStation Radio'
+      },
+      programas: {
+        title: 'Programas de Radio',
+        content: '<p>Descubre todos nuestros programas de radio especializados en música vinilo.</p>',
+        excerpt: 'Descubre todos nuestros programas de radio especializados en música vinilo.',
+        metaDesc: 'Programas de radio especializados en música vinilo en VinylStation Radio'
+      }
+    };
+    
+    const fallback = pageFallbacks[slug] || {
+      title: slug ? (slug.charAt(0).toUpperCase() + slug.slice(1)) : 'VinylStation',
+      content: `<p>Contenido de la página ${slug || 'principal'}.</p>`,
+      excerpt: `Contenido de la página ${slug || 'principal'}.`,
+      metaDesc: `Página ${slug || 'principal'} de VinylStation Radio`
+    };
+    
     return {
       id: 'fallback-page',
-      title: pageTitleFallback,
-      content: `<p>Error al cargar el contenido de la página. Por favor, inténtalo de nuevo más tarde.</p>`,
-      excerpt: 'Error al cargar el contenido. Revisa la consola del servidor para más detalles.',
+      title: fallback.title,
+      content: fallback.content,
+      excerpt: fallback.excerpt,
       slug: slug || 'error',
       date: new Date().toISOString(),
       featuredImage: null,
       seo: {
-        title: `${pageTitleFallback} | VinylStation`,
-        metaDesc: 'Error al cargar la descripción de la página.',
+        title: `${fallback.title} | VinylStation`,
+        metaDesc: fallback.metaDesc,
       },
     };
   }
@@ -431,38 +459,144 @@ export async function getVinilos({ limit = 200, page = null, itemsPerPage = 20 }
   }
 }
 
-// Nueva función para paginación eficiente del servidor
-export async function getVinilosPaginados({ page = 1, itemsPerPage = 20 } = {}) {
-  console.log(`📀 Obteniendo página ${page} con ${itemsPerPage} vinilos (optimizado)...`);
+// Función específica para cargar TODOS los vinilos para búsqueda
+export async function getTodosLosVinilos() {
+  console.log('🔍 Cargando TODOS los vinilos para búsqueda global...');
   
-  // Para las primeras 3 páginas, usar el método directo más eficiente
-  if (page <= 3) {
-    return getVinilosPaginadosOptimizado({ page, itemsPerPage });
-  }
-  
-  // Para páginas posteriores, usar el método de cursor si es necesario
-  return getVinilosPaginadosConCursor({ page, itemsPerPage });
-}
-
-// Función optimizada para paginación real del servidor
-async function getVinilosPaginadosOptimizado({ page = 1, itemsPerPage = 20 } = {}) {
-  console.log(`📄 Paginación simple: página ${page}, necesito ${itemsPerPage} elementos`);
-  
-  const QUERY = gql`
-    query GetVinilosSimple($first: Int!) {
-      vinilos(first: $first, where: {orderby: {field: DATE, order: DESC}}) { 
+  const QUERY_ALL = gql`
+    query GetAllVinilos($first: Int!, $after: String) {
+      vinilos(first: $first, after: $after, where: {orderby: {field: DATE, order: DESC}}) {
         pageInfo {
           hasNextPage
+          endCursor
         }
         nodes {
           databaseId
           title
-          slug 
-          date 
-          imagenPrincipalUrl 
-          imagenPrincipal { 
+          slug
+          date
+          imagenPrincipalUrl
+          imagenPrincipal {
             altText
-            sourceUrl 
+            sourceUrl
+          }
+          camposVinilo {
+            vsPrecio
+            vsArtista
+            vsAlbum
+          }
+        }
+      }
+    }
+  `;
+
+  let allVinilos = [];
+  let hasNextPage = true;
+  let cursor = null;
+  const BATCH_SIZE = 100; // Tamaño de cada lote
+  let pageCount = 0;
+  
+  try {
+    while (hasNextPage) {
+      pageCount++;
+      console.log(`📄 Cargando lote ${pageCount} de vinilos...`);
+      
+      const variables = { 
+        first: BATCH_SIZE,
+        ...(cursor && { after: cursor })
+      };
+      
+      const rawData = await request(WORDPRESS_GRAPHQL_URL, QUERY_ALL, variables);
+      const nodes = rawData?.vinilos?.nodes || [];
+      const pageInfo = rawData?.vinilos?.pageInfo;
+      
+      if (nodes.length > 0) {
+        allVinilos = allVinilos.concat(nodes);
+        console.log(`   ✅ Lote ${pageCount}: ${nodes.length} vinilos cargados (total: ${allVinilos.length})`);
+      }
+      
+      hasNextPage = pageInfo?.hasNextPage || false;
+      cursor = pageInfo?.endCursor;
+      
+      // Límite de seguridad
+      if (pageCount > 100) {
+        console.warn('⚠️ Alcanzado límite de seguridad de 100 páginas');
+        break;
+      }
+    }
+    
+    console.log(`✅ Total de vinilos cargados: ${allVinilos.length}`);
+    
+    // Procesar todos los vinilos
+    const vinilosProcesados = allVinilos.map((v, index) => {
+      const imgUrl = v.imagenPrincipalUrl || processImageURL(v.imagenPrincipal?.sourceUrl) || '/images/placeholder-vinyl.jpg';
+      const alt = v.imagenPrincipal?.altText || v.title || `Vinilo ${v.databaseId || index}`;
+      const generatedExcerpt = `Artista: ${v.camposVinilo?.vsArtista || 'N/A'}. Álbum: ${v.camposVinilo?.vsAlbum || 'N/A'}. Precio: ${v.camposVinilo?.vsPrecio || 'Consultar'}.`;
+
+      return {
+        ...v,
+        imagenPrincipalUrl: imgUrl,
+        imagenPrincipal: { sourceUrl: imgUrl, altText: alt },
+        excerpt: generatedExcerpt,
+        camposVinilo: {
+          vsPrecio: v.camposVinilo?.vsPrecio || '',
+          vsArtista: v.camposVinilo?.vsArtista || '',
+          vsAlbum: v.camposVinilo?.vsAlbum || '',
+        },
+        seo: {
+          title: `${v.title || 'Vinilo'} | VinylStation`,
+          metaDesc: generatedExcerpt.substring(0, 160),
+        },
+      };
+    });
+    
+    return {
+      vinilos: vinilosProcesados,
+      total: vinilosProcesados.length
+    };
+    
+  } catch (error) {
+    console.error('❌ Error cargando todos los vinilos:', error.message);
+    if (error.response?.errors) {
+      console.error('GraphQL Errors:', JSON.stringify(error.response.errors, null, 2));
+    }
+    return {
+      vinilos: [],
+      total: 0
+    };
+  }
+}
+
+// Nueva función para paginación eficiente usando wp-graphql-offset-pagination
+export async function getVinilosPaginados({ page = 1, itemsPerPage = 20 } = {}) {
+  console.log(`📀 Obteniendo página ${page} con ${itemsPerPage} vinilos usando offset pagination...`);
+  
+  // Calcular offset: página 1 = offset 0, página 2 = offset 20, etc.
+  const offset = (page - 1) * itemsPerPage;
+  
+  // PRIMERA TENTATIVA: Intentar con offset pagination plugin
+  const QUERY_OFFSET = gql`
+    query GetVinilosPaginated($first: Int!, $offset: Int!) {
+      vinilos(
+        first: $first
+        where: {
+          offsetPagination: { offset: $offset }
+          orderby: { field: DATE, order: DESC }
+        }
+      ) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        nodes {
+          databaseId
+          title
+          slug
+          date
+          imagenPrincipalUrl
+          imagenPrincipal {
+            altText
+            sourceUrl
           }
           camposVinilo {
             vsPrecio
@@ -475,84 +609,289 @@ async function getVinilosPaginadosOptimizado({ page = 1, itemsPerPage = 20 } = {
   `;
 
   try {
-    // Cargar solo los elementos que necesito para esta página específica
-    // Esto no es óptimo pero debería funcionar
-    const totalNeeded = page * itemsPerPage;
-    const variables = { first: Math.min(totalNeeded, 100) }; // Máximo 100 para evitar timeouts
+    console.log(`📄 [INTENTO 1] Offset pagination: página ${page}, offset ${offset}, items ${itemsPerPage}`);
     
-    console.log(`📄 Pidiendo ${variables.first} elementos para página ${page}`);
-    const rawData = await request(WORDPRESS_GRAPHQL_URL, QUERY, variables);
+    const variables = { first: itemsPerPage, offset };
+    const rawData = await request(WORDPRESS_GRAPHQL_URL, QUERY_OFFSET, variables);
     
-    const allNodes = rawData?.vinilos?.nodes || [];
+    const nodes = rawData?.vinilos?.nodes || [];
     const pageInfo = rawData?.vinilos?.pageInfo;
+    const total = pageInfo?.offsetPagination?.total || 0;
 
-    if (!Array.isArray(allNodes)) {
-      console.warn('⚠️ Nodes inválidos');
-      return { vinilos: [], pageInfo: { hasNext: false, hasPrevious: false, total: 4218, currentPage: page } };
+    // Si obtenemos vinilos, todo funciona correctamente
+    if (Array.isArray(nodes) && nodes.length > 0) {
+      console.log(`✅ [ÉXITO OFFSET] Página ${page}: obtenidos ${nodes.length} vinilos (total: ${total})`);
+      
+      const vinilosProcesados = nodes.map((v, index) => {
+        const imgUrl = v.imagenPrincipalUrl || processImageURL(v.imagenPrincipal?.sourceUrl) || '/images/placeholder-vinyl.jpg';
+        const alt = v.imagenPrincipal?.altText || v.title || `Vinilo ${v.databaseId || index}`;
+        const generatedExcerpt = `Artista: ${v.camposVinilo?.vsArtista || 'N/A'}. Álbum: ${v.camposVinilo?.vsAlbum || 'N/A'}. Precio: ${v.camposVinilo?.vsPrecio || 'Consultar'}.`;
+
+        return {
+          ...v,
+          imagenPrincipalUrl: imgUrl,
+          imagenPrincipal: { sourceUrl: imgUrl, altText: alt },
+          excerpt: generatedExcerpt,
+          camposVinilo: {
+            vsPrecio: v.camposVinilo?.vsPrecio || '',
+            vsArtista: v.camposVinilo?.vsArtista || '',
+            vsAlbum: v.camposVinilo?.vsAlbum || '',
+          },
+          seo: {
+            title: `${v.title || 'Vinilo'} | VinylStation`,
+            metaDesc: generatedExcerpt.substring(0, 160),
+          },
+        };
+      });
+      
+      const totalPages = Math.ceil(total / itemsPerPage);
+      
+      return {
+        vinilos: vinilosProcesados,
+        pageInfo: {
+          hasNext: pageInfo?.hasNextPage || false,
+          hasPrevious: pageInfo?.hasPreviousPage || false,
+          total,
+          totalPages,
+          currentPage: page,
+          itemsPerPage
+        }
+      };
     }
     
-    // Slice simple: página 1 = 0-19, página 2 = 20-39, etc.
+    // Si llegamos aquí, offset pagination no devolvió vinilos, usar fallback
+    console.warn(`⚠️ [OFFSET FALLÓ] Plugin offset pagination no funcionó correctamente, usando fallback cursor...`);
+    
+  } catch (error) {
+    console.error('❌ [OFFSET ERROR] Error con offset pagination:', error.message);
+    if (error.response?.errors) {
+      console.error('GraphQL Errors (offset):', JSON.stringify(error.response.errors, null, 2));
+    }
+    console.warn('🔄 [FALLBACK] Intentando con método cursor...');
+  }
+  
+  // FALLBACK AUTOMÁTICO: Usar cursor pagination simulando offset
+  return getVinilosPaginadosConCursor({ page, itemsPerPage });
+}
+
+// Función fallback usando cursor pagination para simular offset
+async function getVinilosPaginadosConCursor({ page = 1, itemsPerPage = 20 } = {}) {
+  console.log(`🔄 [CURSOR FALLBACK] Simulando offset con cursor para página ${page}`);
+  
+  const QUERY_CURSOR = gql`
+    query GetVinilosCursor($first: Int!, $after: String) {
+      vinilos(first: $first, after: $after, where: {orderby: {field: DATE, order: DESC}}) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        nodes {
+          databaseId
+          title
+          slug
+          date
+          imagenPrincipalUrl
+          imagenPrincipal {
+            altText
+            sourceUrl
+          }
+          camposVinilo {
+            vsPrecio
+            vsArtista
+            vsAlbum
+          }
+        }
+      }
+    }
+  `;
+
+  try {
     const startIndex = (page - 1) * itemsPerPage;
-    const endIndex = page * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    
+    // ESTRATEGIA MEJORADA: Carga inteligente según la página
+    let allNodes = [];
+    let cursor = null;
+    let hasMore = true;
+    const BATCH_SIZE = 200; // Tamaño de cada lote
+    
+    // Para páginas bajas (1-10), carga directa
+    if (page <= 10) {
+      const itemsToLoad = page * itemsPerPage + 40; // Buffer extra para evitar edge cases
+      console.log(`📄 [CURSOR] Página ${page} (baja): Carga directa de ${itemsToLoad} items`);
+      
+      const variables = { first: itemsToLoad };
+      const rawData = await request(WORDPRESS_GRAPHQL_URL, QUERY_CURSOR, variables);
+      allNodes = rawData?.vinilos?.nodes || [];
+      
+    } else {
+      // Para páginas altas, carga por bloques para evitar timeouts
+      console.log(`📄 [CURSOR] Página ${page} (alta): Carga por bloques hasta índice ${endIndex}`);
+      
+      let loadedCount = 0;
+      let attempts = 0;
+      const maxAttempts = Math.ceil(endIndex / BATCH_SIZE) + 1;
+      
+      while (hasMore && loadedCount < endIndex && attempts < maxAttempts) {
+        attempts++;
+        console.log(`   🔄 Bloque ${attempts}: Cargando ${BATCH_SIZE} items (cursor: ${cursor ? 'sí' : 'no'})`);
+        
+        const variables = { 
+          first: BATCH_SIZE,
+          ...(cursor && { after: cursor })
+        };
+        
+        try {
+          const batchData = await request(WORDPRESS_GRAPHQL_URL, QUERY_CURSOR, variables);
+          const batchNodes = batchData?.vinilos?.nodes || [];
+          const batchPageInfo = batchData?.vinilos?.pageInfo;
+          
+          if (batchNodes.length > 0) {
+            allNodes = allNodes.concat(batchNodes);
+            loadedCount = allNodes.length;
+            cursor = batchPageInfo?.endCursor;
+            hasMore = batchPageInfo?.hasNextPage || false;
+            
+            console.log(`   ✅ Bloque ${attempts}: ${batchNodes.length} items cargados (total: ${loadedCount})`);
+            
+            // Si ya tenemos suficientes para esta página, parar
+            if (loadedCount >= endIndex) {
+              console.log(`   🎯 Suficientes items cargados para página ${page}`);
+              break;
+            }
+          } else {
+            console.log(`   ⚠️ Bloque ${attempts}: Sin datos, deteniendo carga`);
+            hasMore = false;
+          }
+        } catch (batchError) {
+          console.error(`   ❌ Error en bloque ${attempts}:`, batchError.message);
+          hasMore = false;
+        }
+      }
+      
+      console.log(`📊 [CURSOR] Carga completa: ${allNodes.length} items totales para página ${page}`);
+    }
+    
+    const pageInfo = { hasNextPage: hasMore, endCursor: cursor };
+
+    if (!Array.isArray(allNodes) || allNodes.length === 0) {
+      console.warn('⚠️ [CURSOR] No se obtuvieron vinilos');
+      return {
+        vinilos: [],
+        pageInfo: {
+          hasNext: false,
+          hasPrevious: page > 1,
+          total: 0,
+          totalPages: 0,
+          currentPage: page,
+          itemsPerPage
+        }
+      };
+    }
+    
+    // Realizar el slice para obtener solo los elementos de esta página
     const pageNodes = allNodes.slice(startIndex, endIndex);
     
-    console.log(`✅ Página ${page}: extraídos ${pageNodes.length} vinilos (${startIndex} a ${endIndex-1})`);
+    console.log(`🔍 [DEBUG SLICE] Página ${page}:`);
+    console.log(`   - Total cargados: ${allNodes.length}`);
+    console.log(`   - Slice: [${startIndex}:${endIndex}] = ${pageNodes.length} items`);
+    console.log(`   - Primer vinilo: ${pageNodes[0]?.title || 'N/A'} (${pageNodes[0]?.camposVinilo?.vsArtista || 'N/A'})`);
+    console.log(`   - Último vinilo: ${pageNodes[pageNodes.length-1]?.title || 'N/A'} (${pageNodes[pageNodes.length-1]?.camposVinilo?.vsArtista || 'N/A'})`);
     
-    // Si no tengo suficientes elementos, devolver array vacío
-    if (pageNodes.length === 0) {
-      console.log('⚠️ No hay vinilos para esta página');
-      return { vinilos: [], pageInfo: { hasNext: false, hasPrevious: page > 1, total: 4218, currentPage: page } };
+    if (pageNodes.length === 0 && allNodes.length > 0) {
+      console.warn(`⚠️ [CURSOR] Slice vacío. Posible problema con la paginación.`);
+      console.warn(`   - Página solicitada: ${page}`);
+      console.warn(`   - Items necesarios: ${endIndex}`);
+      console.warn(`   - Items cargados: ${allNodes.length}`);
+      
+      // Devolver página vacía pero con información correcta
+      return {
+        vinilos: [],
+        pageInfo: {
+          hasNext: false,
+          hasPrevious: page > 1,
+          total: 4218,
+          totalPages: Math.ceil(4218 / itemsPerPage),
+          currentPage: page,
+          itemsPerPage
+        }
+      };
     }
     
-    const vinilosProcesados = pageNodes.map((v, index) => {
-      const imgUrl = v.imagenPrincipalUrl || processImageURL(v.imagenPrincipal?.sourceUrl) || '/images/placeholder-vinyl.jpg';
-      const alt = v.imagenPrincipal?.altText || v.title || `Vinilo ${v.databaseId || index}`;
-      const generatedExcerpt = `Artista: ${v.camposVinilo?.vsArtista || 'N/A'}. Álbum: ${v.camposVinilo?.vsAlbum || 'N/A'}. Precio: ${v.camposVinilo?.vsPrecio || 'Consultar'}.`;
-
-      return {
-        ...v, 
-        imagenPrincipalUrl: imgUrl,
-        imagenPrincipal: { sourceUrl: imgUrl, altText: alt },
-        excerpt: generatedExcerpt, 
-        camposVinilo: { 
-          vsPrecio: v.camposVinilo?.vsPrecio || '',
-          vsArtista: v.camposVinilo?.vsArtista || '',
-          vsAlbum: v.camposVinilo?.vsAlbum || '',
-        },
-        seo: {
-          title: `${v.title || 'Vinilo'} | VinylStation`,
-          metaDesc: generatedExcerpt.substring(0,160),
-        },
-      };
-    });
+    console.log(`✅ [CURSOR] Página ${page}: extraídos ${pageNodes.length} vinilos correctamente`);
     
+    return processVinilosPage(pageNodes, allNodes, page, itemsPerPage, pageInfo);
+    
+  } catch (error) {
+    console.error('❌ [CURSOR ERROR] Error en fallback cursor:', error.message);
+    if (error.response?.errors) {
+      console.error('GraphQL Errors (cursor):', JSON.stringify(error.response.errors, null, 2));
+    }
+    
+    // Último fallback: devolver datos vacíos pero con estructura correcta
     return {
-      vinilos: vinilosProcesados,
-      pageInfo: { 
-        hasNext: pageNodes.length === itemsPerPage,
+      vinilos: [],
+      pageInfo: {
+        hasNext: false,
         hasPrevious: page > 1,
-        total: 4218,
+        total: 4218, // Usar el total conocido
         totalPages: Math.ceil(4218 / itemsPerPage),
         currentPage: page,
         itemsPerPage
       }
     };
-    
-  } catch (error) {
-    console.error('❌ Error simple:', error.message);
-    return { 
-      vinilos: [], 
-      pageInfo: { hasNext: false, hasPrevious: page > 1, total: 4218, currentPage: page } 
-    };
   }
 }
 
-// Función para páginas posteriores usando cursor (si es necesario)
-async function getVinilosPaginadosConCursor({ page = 1, itemsPerPage = 20 } = {}) {
-  console.log(`📀 Usando cursor para página ${page}...`);
+// Función helper para procesar la página de vinilos (evitar duplicación de código)
+function processVinilosPage(pageNodes, allNodes, page, itemsPerPage, pageInfo) {
+  const vinilosProcesados = pageNodes.map((v, index) => {
+    const imgUrl = v.imagenPrincipalUrl || processImageURL(v.imagenPrincipal?.sourceUrl) || '/images/placeholder-vinyl.jpg';
+    const alt = v.imagenPrincipal?.altText || v.title || `Vinilo ${v.databaseId || index}`;
+    const generatedExcerpt = `Artista: ${v.camposVinilo?.vsArtista || 'N/A'}. Álbum: ${v.camposVinilo?.vsAlbum || 'N/A'}. Precio: ${v.camposVinilo?.vsPrecio || 'Consultar'}.`;
+
+    return {
+      ...v,
+      imagenPrincipalUrl: imgUrl,
+      imagenPrincipal: { sourceUrl: imgUrl, altText: alt },
+      excerpt: generatedExcerpt,
+      camposVinilo: {
+        vsPrecio: v.camposVinilo?.vsPrecio || '',
+        vsArtista: v.camposVinilo?.vsArtista || '',
+        vsAlbum: v.camposVinilo?.vsAlbum || '',
+      },
+      seo: {
+        title: `${v.title || 'Vinilo'} | VinylStation`,
+        metaDesc: generatedExcerpt.substring(0, 160),
+      },
+    };
+  });
   
-  // Por ahora, usar el método simple (podría optimizarse más tarde con caching)
-  return getVinilosPaginadosConCursorFallback({ page, itemsPerPage });
+  // Estimar total y páginas
+  const estimatedTotal = pageInfo?.hasNextPage ? 4218 : allNodes.length;
+  const totalPages = Math.ceil(estimatedTotal / itemsPerPage);
+  const startIndex = (page - 1) * itemsPerPage;
+  const hasNext = pageNodes.length === itemsPerPage && (pageInfo?.hasNextPage || startIndex + itemsPerPage < allNodes.length);
+  
+  return {
+    vinilos: vinilosProcesados,
+    pageInfo: {
+      hasNext,
+      hasPrevious: page > 1,
+      total: estimatedTotal,
+      totalPages,
+      currentPage: page,
+      itemsPerPage
+    }
+  };
+}
+
+// Función legacy - mantenida para compatibilidad pero ya no se usa
+// TODO: Remover en futuras versiones una vez confirmado que offset pagination funciona
+async function getVinilosPaginadosLegacy({ page = 1, itemsPerPage = 20 } = {}) {
+  console.log(`⚠️ Usando método legacy (no recomendado) para página ${page}`);
+  // Esta función ya no se usa pero se mantiene como fallback temporal
+  return getVinilosPaginados({ page, itemsPerPage });
 }
 
 // Nueva función para obtener artistas únicos
@@ -601,13 +940,13 @@ export async function getArtistasUnicos() {
   }
 }
 
-// Función de fallback si offsetPagination no está disponible
-async function getVinilosPaginadosConCursorFallback({ page = 1, itemsPerPage = 20 } = {}) {
-  console.log(`🔄 Fallback: simulando paginación para página ${page}`);
+// Función de fallback solo para casos extremos donde offset pagination falle
+async function getVinilosPaginadosFallback({ page = 1, itemsPerPage = 20 } = {}) {
+  console.log(`🚨 FALLBACK EXTREMO: usando cursor para página ${page} (solo si offset pagination falló)`);
   
   const QUERY = gql`
-    query GetVinilosCursor($first: Int!) {
-      vinilos(first: $first, where: {orderby: {field: DATE, order: DESC}}) { 
+    query GetVinilosFallback($first: Int!) {
+      vinilos(first: $first, where: {orderby: {field: DATE, order: DESC}}) {
         pageInfo {
           hasNextPage
           endCursor
@@ -615,12 +954,12 @@ async function getVinilosPaginadosConCursorFallback({ page = 1, itemsPerPage = 2
         nodes {
           databaseId
           title
-          slug 
-          date 
-          imagenPrincipalUrl 
-          imagenPrincipal { 
+          slug
+          date
+          imagenPrincipalUrl
+          imagenPrincipal {
             altText
-            sourceUrl 
+            sourceUrl
           }
           camposVinilo {
             vsPrecio
@@ -633,80 +972,64 @@ async function getVinilosPaginadosConCursorFallback({ page = 1, itemsPerPage = 2
   `;
 
   try {
-    // Cargar suficientes elementos para simular la página solicitada
-    const itemsToLoad = page * itemsPerPage;
+    // Solo cargar lo mínimo necesario en caso de emergencia
+    const itemsToLoad = Math.min(page * itemsPerPage, 200); // Límite de emergencia
     const variables = { first: itemsToLoad };
     
-    console.log(`📄 Fallback: cargando ${itemsToLoad} items para simular página ${page}`);
+    console.log(`🚨 Fallback de emergencia: cargando máximo ${itemsToLoad} items`);
     const rawData = await request(WORDPRESS_GRAPHQL_URL, QUERY, variables);
     
     const allNodes = rawData?.vinilos?.nodes || [];
-    const pageInfo = rawData?.vinilos?.pageInfo;
-
-    if (!Array.isArray(allNodes)) {
-      console.warn('⚠️ fallback: nodes inválidos');
-      return { vinilos: [], pageInfo: { hasNext: false, hasPrevious: false, total: 0, currentPage: page } };
-    }
-    
-    // Extraer solo los vinilos de la página actual (CORREGIDO)
     const startIndex = (page - 1) * itemsPerPage;
     const endIndex = startIndex + itemsPerPage;
-    const pageNodes = allNodes.slice(startIndex, endIndex); // ✅ SLICE CORREGIDO
-    
-    console.log(`✅ Fallback página ${page}: ${pageNodes.length} vinilos (de ${startIndex} a ${endIndex-1})`);
+    const pageNodes = allNodes.slice(startIndex, endIndex);
     
     const vinilosProcesados = pageNodes.map((v, index) => {
-      const imgUrl =
-        v.imagenPrincipalUrl ||
-        processImageURL(v.imagenPrincipal?.sourceUrl) ||
-        '/images/placeholder-vinyl.jpg';
-
+      const imgUrl = v.imagenPrincipalUrl || processImageURL(v.imagenPrincipal?.sourceUrl) || '/images/placeholder-vinyl.jpg';
       const alt = v.imagenPrincipal?.altText || v.title || `Vinilo ${v.databaseId || index}`;
-      
       const generatedExcerpt = `Artista: ${v.camposVinilo?.vsArtista || 'N/A'}. Álbum: ${v.camposVinilo?.vsAlbum || 'N/A'}. Precio: ${v.camposVinilo?.vsPrecio || 'Consultar'}.`;
 
       return {
-        ...v, 
+        ...v,
         imagenPrincipalUrl: imgUrl,
         imagenPrincipal: { sourceUrl: imgUrl, altText: alt },
-        excerpt: generatedExcerpt, 
-        camposVinilo: { 
+        excerpt: generatedExcerpt,
+        camposVinilo: {
           vsPrecio: v.camposVinilo?.vsPrecio || '',
           vsArtista: v.camposVinilo?.vsArtista || '',
           vsAlbum: v.camposVinilo?.vsAlbum || '',
         },
         seo: {
           title: `${v.title || 'Vinilo'} | VinylStation`,
-          metaDesc: generatedExcerpt.substring(0,160),
+          metaDesc: generatedExcerpt.substring(0, 160),
         },
       };
     });
     
-    // Calcular información de paginación para fallback
-    const hasNext = pageInfo?.hasNextPage || (allNodes.length === itemsToLoad);
-    const hasPrevious = page > 1;
-    const totalEstimado = hasNext ? 4218 : allNodes.length; // Usar total conocido si hay más páginas
-    const totalPaginas = Math.ceil(totalEstimado / itemsPerPage);
-    
-    console.log(`📊 Fallback: total=${totalEstimado}, páginas=${totalPaginas}, actual=${page}, hasNext=${hasNext}`);
-    
     return {
       vinilos: vinilosProcesados,
-      pageInfo: { 
-        hasNext,
-        hasPrevious,
-        total: totalEstimado,
-        totalPages: totalPaginas,
+      pageInfo: {
+        hasNext: pageNodes.length === itemsPerPage && allNodes.length === itemsToLoad,
+        hasPrevious: page > 1,
+        total: Math.max(allNodes.length, 4218), // Estimación conservadora
+        totalPages: Math.ceil(4218 / itemsPerPage),
         currentPage: page,
         itemsPerPage
       }
     };
     
   } catch (error) {
-    console.error('❌ Error en fallback:', error.message);
-    return { 
-      vinilos: [], 
-      pageInfo: { hasNext: false, hasPrevious: false, total: 0, currentPage: page } 
+    console.error('❌ Error en fallback de emergencia:', error.message);
+    return {
+      vinilos: [],
+      pageInfo: {
+        hasNext: false,
+        hasPrevious: page > 1,
+        total: 0,
+        totalPages: 0,
+        currentPage: page,
+        itemsPerPage
+      }
     };
   }
 }
@@ -1001,6 +1324,319 @@ function getMenuFallback() { // Función helper existente
 // ===============================
 // NOTICIAS Y CATEGORÍAS (EXISTENTES, AJUSTADAS)
 // ===============================
+// Nueva función para obtener noticias paginadas
+export async function getNoticiasPaginadas({ page = 1, itemsPerPage = 12, categoria = null } = {}) {
+  console.log(`📰 Obteniendo página ${page} con ${itemsPerPage} noticias${categoria ? ` (categoría: ${categoria})` : ''}...`);
+  
+  // Obtener más noticias de las necesarias para poder filtrar y paginar
+  const itemsToLoad = Math.max(100, page * itemsPerPage * 3); // Cargar suficientes para filtrar
+  
+  const QUERY = gql`
+    query GetAllNoticiasPaginated($first: Int!) {
+      noticias(
+        first: $first
+        where: {
+          orderby: { field: DATE, order: DESC }
+        }
+      ) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        nodes {
+          id
+          slug
+          title
+          date
+          content
+          featuredImage {
+            node {
+              sourceUrl(size: MEDIUM)
+              altText
+            }
+          }
+          categoriasNoticia {
+            nodes {
+              id
+              name
+              slug
+            }
+          }
+          seo {
+            title
+            metaDesc
+          }
+        }
+      }
+    }
+  `;
+
+  try {
+    console.log(`📄 [SIMPLE] Página ${page}: Cargando ${itemsToLoad} noticias...`);
+    
+    const variables = { first: itemsToLoad };
+    
+    const rawData = await request(WORDPRESS_GRAPHQL_URL, QUERY, variables);
+    
+    let allNodes = rawData?.noticias?.nodes || [];
+    const pageInfo = rawData?.noticias?.pageInfo;
+    
+    console.log(`✅ Obtenidas ${allNodes.length} noticias totales`);
+    
+    if (!Array.isArray(allNodes) || allNodes.length === 0) {
+      console.warn('⚠️ No se obtuvieron noticias');
+      return {
+        noticias: [],
+        pageInfo: {
+          hasNext: false,
+          hasPrevious: page > 1,
+          total: 0,
+          totalNoticias: 0,
+          totalPages: 0,
+          currentPage: page,
+          itemsPerPage
+        }
+      };
+    }
+    
+    // FILTRAR POR CATEGORÍA si se especifica una
+    if (categoria && categoria !== 'all') {
+      allNodes = allNodes.filter(noticia => {
+        const categoriasNoticia = noticia.categoriasNoticia?.nodes || [];
+        return categoriasNoticia.some(cat => cat.slug === categoria);
+      });
+      console.log(`🔍 Después del filtro por categoría '${categoria}': ${allNodes.length} noticias`);
+    }
+    
+    // Calcular índices para paginación
+    const startIndex = (page - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    
+    // Realizar el slice para obtener solo los elementos de esta página
+    const pageNodes = allNodes.slice(startIndex, endIndex);
+    
+    console.log(`🔍 Página ${page}: mostrando ${pageNodes.length} noticias [${startIndex}:${endIndex}]`);
+    
+    const noticiasProcesadas = pageNodes.map((n) => {
+      const imgUrl = processImageURL(n.featuredImage?.node?.sourceUrl) || '/images/placeholder-news.jpg';
+      const alt = n.featuredImage?.node?.altText || n.seo?.title || n.title;
+      
+      let cleanExcerpt = '';
+      if (n.content) {
+        cleanExcerpt = n.content.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+        cleanExcerpt = cleanExcerpt.substring(0, 160) + (cleanExcerpt.length > 160 ? '...' : '');
+      } else {
+        cleanExcerpt = n.seo?.metaDesc || `Lee la noticia "${n.title || 'desconocida'}".`;
+      }
+
+      return {
+        ...n,
+        imagenDestacadaUrl: imgUrl,
+        featuredImage: { node: { sourceUrl: imgUrl, altText: alt } },
+        excerpt: cleanExcerpt,
+        categorias: n.categoriasNoticia,
+        // author: null, // Campo no disponible en el tipo Noticia
+        seo: n.seo?.title ? n.seo : {
+          title: `${n.title || 'Noticia'} | VinylStation Noticias`,
+          metaDesc: cleanExcerpt
+        }
+      };
+    });
+    
+    // Detectar si hay más páginas basado en el array filtrado
+    const totalFiltered = allNodes.length;
+    const hasMoreItems = totalFiltered > endIndex;
+    
+    // Para obtener más datos si es necesario
+    let needMoreData = false;
+    if (categoria && categoria !== 'all' && totalFiltered <= endIndex && pageInfo?.hasNextPage) {
+      needMoreData = true;
+      console.log('🔄 Puede que necesitemos más datos para esta categoría...');
+    }
+    
+    const totalPages = Math.ceil(totalFiltered / itemsPerPage);
+    
+    return {
+      noticias: noticiasProcesadas,
+      pageInfo: {
+        hasNext: hasMoreItems || (needMoreData && pageInfo?.hasNextPage),
+        hasPrevious: page > 1,
+        total: totalFiltered,
+        totalNoticias: totalFiltered,
+        totalPages,
+        currentPage: page,
+        itemsPerPage
+      }
+    };
+    
+  } catch (error) {
+    console.error('❌ Error obteniendo noticias:', error.message);
+    if (error.response?.errors) {
+      console.error('GraphQL Errors:', JSON.stringify(error.response.errors, null, 2));
+    }
+    
+    return {
+      noticias: [],
+      pageInfo: {
+        hasNext: false,
+        hasPrevious: page > 1,
+        total: 0,
+        totalNoticias: 0,
+        totalPages: 0,
+        currentPage: page,
+        itemsPerPage
+      }
+    };
+  }
+}
+
+// Función fallback usando cursor pagination para noticias
+async function getNoticiasPaginadasConCursor({ page = 1, itemsPerPage = 12, categoria = null } = {}) {
+  console.log(`🔄 [CURSOR FALLBACK] Simulando offset con cursor para página ${page} de noticias`);
+  
+  const whereClause = categoria
+    ? `where: {orderby: {field: DATE, order: DESC}, categoryName: "${categoria}"}`
+    : `where: {orderby: {field: DATE, order: DESC}}`;
+  
+  const QUERY_CURSOR = gql`
+    query GetNoticiasCursor($first: Int!, $after: String) {
+      noticias(first: $first, after: $after, ${whereClause}) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        nodes {
+          id
+          slug
+          title
+          date
+          content
+          featuredImage {
+            node {
+              sourceUrl(size: MEDIUM)
+              altText
+            }
+          }
+          categoriasNoticia {
+            nodes {
+              id
+              name
+              slug
+            }
+          }
+
+          seo {
+            title
+            metaDesc
+          }
+        }
+      }
+    }
+  `;
+
+  try {
+    const startIndex = (page - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    
+    // Cargar suficientes noticias para cubrir la página solicitada
+    const itemsToLoad = Math.min(page * itemsPerPage + 50, 500); // Máximo 500 para evitar timeouts
+    
+    console.log(`📄 [CURSOR] Página ${page}: Carga directa de ${itemsToLoad} items`);
+    
+    const variables = { first: itemsToLoad };
+    const rawData = await request(WORDPRESS_GRAPHQL_URL, QUERY_CURSOR, variables);
+    
+    const allNodes = rawData?.noticias?.nodes || [];
+    const pageInfo = rawData?.noticias?.pageInfo;
+    
+    if (!Array.isArray(allNodes) || allNodes.length === 0) {
+      console.warn('⚠️ [CURSOR] No se obtuvieron noticias');
+      return {
+        noticias: [],
+        pageInfo: {
+          hasNext: false,
+          hasPrevious: page > 1,
+          total: 0,
+          totalNoticias: 0,
+          totalPages: 0,
+          currentPage: page,
+          itemsPerPage
+        }
+      };
+    }
+    
+    // Realizar el slice para obtener solo los elementos de esta página
+    const pageNodes = allNodes.slice(startIndex, endIndex);
+    
+    console.log(`🔍 [DEBUG SLICE] Página ${page} de noticias:`);
+    console.log(`   - Total cargadas: ${allNodes.length}`);
+    console.log(`   - Slice: [${startIndex}:${endIndex}] = ${pageNodes.length} items`);
+    
+    const noticiasProcesadas = pageNodes.map((n) => {
+      const imgUrl = processImageURL(n.featuredImage?.node?.sourceUrl) || '/images/placeholder-news.jpg';
+      const alt = n.featuredImage?.node?.altText || n.seo?.title || n.title;
+      
+      let cleanExcerpt = '';
+      if (n.content) {
+        cleanExcerpt = n.content.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+        cleanExcerpt = cleanExcerpt.substring(0, 160) + (cleanExcerpt.length > 160 ? '...' : '');
+      } else {
+        cleanExcerpt = n.seo?.metaDesc || `Lee la noticia "${n.title || 'desconocida'}".`;
+      }
+
+      return {
+        ...n,
+        imagenDestacadaUrl: imgUrl,
+        featuredImage: { node: { sourceUrl: imgUrl, altText: alt } },
+        excerpt: cleanExcerpt,
+        categorias: n.categoriasNoticia,
+        // author: null, // Campo no disponible en el tipo Noticia
+        seo: n.seo?.title ? n.seo : {
+          title: `${n.title || 'Noticia'} | VinylStation Noticias`,
+          metaDesc: cleanExcerpt
+        }
+      };
+    });
+    
+    // Estimar total y páginas
+    const estimatedTotal = pageInfo?.hasNextPage ? 500 : allNodes.length; // Estimación conservadora
+    const totalPages = Math.ceil(estimatedTotal / itemsPerPage);
+    const hasNext = pageNodes.length === itemsPerPage && (pageInfo?.hasNextPage || startIndex + itemsPerPage < allNodes.length);
+    
+    return {
+      noticias: noticiasProcesadas,
+      pageInfo: {
+        hasNext,
+        hasPrevious: page > 1,
+        total: estimatedTotal,
+        totalNoticias: estimatedTotal,
+        totalPages,
+        currentPage: page,
+        itemsPerPage
+      }
+    };
+    
+  } catch (error) {
+    console.error('❌ [CURSOR ERROR] Error en fallback cursor:', error.message);
+    if (error.response?.errors) {
+      console.error('GraphQL Errors (cursor):', JSON.stringify(error.response.errors, null, 2));
+    }
+    
+    return {
+      noticias: [],
+      pageInfo: {
+        hasNext: false,
+        hasPrevious: page > 1,
+        total: 0,
+        totalNoticias: 0,
+        totalPages: 0,
+        currentPage: page,
+        itemsPerPage
+      }
+    };
+  }
+}
+
 export async function getNoticias({ limit = 20000 } = {}) {
   console.log(`📰 Obteniendo HASTA ${limit} noticias con paginación...`);
   
@@ -1096,7 +1732,7 @@ export async function getNoticias({ limit = 20000 } = {}) {
         featuredImage: { node: { sourceUrl: imgUrl, altText: alt } }, 
         excerpt: cleanExcerpt,
         categories: n.categoriasNoticia?.nodes || [], 
-        author: null, 
+        // author: null, // Campo no disponible en el tipo Noticia 
         seo: n.seo?.title ? n.seo : {
           title: `${n.title || 'Noticia'} | VinylStation Noticias`,
           metaDesc: cleanExcerpt
@@ -1187,7 +1823,7 @@ export async function getNoticiaBySlug(slug) {
       featuredImage: { node: { sourceUrl: imgUrl, altText: alt } },
       excerpt: cleanExcerpt,
       categories: noticia.categoriasNoticia?.nodes || [],
-      author: null, 
+      // author: null, // Campo no disponible en el tipo Noticia 
       seo: noticia.seo?.title ? noticia.seo : {
         title: `${noticia.title || 'Noticia'} | VinylStation Noticias`,
         metaDesc: cleanExcerpt
@@ -1247,6 +1883,7 @@ export default {
   getEmisora,
   getMenuNavegacion,
   getNoticias,
+  getNoticiasPaginadas,
   getNoticiaBySlug,
   getCategoriasNoticias,
   getVinilos, 
@@ -1254,4 +1891,5 @@ export default {
   getVinilosPaginados,
   getVinilosPaginadosOptimizado: getVinilosPaginados,
   getArtistasUnicos,
+  getTodosLosVinilos,
 };

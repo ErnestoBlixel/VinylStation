@@ -1,121 +1,670 @@
 ---
 // Página de inicio - SOLO datos reales desde WordPress
 import MainLayout from '../layouts/MainLayout.astro';
-import { getSiteInfo, getPageData } from '../lib/wordpress';
+import { getSiteInfo, getPageData, getProgramas, getNoticiasPaginadas } from '../lib/wordpress';
+
+// Helper para convertir "<p>Hola</p>" → "Hola"
+const stripHtml = (html) => {
+  if (!html) return '';
+  return html.replace(/<[^>]*>/g, '').trim();
+};
 
 // Variables para controlar errores
 let hasError = false;
 let errorMessage = '';
 let siteInfo = null;
 let pageData = null;
+let programasData = null;
+let noticiasData = null;
 
 try {
-  console.log('🔄 Obteniendo datos desde WordPress...');
-  
   // Obtener información del sitio
   siteInfo = await getSiteInfo();
-  console.log('✅ SiteInfo obtenido:', siteInfo);
-  
   // Obtener datos de la página home
   pageData = await getPageData('home');
-  console.log('✅ PageData obtenido:', pageData);
-  
+  // Obtener todos los programas para el grid
+  programasData = await getProgramas({ limit: 50 });
+  // Obtener noticias recientes para el slider
+  noticiasData = await getNoticiasPaginadas({ page: 1, itemsPerPage: 12 });
   // Verificar que tenemos los datos mínimos necesarios
-  if (!siteInfo || !siteInfo.title) {
-    throw new Error('No se pudo obtener el título del sitio desde WordPress');
-  }
-  
-  if (!siteInfo.description) {
-    throw new Error('No se pudo obtener la descripción del sitio desde WordPress');
-  }
-  
-  console.log('✅ Todos los datos obtenidos correctamente');
-  
+  if (!siteInfo || !siteInfo.title) throw new Error('No se pudo obtener el título del sitio desde WordPress');
+  if (!siteInfo.description) throw new Error('No se pudo obtener la descripción del sitio desde WordPress');
 } catch (error) {
-  console.error('❌ Error obteniendo datos de WordPress:', error);
   hasError = true;
   errorMessage = `Error conectando con WordPress: ${error.message}`;
 }
 
-// USAR SOLO DATOS REALES - Sin fallbacks inventados
-// Priorizar título del sitio sobre título de página para el H1
+// Obtener programas y noticias del resultado
+const programas = hasError ? [] : (programasData?.programas || []);
+const noticias = hasError ? [] : (noticiasData?.noticias || []);
+
+// Helper para formatear fecha
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
+
+// Estas variables SIEMPRE existen
 const heroTitle = hasError ? null : (siteInfo?.title || pageData?.title);
 const heroDescription = hasError ? null : (siteInfo?.description || pageData?.excerpt);
-const logoImage = hasError ? null : (siteInfo?.logo?.url || pageData?.featuredImage?.url);
-const logoAlt = hasError ? null : (siteInfo?.logo?.altText || pageData?.featuredImage?.altText);
+const logoImage = hasError ? null : (siteInfo?.logo?.url || pageData?.featuredImage?.url || '');
+const logoAlt = hasError ? '' : (siteInfo?.logo?.altText || pageData?.featuredImage?.altText || 'Logo');
 
 // SEO usando datos reales
-const pageTitle = hasError ? 'Error - VinylStation' : (pageData?.seo?.title || `${siteInfo.title}`);
-const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.metaDesc || siteInfo.description);
+const pageTitle = hasError ? 'Error - VinylStation' : (pageData?.seo?.title || `${siteInfo?.title}`);
+const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.metaDesc || siteInfo?.description);
 ---
 
 <MainLayout title={pageTitle} description={pageDescription}>
-  <div class="container">
-    {hasError ? (
-      <!-- Vista de ERROR -->
-      <div class="error-container">
-        <div class="error-icon">⚠️</div>
-        <h1 class="error-title">Error de Conexión</h1>
-        <p class="error-message">{errorMessage}</p>
-        <div class="error-details">
-          <h3>Detalles técnicos:</h3>
-          <ul>
-            <li>Verificar conexión a: https://cms.vinylstation.es/graphql</li>
-            <li>Comprobar que WordPress esté funcionando</li>
-            <li>Revisar configuración de GraphQL</li>
-          </ul>
+  <!-- Contenedor principal unificado -->
+  <div class="main-content">
+    <div class="container hero-container">
+      {hasError ? (
+        // Vista de ERROR
+        <div class="error-container">
+          <div class="error-icon">⚠️</div>
+          <h1 class="error-title">Error de Conexión</h1>
+          <p class="error-message">{errorMessage}</p>
+          <div class="error-details">
+            <h3>Detalles técnicos:</h3>
+            <ul>
+              <li>Verificar conexión a: https://cms.vinylstation.es/graphql</li>
+              <li>Comprobar que WordPress esté funcionando</li>
+              <li>Revisar configuración de GraphQL</li>
+            </ul>
+          </div>
+          <div class="error-actions">
+            <button onclick="window.location.reload()" class="btn primary-btn">
+              🔄 Reintentar
+            </button>
+          </div>
         </div>
-        <div class="error-actions">
-          <button onclick="window.location.reload()" class="btn primary-btn">
-            🔄 Reintentar
-          </button>
+      ) : (
+        // Vista NORMAL con datos reales
+        <header class="page-header">
+          {true && (
+            <div class="site-icon-container">
+              <img src="/images/logos/logo vinylstation.png" alt="VinylStation Logo" class="site-icon" />
+            </div>
+          )}
+          <h1>{heroTitle}</h1>
+          <p class="page-description">{heroDescription}</p>
+          <div class="radio-player-widget">
+            <div class="radio-player-minimal">
+              <audio id="radio-audio-index" preload="none" data-stream-url="https://stream.zeno.fm/4g7qxnxrloluv"></audio>
+              
+              <div class="player-controls">
+                <button id="play-pause-index" class="play-button" aria-label="Reproducir/Pausar">
+                  <svg id="play-icon-index" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="5,3 19,12 5,21"></polygon>
+                  </svg>
+                  <svg id="pause-icon-index" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                    <rect x="6" y="4" width="4" height="16"></rect>
+                    <rect x="14" y="4" width="4" height="16"></rect>
+                  </svg>
+                </button>
+                
+                <div class="status-info">
+                  <span id="status-text-index">Radio en vivo</span>
+                  <div id="loading-indicator-index" class="loading-dot" style="display: none;"></div>
+                </div>
+                
+                <div class="volume-control">
+                  <button id="volume-toggle-index" class="volume-button" aria-label="Silenciar/Activar sonido">
+                    <svg id="volume-on-index" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polygon points="11,5 6,9 2,9 2,15 6,15 11,19"></polygon>
+                      <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                    </svg>
+                    <svg id="volume-off-index" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                      <polygon points="11,5 6,9 2,9 2,15 6,15 11,19"></polygon>
+                      <line x1="23" y1="9" x2="17" y2="15"></line>
+                      <line x1="17" y1="9" x2="23" y2="15"></line>
+                    </svg>
+                  </button>
+                  <input type="range" id="volume-slider-index" class="volume-slider" min="0" max="1" step="0.1" value="0.7">
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
+      )}
+    </div>
+    
+    <!-- Sección de Programas integrada sin líneas de corte -->
+    <section class="programs-section">
+      <div class="container">
+        <div class="section-header">
+          <h2>Nuestros Programas de Radio</h2>
+          <p>Sumérgete en la magia del vinilo con nuestra programación especializada. Cada programa es una experiencia única que celebra la cultura musical en formato analógico.</p>
+        </div>
+      
+        <!-- Grid de Programas - 2 filas x 6 columnas -->
+        <div class="programs-grid">
+          {programas.length > 0 ? (
+            programas.slice(0, 12).map((programa) => {
+              // Imagen del programa
+              const imagen =
+                programa.imagenPrincipalUrl ||
+                programa.imagenPrincipal?.sourceUrl ||
+                '/images/placeholder-radio.jpg';
+
+              return (
+                <div class="program-card-grid">
+                  <div class="program-image-grid">
+                    <img 
+                      src={imagen} 
+                      alt={programa.imagenPrincipal?.altText || programa.title}
+                      onerror="this.src='/images/placeholder-radio.jpg'"
+                    />
+                    <div class="program-overlay-grid">
+                      <button class="play-btn-grid">▶️</button>
+                    </div>
+                  </div>
+                  <div class="program-title-grid">
+                    <h3>{programa.title}</h3>
+                  </div>
+                </div>
+              );
+            })
+          ) : (
+            <div class="no-programs">
+              <div class="no-programs-icon">📻</div>
+              <h3>No hay programas disponibles</h3>
+              <p>Los programas aparecerán aquí cuando sean publicados en WordPress.</p>
+            </div>
+          )}
+        </div>
+      
+        <div class="section-footer">
+          <a href="/programas" class="btn primary-btn">Ver Todos los Programas</a>
         </div>
       </div>
-    ) : (
-      <!-- Vista NORMAL con datos reales -->
-      <header class="page-header">
-        {logoImage && (
-          <div class="site-icon-container">
-            <img src={logoImage} alt={logoAlt || 'Logo'} class="site-icon">
-          </div>
-        )}
-        
-        <h1>{heroTitle}</h1>
-        <p class="page-description">{heroDescription}</p>
-        
-        <!-- Mostrar información de debug -->
-        <div class="debug-info">
-          <details>
-            <summary>🔍 Debug Info (click para ver)</summary>
-            <div class="debug-content">
-              <p><strong>Título del sitio:</strong> {siteInfo?.title || 'No obtenido'}</p>
-              <p><strong>Descripción:</strong> {siteInfo?.description || 'No obtenido'}</p>
-              <p><strong>URL del logo:</strong> {siteInfo?.logo?.url || 'No obtenido'}</p>
-              <p><strong>Fuente del logo:</strong> {siteInfo?.logo?.source || 'No especificado'}</p>
-              {siteInfo?.logo?.errorMessage && (
-                <p><strong>Error del logo:</strong> {siteInfo.logo.errorMessage}</p>
+    </section>
+    
+    <!-- Sección de Noticias -->
+    <section class="news-section">
+      <div class="container">
+        <div class="section-header">
+          <h2>Últimas Noticias</h2>
+          <p>Mantente al día con las últimas novedades del mundo del vinilo, lanzamientos exclusivos y todo lo que acontece en la escena musical analógica.</p>
+        </div>
+      
+        <!-- Slider de Noticias -->
+        <div class="news-slider">
+          <div class="slider-viewport">
+            <div class="slider-container" id="newsSlider">
+              {noticias.length > 0 ? (
+                noticias.map((noticia) => {
+                  // imagen destacada
+                  const imagen =
+                    noticia.imagenDestacadaUrl ||
+                    noticia.featuredImage?.node?.sourceUrl ||
+                    '/images/placeholder-news.jpg';
+
+                  // descripción como texto limpio
+                  const rawDesc =
+                    noticia.excerpt ||
+                    `Noticia "${noticia.title}" - Últimas noticias de VinylStation`;
+                  const descripcion = stripHtml(rawDesc);
+
+                  // categorías
+                  const categoriasNoticia = noticia.categorias?.nodes || [];
+                  const fechaPublicacion = formatDate(noticia.date);
+                  const categoria = categoriasNoticia.length > 0 ? categoriasNoticia[0].name : 'Música';
+
+                  return (
+                    <article class="news-card-slider">
+                      <div class="news-image-slider">
+                        <img
+                          src={imagen}
+                          alt={noticia.featuredImage?.node?.altText || noticia.title}
+                          loading="lazy"
+                          onerror="this.src='/images/placeholder-news.jpg'"
+                        />
+                        <div class="news-overlay-slider">
+                          <div class="news-category">{categoria}</div>
+                        </div>
+                      </div>
+                      <div class="news-content-slider">
+                        <div class="news-meta">
+                          <span class="news-date">{fechaPublicacion}</span>
+                          <span class="news-author">VinylStation</span>
+                        </div>
+                        <h3>{noticia.title}</h3>
+                        <p class="news-excerpt">{descripcion}</p>
+                        <a href={`/noticias/${noticia.slug || noticia.id}`} class="news-link">Leer más</a>
+                      </div>
+                    </article>
+                  );
+                })
+              ) : (
+                <div class="no-news-slider">
+                  <div class="no-news-icon">📰</div>
+                  <h3>No hay noticias disponibles</h3>
+                  <p>Las noticias aparecerán aquí cuando sean publicadas en WordPress.</p>
+                </div>
               )}
-              {siteInfo?.logo?.databaseId && (
-                <p><strong>ID del logo:</strong> {siteInfo.logo.databaseId}</p>
-              )}
-              <p><strong>Página obtenida:</strong> {pageData?.title || 'No obtenido'}</p>
             </div>
-          </details>
+          </div>
+          
+          <!-- Controles del slider de noticias -->
+          <div class="slider-controls news-controls">
+            <button class="slider-btn prev-btn" id="newsPrevBtn">‹</button>
+            <div class="slider-dots" id="newsSliderDots"></div>
+            <button class="slider-btn next-btn" id="newsNextBtn">›</button>
+          </div>
         </div>
-        
-        <div class="hero-actions">
-          <a href="/vinilos" class="btn primary-btn">Explorar Vinilos</a>
-          <a href="/programas" class="btn secondary-btn">Ver Programas</a>
+      
+        <div class="section-footer">
+          <a href="/noticias" class="btn primary-btn">Ver Todas las Noticias</a>
         </div>
-      </header>
-    )}
+      </div>
+    </section>
   </div>
 </MainLayout>
 
+<!-- Script para el grid de programas, slider de noticias y reproductor de radio -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const playButtons = document.querySelectorAll('.play-btn-grid');
+    const newsCards = document.querySelectorAll('.news-card-slider');
+    
+    // === REPRODUCTOR DE RADIO SIMPLE (INDEX) ===
+    class IndexRadioPlayer {
+      constructor() {
+        this.audio = document.getElementById('radio-audio-index');
+        this.playPauseBtn = document.getElementById('play-pause-index');
+        this.playIcon = document.getElementById('play-icon-index');
+        this.pauseIcon = document.getElementById('pause-icon-index');
+        this.statusText = document.getElementById('status-text-index');
+        this.loadingIndicator = document.getElementById('loading-indicator-index');
+        this.volumeToggle = document.getElementById('volume-toggle-index');
+        this.volumeOnIcon = document.getElementById('volume-on-index');
+        this.volumeOffIcon = document.getElementById('volume-off-index');
+        this.volumeSlider = document.getElementById('volume-slider-index');
+        
+        this.isPlaying = false;
+        this.isLoading = false;
+        
+        this.init();
+      }
+      
+      init() {
+        if (!this.audio) return;
+        const streamUrl = this.audio.getAttribute('data-stream-url');
+        this.audio.src = streamUrl;
+        this.audio.volume = parseFloat(this.volumeSlider?.value || 0.7);
+        
+        this.bindEvents();
+      }
+      
+      bindEvents() {
+        // Play/Pause
+        this.playPauseBtn?.addEventListener('click', () => this.togglePlayPause());
+        
+        // Volume
+        this.volumeToggle?.addEventListener('click', () => this.toggleMute());
+        this.volumeSlider?.addEventListener('input', (e) => this.updateVolume(e.target.value));
+        
+        // Audio events
+        this.audio?.addEventListener('loadstart', () => this.setLoading(true));
+        this.audio?.addEventListener('canplay', () => this.setLoading(false));
+        this.audio?.addEventListener('play', () => this.setPlaying(true));
+        this.audio?.addEventListener('pause', () => this.setPlaying(false));
+        this.audio?.addEventListener('error', () => this.handleError());
+        this.audio?.addEventListener('stalled', () => this.setLoading(true));
+        this.audio?.addEventListener('waiting', () => this.setLoading(true));
+        this.audio?.addEventListener('playing', () => this.setLoading(false));
+      }
+      
+      togglePlayPause() {
+        if (!this.audio) return;
+        if (this.isPlaying) {
+          this.audio.pause();
+        } else {
+          this.audio.play().catch(() => this.handleError());
+        }
+      }
+      
+      setPlaying(playing) {
+        this.isPlaying = playing;
+        
+        if (playing) {
+          if (this.playIcon) this.playIcon.style.display = 'none';
+          if (this.pauseIcon) this.pauseIcon.style.display = 'block';
+          if (this.statusText) this.statusText.textContent = 'En vivo';
+          this.playPauseBtn?.classList.add('playing');
+        } else {
+          if (this.playIcon) this.playIcon.style.display = 'block';
+          if (this.pauseIcon) this.pauseIcon.style.display = 'none';
+          if (this.statusText) this.statusText.textContent = 'Radio en vivo';
+          this.playPauseBtn?.classList.remove('playing');
+        }
+      }
+      
+      setLoading(loading) {
+        this.isLoading = loading;
+        
+        if (loading) {
+          if (this.loadingIndicator) this.loadingIndicator.style.display = 'block';
+          if (this.statusText) this.statusText.textContent = 'Conectando...';
+        } else {
+          if (this.loadingIndicator) this.loadingIndicator.style.display = 'none';
+          if (this.isPlaying && this.statusText) {
+            this.statusText.textContent = 'En vivo';
+          }
+        }
+      }
+      
+      toggleMute() {
+        if (!this.audio) return;
+        this.audio.muted = !this.audio.muted;
+        
+        if (this.audio.muted) {
+          if (this.volumeOnIcon) this.volumeOnIcon.style.display = 'none';
+          if (this.volumeOffIcon) this.volumeOffIcon.style.display = 'block';
+        } else {
+          if (this.volumeOnIcon) this.volumeOnIcon.style.display = 'block';
+          if (this.volumeOffIcon) this.volumeOffIcon.style.display = 'none';
+        }
+      }
+      
+      updateVolume(value) {
+        if (!this.audio) return;
+        this.audio.volume = parseFloat(value);
+        this.audio.muted = value == 0;
+        
+        if (value == 0) {
+          if (this.volumeOnIcon) this.volumeOnIcon.style.display = 'none';
+          if (this.volumeOffIcon) this.volumeOffIcon.style.display = 'block';
+        } else {
+          if (this.volumeOnIcon) this.volumeOnIcon.style.display = 'block';
+          if (this.volumeOffIcon) this.volumeOffIcon.style.display = 'none';
+        }
+      }
+      
+      handleError() {
+        this.setLoading(false);
+        this.setPlaying(false);
+        if (this.statusText) this.statusText.textContent = 'Error de conexión';
+        
+        // Reintentar después de 3 segundos
+        setTimeout(() => {
+          if (this.statusText) this.statusText.textContent = 'Radio en vivo';
+        }, 3000);
+      }
+    }
+    
+    // Inicializar reproductor del index
+    new IndexRadioPlayer();
+    
+    // === PROGRAMAS ===
+    // Click en play buttons de programas
+    playButtons.forEach((playBtn, index) => {
+      playBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        
+        // Animación del botón
+        playBtn.style.transform = 'scale(0.8) rotate(15deg)';
+        setTimeout(() => {
+          playBtn.style.transform = '';
+        }, 200);
+        
+        // Obtener título del programa
+        const card = playBtn.closest('.program-card-grid');
+        const title = card.querySelector('.program-title-grid h3')?.textContent;
+        
+        console.log(`🎵 Reproduciendo programa: ${title}`);
+      });
+    });
+    
+    // === SLIDER DE NOTICIAS ===
+    const newsSlider = document.getElementById('newsSlider');
+    const newsPrevBtn = document.getElementById('newsPrevBtn');
+    const newsNextBtn = document.getElementById('newsNextBtn');
+    const newsDotsContainer = document.getElementById('newsSliderDots');
+    
+    if (newsSlider && newsPrevBtn && newsNextBtn && newsDotsContainer) {
+      const newsSlides = newsSlider.querySelectorAll('.news-card-slider');
+      const totalSlides = newsSlides.length;
+      
+      // Si no hay noticias, ocultar controles
+      if (totalSlides === 0) {
+        newsPrevBtn.style.display = 'none';
+        newsNextBtn.style.display = 'none';
+        newsDotsContainer.style.display = 'none';
+        console.log('📰 No hay noticias disponibles - controles ocultos');
+        return;
+      }
+      
+      let currentSlide = 0;
+      let isTransitioning = false;
+      let autoSlideInterval;
+      
+      console.log(`📰 Slider de noticias iniciado con ${totalSlides} noticias`);
+      
+      // Configuración responsive
+      function getVisibleSlides() {
+        const containerWidth = newsSlider.parentElement.offsetWidth;
+        if (containerWidth >= 1200) return 4;
+        if (containerWidth >= 992) return 3;
+        if (containerWidth >= 768) return 2;
+        return 1;
+      }
+      
+      function getMaxSlide() {
+        const visibleSlides = getVisibleSlides();
+        return Math.max(0, totalSlides - visibleSlides);
+      }
+      
+      // Crear dots
+      function createDots() {
+        newsDotsContainer.innerHTML = '';
+        const maxSlides = getMaxSlide() + 1;
+        
+        // Solo crear dots si hay más slides que los visibles
+        if (maxSlides <= 1) {
+          newsDotsContainer.style.display = 'none';
+          return;
+        }
+        
+        newsDotsContainer.style.display = 'flex';
+        const step = Math.max(1, Math.floor(maxSlides / 8)); // Máximo 8 dots
+        
+        for (let i = 0; i < maxSlides; i += step) {
+          const dot = document.createElement('div');
+          dot.className = `dot ${i === 0 ? 'active' : ''}`;
+          dot.setAttribute('data-slide', i);
+          dot.addEventListener('click', () => goToSlide(i));
+          dot.title = `Noticia ${i + 1}`;
+          newsDotsContainer.appendChild(dot);
+        }
+      }
+      
+      // Actualizar dots
+      function updateDots() {
+        const dots = newsDotsContainer.querySelectorAll('.dot');
+        dots.forEach(dot => {
+          const slideIndex = parseInt(dot.getAttribute('data-slide'));
+          dot.classList.toggle('active', Math.abs(slideIndex - currentSlide) < 2);
+        });
+      }
+      
+      // Actualizar botones
+      function updateButtons() {
+        const maxSlide = getMaxSlide();
+        
+        if (maxSlide <= 0) {
+          newsPrevBtn.style.display = 'none';
+          newsNextBtn.style.display = 'none';
+          return;
+        }
+        
+        newsPrevBtn.style.display = 'flex';
+        newsNextBtn.style.display = 'flex';
+        
+        newsPrevBtn.disabled = currentSlide <= 0;
+        newsNextBtn.disabled = currentSlide >= maxSlide;
+        
+        newsPrevBtn.style.opacity = currentSlide <= 0 ? '0.5' : '1';
+        newsNextBtn.style.opacity = currentSlide >= maxSlide ? '0.5' : '1';
+      }
+      
+      // Ir a slide específico
+      function goToSlide(slideIndex, smooth = true) {
+        if (isTransitioning || totalSlides === 0) return;
+        
+        const maxSlide = getMaxSlide();
+        currentSlide = Math.max(0, Math.min(slideIndex, maxSlide));
+        
+        const slideWidth = newsSlides[0].offsetWidth;
+        const gap = 24; // 1.5rem
+        const translateX = currentSlide * (slideWidth + gap);
+        
+        if (smooth) {
+          isTransitioning = true;
+          setTimeout(() => {
+            isTransitioning = false;
+          }, 600);
+        }
+        
+        newsSlider.style.transform = `translateX(-${translateX}px)`;
+        
+        updateDots();
+        updateButtons();
+      }
+      
+      // Navegar slides
+      function nextSlide() {
+        const maxSlide = getMaxSlide();
+        if (currentSlide >= maxSlide) {
+          goToSlide(0); // Loop al inicio
+        } else {
+          goToSlide(currentSlide + 1);
+        }
+      }
+      
+      function prevSlide() {
+        const maxSlide = getMaxSlide();
+        if (currentSlide <= 0) {
+          goToSlide(maxSlide); // Loop al final
+        } else {
+          goToSlide(currentSlide - 1);
+        }
+      }
+      
+      // Event listeners
+      newsNextBtn.addEventListener('click', nextSlide);
+      newsPrevBtn.addEventListener('click', prevSlide);
+      
+      // Auto-slide
+      function startAutoSlide() {
+        if (totalSlides <= getVisibleSlides()) return;
+        autoSlideInterval = setInterval(nextSlide, 3000); // Cada 3 segundos
+      }
+      
+      function stopAutoSlide() {
+        if (autoSlideInterval) {
+          clearInterval(autoSlideInterval);
+          autoSlideInterval = null;
+        }
+      }
+      
+      // Control de auto-slide con hover
+      newsSlider.addEventListener('mouseenter', stopAutoSlide);
+      newsSlider.addEventListener('mouseleave', startAutoSlide);
+      
+      // Responsive
+      let resizeTimeout;
+      window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(() => {
+          goToSlide(currentSlide, false);
+          createDots();
+        }, 150);
+      });
+      
+      // Touch/swipe support
+      let touchStartX = 0;
+      let isDragging = false;
+      
+      newsSlider.addEventListener('touchstart', (e) => {
+        touchStartX = e.touches[0].clientX;
+        isDragging = true;
+        stopAutoSlide();
+      }, { passive: true });
+      
+      newsSlider.addEventListener('touchend', (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+        
+        const touchEndX = e.changedTouches[0].clientX;
+        const diffX = touchStartX - touchEndX;
+        
+        if (Math.abs(diffX) > 50) {
+          if (diffX > 0) {
+            nextSlide();
+          } else {
+            prevSlide();
+          }
+        }
+        
+        startAutoSlide();
+      }, { passive: true });
+      
+      // Click en noticias
+      newsCards.forEach((card) => {
+        card.addEventListener('click', (e) => {
+          if (!e.target.classList.contains('news-link')) {
+            const link = card.querySelector('.news-link');
+            if (link) {
+              window.location.href = link.href;
+            }
+          }
+        });
+      });
+      
+      // Inicialización
+      createDots();
+      updateButtons();
+      goToSlide(0, false);
+      startAutoSlide();
+      
+      console.log(`✅ Slider de noticias inicializado: ${totalSlides} noticias`);
+    }
+    
+    console.log(`✅ Página inicializada: ${playButtons.length} programas, ${newsCards.length} noticias`);
+  });
+</script>
+
 <style>
+  /* Contenedor principal unificado */
+  .main-content {
+    background: linear-gradient(
+      135deg,
+      var(--color-bg) 0%,
+      rgba(0, 0, 0, 0.02) 50%,
+      var(--color-bg) 100%
+    );
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+  
   .container {
     max-width: 1200px;
     margin: 0 auto;
+    padding: 0 1rem;
+    position: relative;
+    z-index: 1;
+  }
+  
+  .hero-container {
     padding: 4rem 1rem;
     min-height: 70vh;
     display: flex;
@@ -138,7 +687,7 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
   }
   
   .error-title {
-    color: #ff3333;
+    color: var(--title-color);
     font-size: 2.5rem;
     margin-bottom: 1rem;
   }
@@ -163,7 +712,7 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
   }
   
   .error-details h3 {
-    color: #ff3333;
+    color: var(--title-color);
     margin-bottom: 1rem;
   }
   
@@ -203,7 +752,7 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
   h1 {
     font-size: 4rem;
     margin: 0 0 1.5rem;
-    color: var(--color-primary, #ff3333);
+    color: var(--title-color);
     position: relative;
     display: inline-block;
     font-weight: 800;
@@ -219,7 +768,7 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
     height: 4px;
     background: linear-gradient(90deg, 
       transparent, 
-      var(--color-primary, #ff3333), 
+      var(--title-color),
       transparent);
     border-radius: 2px;
   }
@@ -232,45 +781,151 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
     line-height: 1.6;
   }
 
-  /* === DEBUG INFO === */
-  .debug-info {
+  /* === RADIO PLAYER WIDGET - SIMPLE COMO HEADER === */
+  .radio-player-widget {
     margin: 2rem auto;
-    max-width: 600px;
+    max-width: 500px;
   }
   
-  .debug-info details {
-    background: #1a1a1a;
-    border-radius: 8px;
-    border: 1px solid #333;
+  .radio-player-minimal {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 12px 16px;
+    min-width: 280px;
+    max-width: 320px;
+    margin: 0 auto;
   }
   
-  .debug-info summary {
-    padding: 1rem;
+  .player-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .play-button {
+    background: var(--color-primary, #ff3333);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    color: #888;
-    font-size: 0.9rem;
-    transition: color 0.3s ease;
+    transition: all 0.2s ease;
+    color: white;
   }
   
-  .debug-info summary:hover {
-    color: #ff3333;
+  .play-button:hover {
+    background: var(--color-secondary, #bb2424);
+    transform: scale(1.05);
   }
   
-  .debug-content {
-    padding: 0 1rem 1rem;
-    border-top: 1px solid #333;
-    background: #0d0d0d;
+  .play-button.playing {
+    background: var(--color-secondary, #bb2424);
   }
   
-  .debug-content p {
-    margin: 0.5rem 0;
-    font-size: 0.9rem;
-    color: #ccc;
-    font-family: monospace;
+  .status-info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
   }
   
-  .debug-content strong {
-    color: #ff3333;
+  #status-text {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--color-text, #ffffff);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  .loading-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--color-primary, #ff3333);
+    border-radius: 50%;
+    animation: pulse 1.5s infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.2); }
+  }
+  
+  .volume-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .volume-button {
+    background: none;
+    border: none;
+    color: var(--color-text, #ffffff);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    opacity: 0.7;
+  }
+  
+  .volume-button:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
+  }
+  
+  .volume-slider {
+    width: 60px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+    -webkit-appearance: none;
+  }
+  
+  .volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--color-primary, #ff3333);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+  
+  .volume-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+  }
+  
+  .volume-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: var(--color-primary, #ff3333);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+  }
+  
+  /* Responsive */
+  @media (max-width: 480px) {
+    .radio-player-minimal {
+      min-width: 240px;
+      padding: 10px 12px;
+    }
+    
+    .volume-slider {
+      width: 50px;
+    }
+    
+    #status-text {
+      font-size: 13px;
+    }
   }
 
   .hero-actions {
@@ -323,10 +978,480 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
     box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
   }
   
+  /* === ESTILOS PARA LA SECCIÓN DE PROGRAMAS === */
+  .programs-section {
+    padding: 0;
+    background: transparent;
+    position: relative;
+    z-index: 1;
+    margin-top: -2rem;
+  }
+  
+  .programs-section .container {
+    padding: 4rem 1rem 6rem;
+  }
+  
+  .section-header {
+    text-align: left;
+    margin-bottom: 3rem;
+    position: relative;
+  }
+  
+  .section-header h2 {
+    font-size: 3.2rem;
+    margin-bottom: 1.5rem;
+    color: var(--title-color);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    position: relative;
+    display: inline-block;
+    animation: titleSlideIn 1s ease-out;
+  }
+  
+  @keyframes titleSlideIn {
+    0% { transform: translateX(-30px); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+  }
+  
+  .section-header p {
+    font-size: 1.3rem;
+    color: #777;
+    max-width: 800px;
+    line-height: 1.6;
+    margin: 2rem 0 0;
+    animation: textFadeIn 1s ease-out 0.3s both;
+  }
+  
+  @keyframes textFadeIn {
+    0% { transform: translateY(20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+  
+  /* Grid de Programas - 2 filas x 6 columnas */
+  .programs-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 1.5rem;
+    padding: 2rem 0;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+  
+  /* Program Cards Grid - Diseño limpio */
+  .program-card-grid {
+    background: var(--color-card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    border: 1px solid rgba(255, 51, 51, 0.1);
+    animation: cardSlideIn 0.6s ease-out both;
+  }
+  
+  @keyframes cardSlideIn {
+    0% { transform: translateY(30px) scale(0.9); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
+  
+  /* Delays escalonados para efecto visual */
+  .program-card-grid:nth-child(1) { animation-delay: 0.1s; }
+  .program-card-grid:nth-child(2) { animation-delay: 0.15s; }
+  .program-card-grid:nth-child(3) { animation-delay: 0.2s; }
+  .program-card-grid:nth-child(4) { animation-delay: 0.25s; }
+  .program-card-grid:nth-child(5) { animation-delay: 0.3s; }
+  .program-card-grid:nth-child(6) { animation-delay: 0.35s; }
+  .program-card-grid:nth-child(7) { animation-delay: 0.4s; }
+  .program-card-grid:nth-child(8) { animation-delay: 0.45s; }
+  .program-card-grid:nth-child(9) { animation-delay: 0.5s; }
+  .program-card-grid:nth-child(10) { animation-delay: 0.55s; }
+  .program-card-grid:nth-child(11) { animation-delay: 0.6s; }
+  .program-card-grid:nth-child(12) { animation-delay: 0.65s; }
+  
+  .program-card-grid::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(255, 51, 51, 0.05) 50%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 1;
+  }
+  
+  .program-card-grid:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25), 0 0 15px rgba(255, 51, 51, 0.2);
+    border-color: rgba(255, 51, 51, 0.3);
+  }
+  
+  .program-card-grid:hover::before {
+    opacity: 1;
+  }
+  
+  .program-image-grid {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+  }
+  
+  .program-image-grid img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+  
+  .program-card-grid:hover .program-image-grid img {
+    transform: scale(1.1);
+  }
+  
+  .program-overlay-grid {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  .program-card-grid:hover .program-overlay-grid {
+    opacity: 1;
+  }
+  
+  .play-btn-grid {
+    background: linear-gradient(135deg, var(--title-color) 0%, #ff6b6b 100%);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: 0 4px 15px rgba(255, 51, 51, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .play-btn-grid::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    transition: all 0.6s ease;
+    transform: translate(-50%, -50%);
+  }
+  
+  .play-btn-grid:hover {
+    transform: scale(1.15) rotate(5deg);
+    box-shadow: 0 6px 20px rgba(255, 51, 51, 0.6);
+  }
+  
+  .play-btn-grid:hover::before {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .play-btn-grid:active {
+    transform: scale(0.95);
+  }
+  
+  .program-title-grid {
+    padding: 1rem;
+    text-align: center;
+    background: linear-gradient(180deg, 
+      var(--color-card-bg) 0%, 
+      rgba(0, 0, 0, 0.02) 100%);
+  }
+  
+  .program-title-grid h3 {
+    color: var(--title-color);
+    font-size: 0.9rem;
+    margin: 0;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-weight: 600;
+    transition: color 0.3s ease;
+  }
+  
+  .program-card-grid:hover .program-title-grid h3 {
+    color: #ff6b6b;
+  }
+  
+  .section-footer {
+    text-align: center;
+    margin-top: 3rem;
+  }
+  
+  /* Responsive para el grid */
+  @media (max-width: 1200px) {
+    .programs-grid {
+      grid-template-columns: repeat(5, 1fr);
+    }
+  }
+  
+  /* === ESTILOS PARA LA SECCIÓN DE NOTICIAS === */
+  .news-section {
+    padding: 0;
+    background: transparent;
+    position: relative;
+    z-index: 1;
+    margin-top: -2rem;
+  }
+  
+  .news-section .container {
+    padding: 4rem 1rem 6rem;
+  }
+  
+  /* Grid de Noticias - 2 filas x 4 columnas */
+  .news-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 1.5rem;
+    padding: 2rem 0;
+    max-width: 100%;
+    margin: 0 auto;
+  }
+  
+  /* News Cards Grid - Diseño limpio */
+  .news-card-grid {
+    background: var(--color-card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    border: 1px solid rgba(255, 51, 51, 0.1);
+    animation: cardSlideIn 0.6s ease-out both;
+  }
+  
+  /* Delays escalonados para noticias */
+  .news-card-grid:nth-child(1) { animation-delay: 0.1s; }
+  .news-card-grid:nth-child(2) { animation-delay: 0.15s; }
+  .news-card-grid:nth-child(3) { animation-delay: 0.2s; }
+  .news-card-grid:nth-child(4) { animation-delay: 0.25s; }
+  .news-card-grid:nth-child(5) { animation-delay: 0.3s; }
+  .news-card-grid:nth-child(6) { animation-delay: 0.35s; }
+  .news-card-grid:nth-child(7) { animation-delay: 0.4s; }
+  .news-card-grid:nth-child(8) { animation-delay: 0.45s; }
+  
+  .news-card-grid::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(255, 51, 51, 0.05) 50%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 1;
+  }
+  
+  .news-card-grid:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25), 0 0 15px rgba(255, 51, 51, 0.2);
+    border-color: rgba(255, 51, 51, 0.3);
+  }
+  
+  .news-card-grid:hover::before {
+    opacity: 1;
+  }
+  
+  .news-image-grid {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+  }
+  
+  .news-image-grid img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+  
+  .news-card-grid:hover .news-image-grid img {
+    transform: scale(1.1);
+  }
+  
+  .news-overlay-grid {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    z-index: 2;
+  }
+  
+  .news-category {
+    background: linear-gradient(135deg, var(--title-color) 0%, #ff6b6b 100%);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(255, 51, 51, 0.3);
+  }
+  
+  .news-content-grid {
+    padding: 1.2rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  
+  .news-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.8rem;
+    font-size: 0.75rem;
+    color: #888;
+  }
+  
+  .news-date {
+    color: var(--title-color);
+    font-weight: 600;
+  }
+  
+  .news-author {
+    color: #666;
+  }
+  
+  .news-content-grid h3 {
+    color: var(--title-color);
+    font-size: 1rem;
+    margin: 0 0 0.8rem;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-weight: 700;
+    transition: color 0.3s ease;
+  }
+  
+  .news-card-grid:hover .news-content-grid h3 {
+    color: #ff6b6b;
+  }
+  
+  .news-excerpt {
+    color: #777;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin: 0 0 1rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    flex: 1;
+  }
+  
+  .news-link {
+    color: var(--title-color);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+    position: relative;
+    align-self: flex-start;
+  }
+  
+  .news-link::after {
+    content: '→';
+    margin-left: 0.5rem;
+    transition: transform 0.3s ease;
+  }
+  
+  .news-link:hover {
+    color: #ff6b6b;
+  }
+  
+  .news-link:hover::after {
+    transform: translateX(3px);
+  }
+  
+  /* Responsive para el grid de noticias */
+  @media (max-width: 1200px) {
+    .news-grid {
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+    }
+    
+    /* Ocultar la última noticia en pantallas medianas */
+    .news-card-grid:nth-child(8) {
+      display: none;
+    }
+  }
+  
+  @media (max-width: 992px) {
+    .news-grid {
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+    }
+    
+    /* Mostrar solo 6 noticias */
+    .news-card-grid:nth-child(n+7) {
+      display: none;
+    }
+  }
+  
+  @media (max-width: 992px) {
+    .programs-grid {
+      grid-template-columns: repeat(4, 1fr);
+      grid-template-rows: repeat(3, 1fr);
+    }
+  }
+  
   @media (max-width: 768px) {
-    .container {
+    .main-content {
+      min-height: auto;
+    }
+    
+    .hero-container {
       padding: 2rem 1rem;
       min-height: 60vh;
+    }
+    
+    .programs-section {
+      margin-top: -1rem;
+    }
+    
+    .programs-section .container {
+      padding: 2rem 1rem 4rem;
     }
 
     .site-icon {
@@ -361,8 +1486,54 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
     .error-message {
       font-size: 1rem;
     }
+    
+    .section-header h2 {
+      font-size: 2.5rem;
+    }
+    
+    .section-header p {
+      font-size: 1.1rem;
+    }
+    
+    .programs-grid {
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(4, 1fr);
+      gap: 1rem;
+      padding: 1.5rem 0;
+    }
+    
+    .program-title-grid {
+      padding: 0.8rem;
+    }
+    
+    .program-title-grid h3 {
+      font-size: 0.8rem;
+    }
+    
+    .play-btn-grid {
+      width: 40px;
+      height: 40px;
+      font-size: 1rem;
+    }
   }
-
+  
+  @media (max-width: 576px) {
+    .programs-grid {
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(6, 1fr);
+      gap: 0.8rem;
+    }
+    
+    .program-title-grid {
+      padding: 0.6rem;
+    }
+    
+    .program-title-grid h3 {
+      font-size: 0.75rem;
+      -webkit-line-clamp: 1;
+    }
+  }
+  
   @media (max-width: 480px) {
     h1 {
       font-size: 2rem;
@@ -374,6 +1545,387 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
     
     .error-title {
       font-size: 1.5rem;
+    }
+  }
+  
+  @media (max-width: 400px) {
+    .programs-grid {
+      grid-template-columns: 1fr;
+      grid-template-rows: repeat(12, 1fr);
+    }
+  }
+  
+  /* === ESTILOS PARA ESTADOS VACÍOS === */
+  .no-programs,
+  .no-news-slider {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #666;
+    grid-column: 1 / -1;
+    background: var(--color-card-bg);
+    border-radius: 12px;
+    border: 2px dashed rgba(255, 51, 51, 0.2);
+  }
+  
+  .no-programs-icon,
+  .no-news-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+  
+  .no-programs h3,
+  .no-news-slider h3 {
+    color: var(--title-color);
+    margin-bottom: 0.5rem;
+    font-size: 1.5rem;
+  }
+  
+  .no-programs p,
+  .no-news-slider p {
+    color: #888;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+  
+  /* === ESTILOS PARA LA SECCIÓN DE NOTICIAS - SLIDER === */
+  .news-section {
+    padding: 0;
+    background: transparent;
+    position: relative;
+    z-index: 1;
+    margin-top: -2rem;
+  }
+  
+  .news-section .container {
+    padding: 4rem 1rem 6rem;
+  }
+  
+  /* Slider de Noticias */
+  .news-slider {
+    position: relative;
+    margin-bottom: 2rem;
+    overflow: hidden;
+    width: 100%;
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  .slider-viewport {
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .slider-container {
+    display: flex;
+    gap: 1.5rem;
+    padding: 2rem 0;
+    position: relative;
+    width: fit-content;
+    transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    will-change: transform;
+  }
+  
+  /* News Cards Slider */
+  .news-card-slider {
+    flex: 0 0 300px;
+    background: var(--color-card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    border: 1px solid rgba(255, 51, 51, 0.1);
+    animation: cardSlideIn 0.6s ease-out both;
+  }
+  
+  .news-card-slider::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(255, 51, 51, 0.05) 50%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 1;
+  }
+  
+  .news-card-slider:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25), 0 0 15px rgba(255, 51, 51, 0.2);
+    border-color: rgba(255, 51, 51, 0.3);
+  }
+  
+  .news-card-slider:hover::before {
+    opacity: 1;
+  }
+  
+  .news-image-slider {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+  }
+  
+  .news-image-slider img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+  
+  .news-card-slider:hover .news-image-slider img {
+    transform: scale(1.1);
+  }
+  
+  .news-overlay-slider {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    z-index: 2;
+  }
+  
+  .news-category {
+    background: linear-gradient(135deg, var(--title-color) 0%, #ff6b6b 100%);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(255, 51, 51, 0.3);
+  }
+  
+  .news-content-slider {
+    padding: 1.2rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  
+  .news-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.8rem;
+    font-size: 0.75rem;
+    color: #888;
+  }
+  
+  .news-date {
+    color: var(--title-color);
+    font-weight: 600;
+  }
+  
+  .news-author {
+    color: #666;
+  }
+  
+  .news-content-slider h3 {
+    color: var(--title-color);
+    font-size: 1rem;
+    margin: 0 0 0.8rem;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-weight: 700;
+    transition: color 0.3s ease;
+  }
+  
+  .news-card-slider:hover .news-content-slider h3 {
+    color: #ff6b6b;
+  }
+  
+  .news-excerpt {
+    color: #777;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    margin: 0 0 1rem;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    flex: 1;
+  }
+  
+  .news-link {
+    color: var(--title-color);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+    position: relative;
+    align-self: flex-start;
+  }
+  
+  .news-link::after {
+    content: '→';
+    margin-left: 0.5rem;
+    transition: transform 0.3s ease;
+  }
+  
+  .news-link:hover {
+    color: #ff6b6b;
+  }
+  
+  .news-link:hover::after {
+    transform: translateX(3px);
+  }
+  
+  /* Controles del slider de noticias */
+  .news-controls {
+    margin-top: 1rem;
+  }
+  
+  .slider-controls {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+  
+  .slider-btn {
+    background: linear-gradient(135deg, var(--title-color) 0%, #ff6b6b 100%);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(255, 51, 51, 0.3);
+  }
+  
+  .slider-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.6s ease;
+  }
+  
+  .slider-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(255, 51, 51, 0.5);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+  
+  .slider-btn:hover::before {
+    left: 100%;
+  }
+  
+  .slider-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: scale(0.9);
+  }
+  
+  .slider-dots {
+    display: flex;
+    gap: 0.4rem;
+  }
+  
+  .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--color-text-secondary, #888);
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    border: 2px solid transparent;
+  }
+  
+  .dot::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: var(--title-color);
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    transform: translate(-50%, -50%);
+  }
+  
+  .dot:hover {
+    background: rgba(255, 51, 51, 0.3);
+    border-color: var(--title-color);
+    transform: scale(1.2);
+  }
+  
+  .dot.active {
+    background: var(--title-color);
+    transform: scale(1.3);
+    box-shadow: 0 0 12px rgba(255, 51, 51, 0.6);
+  }
+  
+  .dot.active::before {
+    width: 6px;
+    height: 6px;
+  }
+  
+  /* Responsive para el slider de noticias */
+  @media (max-width: 992px) {
+    .news-card-slider {
+      flex: 0 0 280px;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .news-section {
+      margin-top: -1rem;
+    }
+    
+    .news-section .container {
+      padding: 2rem 1rem 4rem;
+    }
+    
+    .news-card-slider {
+      flex: 0 0 250px;
+    }
+    
+    .news-content-slider {
+      padding: 1rem;
+    }
+    
+    .news-content-slider h3 {
+      font-size: 0.9rem;
+    }
+    
+    .news-excerpt {
+      font-size: 0.8rem;
+      -webkit-line-clamp: 2;
+    }
+    
+    .slider-btn {
+      width: 40px;
+      height: 40px;
+      font-size: 1.2rem;
     }
   }
 </style>

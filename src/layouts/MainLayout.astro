@@ -13,6 +13,7 @@ const { title, description } = Astro.props;
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
 import RadioPlayer from '../components/RadioPlayer.astro'; // Asegúrate que este componente exista y funcione como esperas
+import VinylParticles from '../components/VinylParticles.astro'; // Vinilos flotantes animados
 ---
 
 <!DOCTYPE html>
@@ -67,6 +68,9 @@ import RadioPlayer from '../components/RadioPlayer.astro'; // Asegúrate que est
     <RadioPlayer />
   </Header>
 
+  {/* Animación de vinilos flotantes - Posicionado entre header y footer */}
+  <VinylParticles />
+
   {/* Contenido principal de la página */}
   <main>
     <slot /> {/* Aquí se renderiza el contenido de cada página individual */}
@@ -78,20 +82,68 @@ import RadioPlayer from '../components/RadioPlayer.astro'; // Asegúrate que est
 </html>
 
 <style is:global>
-  /* Variables CSS originales de VinylStation (y ahora globales) */
+  /* Variables CSS con modo noche/día */
   :root {
-    --color-primary: #ff3333; /* Rojo vibrante, usado como color principal */
-    --color-secondary: #bb2424; /* Un rojo más oscuro, para variaciones o hover */
-    --color-accent: #f9ca24; /* Amarillo/dorado, para acentos y destaques */
-    --color-bg: #0a0a0a; /* Negro/gris muy oscuro para el fondo principal */
-    --color-surface: #1a1a1a; /* Gris oscuro para superficies de componentes como cards */
-    --color-text: #ffffff; /* Blanco para texto principal */
-    --color-text-secondary: #cccccc; /* Gris claro para texto secundario o menos importante */
-    --color-border: #333333; /* Gris para bordes sutiles */
+    /* Colores base */
+    --color-darkest:   #05021f;
+    --color-dark:      #0b1739;
+    --color-blue:      #1a3459;
+    --color-black:     #020202;
+    --color-gray-dark: #262626;
+    --color-gray:      #636162;
+    --color-brown:     #904139;
+    --color-gold:      #c5ad7b;
+    --color-white:     #ffffff;
+    --color-light-blue: #d5e6ff;
 
-    /* Podrías añadir variables para fuentes si usas más de una o para tamaños base */
+    /* Modo Noche (por defecto) */
+    --bg-color: var(--color-darkest);
+    --bg-gradient-end: #0b1739; /* Gradiente hacia azul más claro */
+    --title-color: var(--color-gold);
+    --text-color: var(--color-white);
+    
+    /* Variables RGB para transparencias */
+    --color-bg-rgb: 5, 2, 31;
+    
+    /* Variables semánticas */
+    --color-primary:   var(--color-blue);
+    --color-secondary: var(--color-brown);
+    --color-accent:    var(--color-gold);
+
+    --color-bg:        var(--bg-color);
+    --color-surface:   var(--color-gray-dark);
+    --color-card-bg:   var(--color-gray-dark);
+    --color-text:      var(--text-color);
+    --color-text-secondary: var(--color-gray);
+    --color-text-light: var(--text-color);
+    --color-text-muted: var(--color-gray);
+    --color-border:    var(--color-gray-dark);
+
     --font-family-base: 'Inter', sans-serif;
+    --header-height: 80px;
+    --header-mobile-height: 120px;
   }
+
+  /* Modo Día */
+  [data-theme="day"] {
+    --bg-color: var(--color-light-blue);
+    --bg-gradient-end: #f0f6ff; /* Gradiente hacia azul aún más claro */
+    --title-color: var(--color-darkest);
+    --text-color: var(--color-black);
+    
+    /* Variables RGB para transparencias en modo día */
+    --color-bg-rgb: 213, 230, 255;
+    
+    --color-bg: var(--bg-color);
+    --color-text: var(--text-color);
+    --color-text-light: var(--text-color);
+    --color-surface: rgba(255, 255, 255, 0.8);
+    --color-card-bg: rgba(255, 255, 255, 0.9);
+    --color-border: rgba(5, 2, 31, 0.2);
+    --color-text-secondary: rgba(5, 2, 31, 0.7);
+    --color-text-muted: rgba(5, 2, 31, 0.6);
+  }
+
 
   /* Reset y configuración base */
   *,
@@ -108,14 +160,42 @@ import RadioPlayer from '../components/RadioPlayer.astro'; // Asegúrate que est
 
   body {
     font-family: var(--font-family-base);
-    background-color: var(--color-bg);
+    background: linear-gradient(135deg, var(--bg-color) 0%, var(--bg-gradient-end) 100%);
     color: var(--color-text);
     line-height: 1.6;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
-    font-size: 16px; /* Establecer un tamaño de fuente base */
+    font-size: 16px;
+    transition: background 0.3s ease, color 0.3s ease; /* Transición suave */
+    position: relative;
+    overflow-x: hidden;
+    padding-top: 120px; /* Espacio para el header fijo */
   }
+  
+  @media (min-width: 768px) {
+    body {
+      padding-top: 100px; /* Menos padding en desktop */
+    }
+  }
+  
+  /* Fondo animado con partículas - DESHABILITADO */
+  /*
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    background: 
+      radial-gradient(circle at 20% 80%, rgba(197, 173, 123, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(26, 52, 89, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(197, 173, 123, 0.05) 0%, transparent 50%);
+    animation: backgroundFloat 20s ease-in-out infinite;
+  }
+  */
 
   main {
     flex: 1; /* Asegura que el main ocupe el espacio disponible para que el footer quede abajo */
@@ -135,18 +215,61 @@ import RadioPlayer from '../components/RadioPlayer.astro'; // Asegúrate que est
     /* text-decoration: underline; Podrías añadir subrayado en hover/focus si lo deseas */
   }
 
-  /* Headings */
+  /* Headings con colores específicos */
   h1, h2, h3, h4, h5, h6 {
-    color: var(--color-text); /* Heredado de body, pero puede ser explícito */
-    font-weight: 700; /* Un poco más de peso para los headings */
-    line-height: 1.3; /* Mejorar espaciado vertical de headings */
-    margin-bottom: 0.75em; /* Espacio por defecto debajo de los headings */
+    color: var(--title-color); /* Dorado en noche, azul oscuro en día */
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 0.75em;
+    transition: color 0.3s ease;
   }
   
-  h1 { font-size: 2.5rem; } /* Ejemplo de escala tipográfica */
+  h1 { font-size: 2.5rem; }
   h2 { font-size: 2rem; }
   h3 { font-size: 1.75rem; }
-  /* ... y así sucesivamente */
+  
+  /* Párrafos globales con colores automáticos día/noche */
+  p {
+    color: var(--color-text);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    transition: color 0.3s ease;
+  }
+  
+  /* Asegurar que todos los párrafos en cualquier contexto respeten los colores */
+  article p,
+  section p,
+  div p,
+  main p,
+  .content p,
+  .content-body p,
+  .noticia-content p {
+    color: var(--color-text) !important;
+  }
+  
+  /* En modo día: párrafos negros */
+  [data-theme="day"] p,
+  [data-theme="day"] article p,
+  [data-theme="day"] section p,
+  [data-theme="day"] div p,
+  [data-theme="day"] main p,
+  [data-theme="day"] .content p,
+  [data-theme="day"] .content-body p,
+  [data-theme="day"] .noticia-content p {
+    color: var(--color-black) !important;
+  }
+  
+  /* En modo noche: párrafos blancos */
+  [data-theme="night"] p,
+  [data-theme="night"] article p,
+  [data-theme="night"] section p,
+  [data-theme="night"] div p,
+  [data-theme="night"] main p,
+  [data-theme="night"] .content p,
+  [data-theme="night"] .content-body p,
+  [data-theme="night"] .noticia-content p {
+    color: var(--color-white) !important;
+  }
 
 
   /* Imágenes responsivas por defecto */
@@ -255,4 +378,28 @@ import RadioPlayer from '../components/RadioPlayer.astro'; // Asegúrate que est
         font-size: 15px; /* Podrías ajustar el tamaño de fuente base para móviles */
      }
   }
+
+  /* Botón de cambio de tema global (ahora se maneja en el Header) */
+  
+  /* Animación del fondo - DESHABILITADA */
+  /*
+  @keyframes backgroundFloat {
+    0%, 100% {
+      transform: translate(0, 0) rotate(0deg);
+    }
+    33% {
+      transform: translate(30px, -30px) rotate(120deg);
+    }
+    66% {
+      transform: translate(-20px, 20px) rotate(240deg);
+    }
+  }
+  
+  [data-theme="day"] body::before {
+    background: 
+      radial-gradient(circle at 20% 80%, rgba(5, 2, 31, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(197, 173, 123, 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(5, 2, 31, 0.03) 0%, transparent 50%);
+  }
+  */
 </style>

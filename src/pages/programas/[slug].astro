@@ -34,8 +34,10 @@ const pageDescription =
   data.camposPrograma?.vsDescripcion ||
   `Escucha "${data.title}", programa en VinylStation Radio.`;
 ---
-<MainLayout title={`${pageTitle} | ${siteInfo.title}`} description={pageDescription}}>
-  <div class="programa-page">
+<MainLayout title={`${pageTitle} | ${siteInfo.title}`} description={pageDescription}>
+  <!-- Contenedor principal unificado -->
+  <div class="main-content">
+    <!-- Breadcrumbs -->
     <nav class="breadcrumbs">
       <div class="container">
         <a href="/">Inicio</a>
@@ -89,7 +91,7 @@ const pageDescription =
             </div>
 
             <div class="programa-actions">
-              <a href="/programas" class="btn-back-programas">
+              <a href="/programas" class="btn primary-btn">
                 ← Volver a todos los programas
               </a>
             </div>
@@ -116,198 +118,451 @@ const pageDescription =
 </MainLayout>
 
 <style>
- /* ==== Contenedor principal ==== */
-.programa-page {
-  min-height: 100vh;
-  background: #0a0a0a;
-  color: #e0e0e0;
-  padding-bottom: 3rem;
-}
+  /* === CONTENEDOR PRINCIPAL UNIFICADO === */
+  .main-content {
+    background: linear-gradient(
+      135deg,
+      var(--color-bg) 0%,
+      rgba(0, 0, 0, 0.02) 50%,
+      var(--color-bg) 100%
+    );
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .main-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -50%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(
+      45deg, 
+      transparent 30%, 
+      rgba(255, 51, 51, 0.02) 50%, 
+      transparent 70%
+    );
+    animation: backgroundShimmer 20s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  @keyframes backgroundShimmer {
+    0%, 100% { transform: translateX(-100%) rotate(0deg); opacity: 0.3; }
+    50% { transform: translateX(0%) rotate(1deg); opacity: 0.7; }
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    position: relative;
+    z-index: 1;
+  }
 
-/* ==== Breadcrumbs ==== */
-.breadcrumbs {
-  background: #111;
-  padding: 1rem 0;
-  border-bottom: 1px solid #222;
-}
-.breadcrumbs a {
-  color: #ccc;
-}
-.breadcrumbs .separator,
-.breadcrumbs .current {
-  color: #777;
-}
+  /* === BREADCRUMBS === */
+  .breadcrumbs {
+    background: var(--color-card-bg);
+    padding: 1rem 0;
+    border-bottom: 1px solid rgba(255, 51, 51, 0.1);
+    position: relative;
+    z-index: 2;
+  }
 
-/* ==== Grid principal ==== */
-.programa-details .container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 3rem 1rem;
-}
-.programa-layout {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4rem;
-  align-items: stretch;
-}
-@media (max-width: 968px) {
+  .breadcrumbs .container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .breadcrumbs a {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    transition: color 0.3s ease;
+  }
+
+  .breadcrumbs a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumbs .separator {
+    color: var(--color-text-secondary);
+    opacity: 0.5;
+  }
+
+  .breadcrumbs .current {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  /* === GRID PRINCIPAL === */
+  .programa-details {
+    position: relative;
+    z-index: 1;
+    padding: 3rem 0 6rem;
+  }
+  
+  .programa-details .container {
+    margin: 0 auto;
+  }
+  
   .programa-layout {
-    grid-template-columns: 1fr;
-    gap: 2rem;
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 4rem;
+    align-items: stretch;
+    height: 600px;
   }
-}
+  
+  @media (max-width: 968px) {
+    .programa-layout {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      height: auto;
+    }
+    
+    .programa-image-section {
+      height: auto;
+    }
+    
+    .programa-info-section {
+      height: auto;
+      overflow-y: visible;
+    }
+  }
 
-/* ==== Imagen 1:1 ==== */
-.programa-image-section {
-  position: sticky;
-  top: 2rem;
-}
-.programa-image-section .main-image {
-  position: relative;
-  aspect-ratio: 1/1;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 8px 30px rgba(0,0,0,0.7);
-}
-.programa-image-section .main-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
+  /* === IMAGEN 1:1 === */
+  .programa-image-section {
+    position: sticky;
+    top: 2rem;
+    animation: fadeInUp 0.8s ease-out;
+    height: 600px;
+  }
+  
+  .programa-image-section .main-image {
+    position: relative;
+    aspect-ratio: 1/1;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 51, 51, 0.1);
+    transition: transform 0.3s ease;
+  }
+  
+  .programa-image-section .main-image:hover {
+    transform: scale(1.02);
+  }
+  
+  .programa-image-section .main-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
 
-/* ==== Badge ==== */
-.programa-badge {
-  position: absolute;
-  top: 1rem;
-  left: 1rem;
-  background: #ff3333;
-  color: #fff;
-  padding: .5rem 1rem;
-  border-radius: 20px;
-  font-size: .8rem;
-  font-weight: bold;
-  text-transform: uppercase;
-}
+  /* === BADGE === */
+  .programa-badge {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    background: linear-gradient(135deg, var(--title-color) 0%, #ff6b6b 100%);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(255, 51, 51, 0.3);
+    backdrop-filter: blur(10px);
+  }
 
-/* ==== Sección de info ==== */
-.programa-info-section {
-  background: #1a1a1a;
-  padding: 2rem;
-  border-radius: 12px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-}
-.programa-header h1 {
-  font-size: 2.5rem;
-  color: #fff;
-  margin-bottom: 2rem;
-}
-@media (max-width: 480px) {
+  /* === SECCIÓN DE INFO === */
+  .programa-info-section {
+    background: var(--color-card-bg);
+    padding: 2.5rem;
+    border-radius: 20px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 51, 51, 0.1);
+    animation: fadeInUp 0.8s ease-out 0.2s both;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 600px;
+    overflow-y: auto;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer 10+ */
+  }
+  
+  /* Ocultar scrollbar en Webkit browsers (Chrome, Safari, Edge) */
+  .programa-info-section::-webkit-scrollbar {
+    display: none;
+  }
+  
   .programa-header h1 {
-    font-size: 1.8rem;
+    font-size: 2.2rem;
+    color: var(--title-color);
+    margin-bottom: 1.5rem;
+    line-height: 1.2;
+    font-weight: 800;
+    position: relative;
   }
-}
+  
+  .programa-header h1::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(90deg, 
+      var(--title-color),
+      transparent);
+    border-radius: 2px;
+  }
+  
+  @media (max-width: 480px) {
+    .programa-header h1 {
+      font-size: 2.2rem;
+    }
+  }
 
-/* ==== Descripción ==== */
-.programa-description h4 {
-  font-size: 1.3rem;
-  color: #fff;
-  margin-bottom: 1rem;
-}
-.content,
-.programa-description p {
-  color: #ccc;
-  line-height: 1.6;
-  font-size: 1.05rem;
-  margin-bottom: 2rem;
-}
+  /* === DESCRIPCIÓN === */
+  .programa-description {
+    margin-bottom: 2.5rem;
+  }
+  
+  .programa-description h4 {
+    font-size: 1.4rem;
+    color: var(--title-color);
+    margin-bottom: 1rem;
+    font-weight: 700;
+  }
+  
+  .content,
+  .programa-description p {
+    color: var(--color-text);
+    line-height: 1.7;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
 
-/* ==== Meta ==== */
-.programa-meta h4 {
-  font-size: 1.3rem;
-  color: #fff;
-  margin-bottom: 1rem;
-}
-.meta-grid {
-  display: grid;
-  gap: .8rem;
-}
-.meta-item {
-  display: flex;
-  justify-content: space-between;
-  padding: .7rem 0;
-  border-bottom: 1px solid #333;
-}
-.meta-item strong {
-  color: #fff;
-}
-.meta-item span {
-  color: #bbb;
-}
+  /* === META === */
+  .programa-meta {
+    margin-bottom: 2.5rem;
+    flex-grow: 1;
+  }
+  
+  .programa-meta h4 {
+    font-size: 1.4rem;
+    color: var(--title-color);
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+  }
+  
+  .meta-grid {
+    display: grid;
+    gap: 1rem;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 1.5rem;
+    border-radius: 15px;
+    border-left: 4px solid var(--title-color);
+  }
+  
+  .meta-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid var(--color-text-secondary);
+    opacity: 0.9;
+  }
+  
+  .meta-item:last-child {
+    border-bottom: none;
+  }
+  
+  .meta-item strong {
+    color: var(--color-text);
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  
+  .meta-item span {
+    color: var(--color-text-secondary);
+    font-weight: 500;
+  }
 
-/* ==== Botón “volver” ==== */
-.programa-actions {
-  text-align: center;
-  padding-top: 1rem;
-  border-top: 1px solid #333;
-}
-.btn-back-programas {
-  background: #ff3333;
-  color: #fff;
-  padding: 1rem 2rem;
-  border-radius: 30px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: background .3s, transform .3s;
-}
-.btn-back-programas:hover {
-  background: #cc2929;
-  transform: translateY(-2px);
-}
+  /* === BOTÓN "VOLVER" === */
+  .programa-actions {
+    text-align: center;
+    padding-top: 2rem;
+    border-top: 1px solid var(--color-text-secondary);
+  }
 
-/* ==== Equipo Relacionado & Listas ==== */
-.programa-equipo,
-.programa-listas {
-  padding: 3rem 0;
-}
-.programs-title {
-  color: #ff3333;
-  font-size: 2rem;
-  text-align: center;
-  margin-bottom: 1.5rem;
-}
-.programs-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 1.5rem;
-}
-.program-card {
-  background: #1a1a1a;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.5);
-  text-align: center;
-  color: #fff;
-}
-.program-card .program-image {
-  aspect-ratio: 1/1;
-  overflow: hidden;
-}
-.program-card .program-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.program-card .program-info {
-  padding: 1rem;
-}
-.program-card .program-title {
-  margin: .5rem 0;
-}
+  .btn {
+    display: inline-block;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    min-width: 220px;
+    text-align: center;
+    border: none;
+    cursor: pointer;
+  }
 
-/* Mensajes sin contenido */
-.no-programs {
-  text-align: center;
-  color: #777;
-  font-style: italic;
-}
+  .primary-btn {
+    background: var(--color-primary, #ff3333);
+    color: #ffffff;
+    border: 2px solid var(--color-primary, #ff3333);
+  }
+
+  .primary-btn:hover {
+    background: var(--color-secondary, #bb2424);
+    border-color: var(--color-secondary, #bb2424);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
+  }
+
+  /* === LISTAS DE CANCIONES === */
+  .programa-listas {
+    padding: 4rem 0;
+    position: relative;
+    z-index: 1;
+    animation: fadeInUp 0.8s ease-out 0.4s both;
+  }
+  
+  .programs-title {
+    color: var(--title-color);
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 2rem;
+    font-weight: 800;
+    position: relative;
+  }
+  
+  .programs-title::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 4px;
+    background: linear-gradient(90deg, 
+      var(--title-color),
+      transparent);
+    border-radius: 2px;
+  }
+  
+  .song-list {
+    max-width: 800px;
+    margin: 0 auto;
+    background: var(--color-card-bg);
+    padding: 3rem;
+    border-radius: 20px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 51, 51, 0.1);
+    list-style: none;
+  }
+  
+  .song-list li {
+    color: var(--color-text);
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--color-text-secondary);
+    font-size: 1.1rem;
+    position: relative;
+    padding-left: 2rem;
+  }
+  
+  .song-list li:last-child {
+    border-bottom: none;
+  }
+  
+  .song-list li::before {
+    content: '♪';
+    position: absolute;
+    left: 0;
+    top: 1rem;
+    color: var(--title-color);
+    font-weight: bold;
+  }
+
+  /* === MENSAJE SIN CONTENIDO === */
+  .no-programs {
+    text-align: center;
+    color: var(--color-text-secondary);
+    font-style: italic;
+    padding: 4rem;
+    background: var(--color-card-bg);
+    border-radius: 15px;
+    border: 2px dashed rgba(255, 51, 51, 0.2);
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  /* === ANIMACIONES === */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    .programa-details {
+      padding: 2rem 0 4rem;
+    }
+    
+    .programa-info-section {
+      padding: 2rem;
+      height: auto;
+    }
+    
+    .song-list {
+      padding: 2rem;
+      margin: 0 1rem;
+    }
+    
+    .programs-title {
+      font-size: 2rem;
+    }
+    
+    .meta-grid {
+      padding: 1rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .programa-info-section {
+      padding: 1.5rem;
+      height: auto;
+    }
+    
+    .song-list {
+      padding: 1.5rem;
+    }
+    
+    .breadcrumbs .current {
+      display: none;
+    }
+  }
+  
+  /* === SMOOTH SCROLL === */
+  html {
+    scroll-behavior: smooth;
+  }
 </style>

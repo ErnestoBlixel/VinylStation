@@ -1,0 +1,82 @@
+/* empty css                                    */
+import { c as createAstro, a as createComponent, r as renderComponent, b as renderTemplate, m as maybeRenderHead, d as addAttribute, u as unescapeHTML } from '../../chunks/astro/server_DfIlsqH_.mjs';
+import 'kleur/colors';
+import { g as getSiteInfo, a as getNoticiaBySlug, $ as $$MainLayout, b as getNoticias } from '../../chunks/MainLayout_CruwIgCf.mjs';
+/* empty css                                     */
+export { renderers } from '../../renderers.mjs';
+
+const $$Astro = createAstro("https://vinylstation.com");
+async function getStaticPaths() {
+  const { noticias } = await getNoticias({ limit: 2e4 });
+  return noticias.map((n) => ({ params: { slug: n.slug }, props: { noticia: n } }));
+}
+const $$slug = createComponent(async ($$result, $$props, $$slots) => {
+  const Astro2 = $$result.createAstro($$Astro, $$props, $$slots);
+  Astro2.self = $$slug;
+  const { slug } = Astro2.params;
+  const { noticia } = Astro2.props;
+  const siteInfo = await getSiteInfo();
+  const data = noticia || await getNoticiaBySlug(slug);
+  if (!data) {
+    return Astro2.redirect("/404");
+  }
+  const formatDate = (dateString) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("es-ES", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  };
+  const calculateReadTime = (content) => {
+    if (!content) return "1 min";
+    const wordsPerMinute = 200;
+    const words = content.replace(/<[^>]*>/g, "").split(/\s+/).length;
+    const minutes = Math.ceil(words / wordsPerMinute);
+    return `${minutes} min${minutes > 1 ? "" : ""}`;
+  };
+  const imagenNoticia = data.imagenDestacadaUrl || data.featuredImage?.node?.sourceUrl || "/images/placeholder-news.jpg";
+  const altImagen = data.featuredImage?.node?.altText || data.title;
+  const pageTitle = data.seo?.title || `${data.title} - VinylStation`;
+  const pageDescription = data.seo?.metaDesc || data.excerpt || `Lee "${data.title}", \xFAltima noticia en VinylStation.`;
+  const fechaPublicacion = formatDate(data.date);
+  const tiempoLectura = calculateReadTime(data.content);
+  const categorias = data.categorias?.nodes || [];
+  const autor = data.author?.node;
+  return renderTemplate`${renderComponent($$result, "MainLayout", $$MainLayout, { "title": `${pageTitle} | ${siteInfo.title}`, "description": pageDescription, "data-astro-cid-se4o7pmu": true }, { "default": async ($$result2) => renderTemplate` ${maybeRenderHead()}<div class="noticia-page" data-astro-cid-se4o7pmu> <nav class="breadcrumbs" data-astro-cid-se4o7pmu> <div class="container" data-astro-cid-se4o7pmu> <a href="/" data-astro-cid-se4o7pmu>Inicio</a> <span class="separator" data-astro-cid-se4o7pmu>›</span> <a href="/noticias" data-astro-cid-se4o7pmu>Noticias</a> <span class="separator" data-astro-cid-se4o7pmu>›</span> <span class="current" data-astro-cid-se4o7pmu>${data.title}</span> </div> </nav> <article class="noticia-details" data-astro-cid-se4o7pmu> <div class="container" data-astro-cid-se4o7pmu> <!-- Header de la noticia --> <header class="noticia-header" data-astro-cid-se4o7pmu> <div class="noticia-meta-top" data-astro-cid-se4o7pmu> ${categorias.length > 0 && renderTemplate`<div class="noticia-categories" data-astro-cid-se4o7pmu> ${categorias.map((cat) => renderTemplate`<span class="category-badge"${addAttribute(cat.id, "key")} data-astro-cid-se4o7pmu>${cat.name}</span>`)} </div>`} <div class="noticia-date-reading" data-astro-cid-se4o7pmu> <time class="noticia-date" data-astro-cid-se4o7pmu>${fechaPublicacion}</time> <span class="reading-time" data-astro-cid-se4o7pmu>⏱️ ${tiempoLectura} lectura</span> </div> </div> <h1 class="noticia-title" data-astro-cid-se4o7pmu>${data.title}</h1> ${data.excerpt && renderTemplate`<div class="noticia-excerpt" data-astro-cid-se4o7pmu>${unescapeHTML(data.excerpt)}</div>`} ${autor && renderTemplate`<div class="noticia-author" data-astro-cid-se4o7pmu> <div class="author-info" data-astro-cid-se4o7pmu> ${autor.avatar?.url && renderTemplate`<img${addAttribute(autor.avatar.url, "src")}${addAttribute(autor.name, "alt")} class="author-avatar" data-astro-cid-se4o7pmu>`} <div class="author-details" data-astro-cid-se4o7pmu> <span class="author-name" data-astro-cid-se4o7pmu>Por ${autor.name}</span> ${autor.description && renderTemplate`<span class="author-description" data-astro-cid-se4o7pmu>${autor.description}</span>`} </div> </div> </div>`} </header> <!-- Imagen destacada --> <div class="noticia-featured-image" data-astro-cid-se4o7pmu> <img${addAttribute(imagenNoticia, "src")}${addAttribute(altImagen, "alt")} loading="lazy" onerror="this.onerror=null;this.src='/images/placeholder-news.jpg';" data-astro-cid-se4o7pmu> ${data.featuredImage?.node?.caption && renderTemplate`<div class="image-caption" data-astro-cid-se4o7pmu>${unescapeHTML(data.featuredImage.node.caption)}</div>`} </div> <!-- Contenido de la noticia --> <div class="noticia-content" data-astro-cid-se4o7pmu> ${data.content ? renderTemplate`<div class="content-body" data-astro-cid-se4o7pmu>${unescapeHTML(data.content)}</div>` : renderTemplate`<p class="no-content" data-astro-cid-se4o7pmu>El contenido de esta noticia no está disponible.</p>`} </div> <!-- Footer de la noticia --> <footer class="noticia-footer" data-astro-cid-se4o7pmu> <div class="share-section" data-astro-cid-se4o7pmu> <h4 data-astro-cid-se4o7pmu>Compartir esta noticia</h4> <div class="share-buttons" data-astro-cid-se4o7pmu> <a${addAttribute(`https://twitter.com/intent/tweet?text=${encodeURIComponent(data.title)}&url=${encodeURIComponent(Astro2.url.toString())}`, "href")} target="_blank" rel="noopener noreferrer" class="share-btn twitter" data-astro-cid-se4o7pmu>
+📱 Twitter
+</a> <a${addAttribute(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(Astro2.url.toString())}`, "href")} target="_blank" rel="noopener noreferrer" class="share-btn facebook" data-astro-cid-se4o7pmu>
+📘 Facebook
+</a> <a${addAttribute(`https://wa.me/?text=${encodeURIComponent(data.title + " " + Astro2.url.toString())}`, "href")} target="_blank" rel="noopener noreferrer" class="share-btn whatsapp" data-astro-cid-se4o7pmu>
+💬 WhatsApp
+</a> </div> </div> <div class="noticia-actions" data-astro-cid-se4o7pmu> <a href="/noticias" class="btn-back-noticias" data-astro-cid-se4o7pmu>
+← Volver a todas las noticias
+</a> </div> </footer> </div> </article> <!-- Noticias relacionadas (opcional, se puede implementar más tarde) --> <!--
+    <section class="noticias-relacionadas">
+      <div class="container">
+        <h2 class="section-title">Noticias Relacionadas</h2>
+        <div class="related-news-grid">
+          // Aquí se pueden mostrar noticias de la misma categoría
+        </div>
+      </div>
+    </section>
+    --> </div> ` })} `;
+}, "C:/Users/nestu/Desktop/web vinylstation/astro_30-05/src/pages/noticias/[slug].astro", void 0);
+
+const $$file = "C:/Users/nestu/Desktop/web vinylstation/astro_30-05/src/pages/noticias/[slug].astro";
+const $$url = "/noticias/[slug].html";
+
+const _page = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: $$slug,
+  file: $$file,
+  getStaticPaths,
+  url: $$url
+}, Symbol.toStringTag, { value: 'Module' }));
+
+const page = () => _page;
+
+export { page };

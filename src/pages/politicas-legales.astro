@@ -1,0 +1,503 @@
+---
+// Página de índice de políticas legales - VinylStation Radio
+import MainLayout from '../layouts/MainLayout.astro';
+import { Fragment } from 'astro/components';
+
+// SEO y metadatos
+const pageTitle = 'Políticas Legales | VinylStation Radio';
+const pageDescription = 'Índice completo de políticas legales de VinylStation Radio - Aviso Legal, Política de Privacidad, Cookies y Devoluciones de nuestra tienda online.';
+
+// Configurar como noindex
+const noIndex = true;
+---
+
+<MainLayout title={pageTitle} description={pageDescription}>
+  {noIndex && (
+    <Fragment slot="head">
+      <meta name="robots" content="noindex, nofollow" />
+      <meta name="googlebot" content="noindex, nofollow" />
+    </Fragment>
+  )}
+  
+  <!-- Contenedor principal unificado -->
+  <div class="main-content">
+    <!-- Breadcrumbs -->
+    <nav class="breadcrumbs">
+      <div class="container">
+        <a href="/">Inicio</a>
+        <span class="separator">›</span>
+        <span class="current">Políticas Legales</span>
+      </div>
+    </nav>
+
+    <article class="noticia-details">
+      <div class="container">
+        
+        <!-- Header de la página -->
+        <header class="noticia-header">
+          <h1 class="noticia-title">Políticas Legales</h1>
+          <div class="noticia-excerpt">
+            <p>Información completa sobre nuestras políticas legales, privacidad y condiciones comerciales</p>
+          </div>
+        </header>
+
+        <!-- Contenido legal -->
+        <div class="noticia-content">
+          <div class="content-body">
+            
+            <h2>Sobre VinylStation Radio</h2>
+            <p><strong>Asociación Dacrepro Salud</strong> opera bajo el nombre comercial <strong>VinylStation Radio</strong>, ofreciendo servicios de radio online y comercialización de productos de merchandising.</p>
+
+            <h3>Nuestros Servicios</h3>
+            <ul>
+              <li>Emisora de radio especializada en vinilo</li>
+              <li>Tienda oficial de merchandising</li>
+              <li>Empresa española con sede en Toledo</li>
+              <li>Cumplimiento total normativa RGPD</li>
+            </ul>
+
+            <h2>Nuestras Políticas</h2>
+            
+            <h3>Aviso Legal</h3>
+            <p>Información legal sobre VinylStation Radio, datos identificativos, condiciones de uso y responsabilidades.</p>
+            <p><strong>Incluye:</strong></p>
+            <ul>
+              <li>Datos de la empresa responsable</li>
+              <li>Condiciones de uso del sitio web</li>
+              <li>Derechos de autor y contenidos</li>
+              <li>Limitación de responsabilidad</li>
+            </ul>
+            <p><a href="/aviso-legal"><strong>→ Leer Aviso Legal Completo</strong></a></p>
+
+            <h3>Política de Cookies y Privacidad</h3>
+            <p>Información sobre el tratamiento de datos personales, uso de cookies y derechos de los usuarios.</p>
+            <p><strong>Incluye:</strong></p>
+            <ul>
+              <li>Tipos de cookies utilizadas</li>
+              <li>Tratamiento de datos personales</li>
+              <li>Derechos RGPD del usuario</li>
+              <li>Medidas de seguridad implementadas</li>
+            </ul>
+            <p><a href="/politica-cookies-privacidad"><strong>→ Leer Política de Privacidad Completa</strong></a></p>
+
+            <h3>Política de Devoluciones</h3>
+            <p>Condiciones para cambios y devoluciones de productos de merchandising de nuestra tienda online.</p>
+            <p><strong>Incluye:</strong></p>
+            <ul>
+              <li>Derecho de desistimiento (14 días)</li>
+              <li>Productos aptos para devolución</li>
+              <li>Proceso paso a paso</li>
+              <li>Garantía de productos defectuosos</li>
+            </ul>
+            <p><a href="/politica-devoluciones"><strong>→ Leer Política de Devoluciones Completa</strong></a></p>
+
+            <h2>Contacto Legal</h2>
+            
+            <h3>Datos de Contacto</h3>
+            <ul>
+              <li><strong>Razón Social:</strong> Asociación Dacrepro Salud</li>
+              <li><strong>CIF:</strong> G/29992282</li>
+              <li><strong>Dirección:</strong> Fuensalida - 45510 - Toledo, España</li>
+              <li><strong>Teléfono:</strong> <a href="tel:+34722415033">+34 722 41 50 33</a></li>
+              <li><strong>Email DPO:</strong> <a href="mailto:legal@vinylstation.es">legal@vinylstation.es</a></li>
+            </ul>
+
+            <h3>Contacto Rápido</h3>
+            <ul>
+              <li><strong>Llamar Ahora:</strong> <a href="tel:+34722415033">+34 722 41 50 33</a></li>
+              <li><strong>WhatsApp:</strong> <a href="https://wa.me/34722415033">+34 722 41 50 33</a></li>
+              <li><strong>Email:</strong> <a href="mailto:info@vinylstation.es">info@vinylstation.es</a></li>
+              <li><strong>Formulario:</strong> <a href="/contacto">Formulario de Contacto</a></li>
+            </ul>
+
+            <h2>Información Adicional</h2>
+            
+            <h3>Atención Legal</h3>
+            <p>Para consultas sobre estas políticas: +34 722 41 50 33</p>
+            
+            <h3>Jurisdicción</h3>
+            <p>Juzgados y Tribunales de Toledo - Legislación española aplicable</p>
+            
+            <h3>Última Actualización</h3>
+            <p>Junio 2025</p>
+            
+            <h3>Protección de Datos</h3>
+            <p>Cumplimiento RGPD y normativa española</p>
+
+            <h2>Sus Derechos como Usuario</h2>
+            
+            <h3>Derechos RGPD</h3>
+            <p>Como usuario europeo, tiene derechos específicos sobre sus datos personales:</p>
+            <ul>
+              <li><strong>Acceso:</strong> Conocer qué datos tenemos sobre usted</li>
+              <li><strong>Rectificación:</strong> Corregir datos incorrectos</li>
+              <li><strong>Supresión:</strong> Solicitar eliminación de sus datos</li>
+              <li><strong>Oposición:</strong> Oponerse al tratamiento</li>
+              <li><strong>Limitación:</strong> Restringir el uso de sus datos</li>
+              <li><strong>Portabilidad:</strong> Transferir sus datos a otro servicio</li>
+            </ul>
+            
+            <h3>Derechos como Consumidor</h3>
+            <p>En nuestras compras online, disfruta de protección adicional:</p>
+            <ul>
+              <li>14 días para desistir sin justificación</li>
+              <li>Reembolso completo garantizado</li>
+              <li>Cambios y devoluciones gratuitas por defectos</li>
+              <li>Garantía legal de conformidad</li>
+            </ul>
+
+            <h2>Herramientas Útiles</h2>
+            
+            <h3>Gestión de Cookies</h3>
+            <p>Configure sus preferencias de cookies y privacidad en cada visita a nuestro sitio web.</p>
+            
+            <h3>Solicitar Datos</h3>
+            <p>Descargue todos los datos que tenemos sobre usted contactando con nuestro DPO: <a href="mailto:legal@vinylstation.es">legal@vinylstation.es</a></p>
+            
+            <h3>Devolución Express</h3>
+            <p>Inicie una devolución rápida de su pedido a través de nuestra <a href="/politica-devoluciones">Política de Devoluciones</a></p>
+            
+            <h3>Reclamación AEPD</h3>
+            <p>Presente una reclamación ante la Agencia Española de Protección de Datos: <a href="https://www.aepd.es" target="_blank">www.aepd.es</a></p>
+
+            <p><strong>Última actualización:</strong> Junio 2025</p>
+
+          </div>
+        </div>
+
+        <!-- Footer de la página -->
+        <footer class="noticia-footer">
+          <div class="noticia-actions">
+            <a href="/" class="btn primary-btn">← Volver al Inicio</a>
+          </div>
+        </footer>
+      </div>
+    </article>
+  </div>
+</MainLayout>
+
+<style>
+  /* Usando exactamente los mismos estilos que las páginas de noticias y aviso legal */
+  .main-content {
+    background: linear-gradient(
+      135deg,
+      var(--color-bg) 0%,
+      rgba(0, 0, 0, 0.02) 50%,
+      var(--color-bg) 100%
+    );
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .main-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -50%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(
+      45deg, 
+      transparent 30%, 
+      rgba(255, 51, 51, 0.02) 50%, 
+      transparent 70%
+    );
+    animation: backgroundShimmer 20s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  @keyframes backgroundShimmer {
+    0%, 100% { transform: translateX(-100%) rotate(0deg); opacity: 0.3; }
+    50% { transform: translateX(0%) rotate(1deg); opacity: 0.7; }
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .breadcrumbs {
+    background: var(--color-card-bg);
+    padding: 1rem 0;
+    border-bottom: 1px solid rgba(255, 51, 51, 0.1);
+    position: relative;
+    z-index: 2;
+  }
+
+  .breadcrumbs .container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .breadcrumbs a {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    transition: color 0.3s ease;
+  }
+
+  .breadcrumbs a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumbs .separator {
+    color: var(--color-text-secondary);
+    opacity: 0.5;
+  }
+
+  .breadcrumbs .current {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  .noticia-details {
+    position: relative;
+    z-index: 1;
+    padding: 3rem 0 6rem;
+  }
+  
+  .noticia-details .container {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .noticia-header {
+    margin-bottom: 3rem;
+    animation: fadeInUp 0.8s ease-out;
+  }
+
+  .noticia-title {
+    font-size: 3.5rem;
+    color: var(--color-text);
+    margin-bottom: 2rem;
+    line-height: 1.2;
+    font-weight: 800;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    position: relative;
+  }
+  
+  .noticia-title::after {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    left: 0;
+    width: 100px;
+    height: 4px;
+    background: linear-gradient(90deg, 
+      var(--color-text-secondary),
+      transparent);
+    border-radius: 2px;
+  }
+
+  .noticia-excerpt {
+    font-size: 1.3rem;
+    color: var(--color-text-secondary);
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    padding: 2rem;
+    background: rgba(0, 0, 0, 0.05);
+    border-left: 4px solid var(--color-text-secondary);
+    border-radius: 0 15px 15px 0;
+    backdrop-filter: blur(10px);
+  }
+
+  .noticia-content {
+    margin: 4rem 0;
+    animation: fadeInUp 0.8s ease-out 0.4s both;
+  }
+
+  .content-body {
+    color: var(--color-text);
+    line-height: 1.8;
+    font-size: 1.1rem;
+  }
+
+  .content-body h2 {
+    font-size: 2.5rem !important;
+    color: var(--title-color) !important;
+    font-weight: 800 !important;
+    border-bottom: 3px solid var(--title-color) !important;
+    padding-bottom: 1rem !important;
+    margin: 3rem 0 2rem 0 !important;
+    line-height: 1.2 !important;
+    text-shadow: none !important;
+  }
+
+  .content-body h3 {
+    font-size: 2rem !important;
+    color: var(--title-color) !important;
+    font-weight: 700 !important;
+    margin: 2.5rem 0 1.5rem 0 !important;
+    padding-left: 1.5rem !important;
+    position: relative !important;
+    line-height: 1.3 !important;
+    text-shadow: none !important;
+  }
+
+  .content-body h3::before {
+    content: '▎' !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    font-size: 2rem !important;
+    color: var(--title-color) !important;
+  }
+
+  .content-body h4 {
+    font-size: 1.6rem !important;
+    color: var(--title-color) !important;
+    font-weight: 600 !important;
+    background: linear-gradient(90deg, var(--title-color), transparent) !important;
+    border-left: 4px solid var(--title-color) !important;
+    padding: 1rem 0 1rem 1.5rem !important;
+    margin: 2rem 0 1.5rem 0 !important;
+    border-radius: 0 10px 10px 0 !important;
+    line-height: 1.3 !important;
+    opacity: 0.9 !important;
+    text-shadow: none !important;
+  }
+
+  .content-body p {
+    margin: 1.5rem 0;
+    text-align: justify;
+  }
+
+  .content-body a {
+    color: var(--color-text);
+    text-decoration: underline;
+    transition: opacity 0.3s ease;
+    font-weight: 500;
+  }
+
+  .content-body a:hover {
+    opacity: 0.7;
+  }
+
+  .content-body ul,
+  .content-body ol {
+    margin: 1.5rem 0;
+    padding-left: 2rem;
+  }
+
+  .content-body li {
+    margin: 0.8rem 0;
+    color: var(--color-text);
+  }
+
+  .noticia-footer {
+    margin-top: 4rem;
+    padding-top: 3rem;
+    border-top: 2px solid var(--color-text-secondary);
+    animation: fadeInUp 0.8s ease-out 0.6s both;
+  }
+
+  .noticia-actions {
+    text-align: center;
+    padding-top: 2rem;
+    border-top: 1px solid var(--color-text-secondary);
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    min-width: 220px;
+    text-align: center;
+  }
+
+  .primary-btn {
+    background: var(--color-primary, #ff3333);
+    color: #ffffff;
+    border: 2px solid var(--color-primary, #ff3333);
+  }
+
+  .primary-btn:hover {
+    background: var(--color-secondary, #bb2424);
+    border-color: var(--color-secondary, #bb2424);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .noticia-details {
+      padding: 2rem 0 4rem;
+    }
+    
+    .noticia-details .container {
+      max-width: 100%;
+    }
+
+    .noticia-title {
+      font-size: 2.5rem;
+    }
+
+    .noticia-excerpt {
+      font-size: 1.1rem;
+      padding: 1.5rem;
+    }
+
+    .content-body {
+      font-size: 1rem;
+    }
+
+    .content-body h2 {
+      font-size: 2rem !important;
+    }
+
+    .content-body h3 {
+      font-size: 1.7rem !important;
+    }
+
+    .content-body h4 {
+      font-size: 1.4rem !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .noticia-title {
+      font-size: 2rem;
+    }
+
+    .noticia-excerpt {
+      font-size: 1rem;
+      padding: 1rem;
+    }
+
+    .breadcrumbs .current {
+      display: none;
+    }
+
+    .content-body h2 {
+      font-size: 1.8rem !important;
+    }
+
+    .content-body h3 {
+      font-size: 1.5rem !important;
+    }
+
+    .content-body h4 {
+      font-size: 1.3rem !important;
+    }
+  }
+</style>

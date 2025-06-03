@@ -1,0 +1,56 @@
+/* empty css                                 */
+import { a as createComponent, r as renderComponent, b as renderTemplate, m as maybeRenderHead, d as addAttribute } from '../chunks/astro/server_DfIlsqH_.mjs';
+import 'kleur/colors';
+import { g as getSiteInfo, c as getPageData, $ as $$MainLayout } from '../chunks/MainLayout_CruwIgCf.mjs';
+/* empty css                                 */
+export { renderers } from '../renderers.mjs';
+
+const $$Index = createComponent(async ($$result, $$props, $$slots) => {
+  let hasError = false;
+  let errorMessage = "";
+  let siteInfo = null;
+  let pageData = null;
+  try {
+    console.log("\u{1F504} Obteniendo datos desde WordPress...");
+    siteInfo = await getSiteInfo();
+    console.log("\u2705 SiteInfo obtenido:", siteInfo);
+    pageData = await getPageData("home");
+    console.log("\u2705 PageData obtenido:", pageData);
+    if (!siteInfo || !siteInfo.title) {
+      throw new Error("No se pudo obtener el t\xEDtulo del sitio desde WordPress");
+    }
+    if (!siteInfo.description) {
+      throw new Error("No se pudo obtener la descripci\xF3n del sitio desde WordPress");
+    }
+    console.log("\u2705 Todos los datos obtenidos correctamente");
+  } catch (error) {
+    console.error("\u274C Error obteniendo datos de WordPress:", error);
+    hasError = true;
+    errorMessage = `Error conectando con WordPress: ${error.message}`;
+  }
+  const heroTitle = hasError ? null : siteInfo?.title || pageData?.title;
+  const heroDescription = hasError ? null : siteInfo?.description || pageData?.excerpt;
+  const logoImage = hasError ? null : siteInfo?.logo?.url || pageData?.featuredImage?.url;
+  const logoAlt = hasError ? null : siteInfo?.logo?.altText || pageData?.featuredImage?.altText;
+  const pageTitle = hasError ? "Error - VinylStation" : pageData?.seo?.title || `${siteInfo.title}`;
+  const pageDescription = hasError ? "Error cargando contenido" : pageData?.seo?.metaDesc || siteInfo.description;
+  return renderTemplate`${renderComponent($$result, "MainLayout", $$MainLayout, { "title": pageTitle, "description": pageDescription, "data-astro-cid-j7pv25f6": true }, { "default": async ($$result2) => renderTemplate` ${maybeRenderHead()}<div class="container" data-astro-cid-j7pv25f6> ${hasError ? renderTemplate`<!-- Vista de ERROR -->
+      <div class="error-container" data-astro-cid-j7pv25f6> <div class="error-icon" data-astro-cid-j7pv25f6>⚠️</div> <h1 class="error-title" data-astro-cid-j7pv25f6>Error de Conexión</h1> <p class="error-message" data-astro-cid-j7pv25f6>${errorMessage}</p> <div class="error-details" data-astro-cid-j7pv25f6> <h3 data-astro-cid-j7pv25f6>Detalles técnicos:</h3> <ul data-astro-cid-j7pv25f6> <li data-astro-cid-j7pv25f6>Verificar conexión a: https://cms.vinylstation.es/graphql</li> <li data-astro-cid-j7pv25f6>Comprobar que WordPress esté funcionando</li> <li data-astro-cid-j7pv25f6>Revisar configuración de GraphQL</li> </ul> </div> <div class="error-actions" data-astro-cid-j7pv25f6> <button onclick="window.location.reload()" class="btn primary-btn" data-astro-cid-j7pv25f6>
+🔄 Reintentar
+</button> </div> </div>` : renderTemplate`<!-- Vista NORMAL con datos reales -->
+      <header class="page-header" data-astro-cid-j7pv25f6> ${logoImage && renderTemplate`<div class="site-icon-container" data-astro-cid-j7pv25f6> <img${addAttribute(logoImage, "src")}${addAttribute(logoAlt || "Logo", "alt")} class="site-icon" data-astro-cid-j7pv25f6> </div>`} <h1 data-astro-cid-j7pv25f6>${heroTitle}</h1> <p class="page-description" data-astro-cid-j7pv25f6>${heroDescription}</p> <!-- Mostrar información de debug --> <div class="debug-info" data-astro-cid-j7pv25f6> <details data-astro-cid-j7pv25f6> <summary data-astro-cid-j7pv25f6>🔍 Debug Info (click para ver)</summary> <div class="debug-content" data-astro-cid-j7pv25f6> <p data-astro-cid-j7pv25f6><strong data-astro-cid-j7pv25f6>Título del sitio:</strong> ${siteInfo?.title || "No obtenido"}</p> <p data-astro-cid-j7pv25f6><strong data-astro-cid-j7pv25f6>Descripción:</strong> ${siteInfo?.description || "No obtenido"}</p> <p data-astro-cid-j7pv25f6><strong data-astro-cid-j7pv25f6>URL del logo:</strong> ${siteInfo?.logo?.url || "No obtenido"}</p> <p data-astro-cid-j7pv25f6><strong data-astro-cid-j7pv25f6>Fuente del logo:</strong> ${siteInfo?.logo?.source || "No especificado"}</p> ${siteInfo?.logo?.errorMessage && renderTemplate`<p data-astro-cid-j7pv25f6><strong data-astro-cid-j7pv25f6>Error del logo:</strong> ${siteInfo.logo.errorMessage}</p>`} ${siteInfo?.logo?.databaseId && renderTemplate`<p data-astro-cid-j7pv25f6><strong data-astro-cid-j7pv25f6>ID del logo:</strong> ${siteInfo.logo.databaseId}</p>`} <p data-astro-cid-j7pv25f6><strong data-astro-cid-j7pv25f6>Página obtenida:</strong> ${pageData?.title || "No obtenido"}</p> </div> </details> </div> <div class="hero-actions" data-astro-cid-j7pv25f6> <a href="/vinilos" class="btn primary-btn" data-astro-cid-j7pv25f6>Explorar Vinilos</a> <a href="/programas" class="btn secondary-btn" data-astro-cid-j7pv25f6>Ver Programas</a> </div> </header>`} </div> ` })} `;
+}, "C:/Users/nestu/Desktop/web vinylstation/astro_30-05/src/pages/index.astro", void 0);
+
+const $$file = "C:/Users/nestu/Desktop/web vinylstation/astro_30-05/src/pages/index.astro";
+const $$url = "";
+
+const _page = /*#__PURE__*/Object.freeze(/*#__PURE__*/Object.defineProperty({
+  __proto__: null,
+  default: $$Index,
+  file: $$file,
+  url: $$url
+}, Symbol.toStringTag, { value: 'Module' }));
+
+const page = () => _page;
+
+export { page };

@@ -1,5 +1,4 @@
 ---
-// Header component for VinylStation
 import { getSiteInfo, getMenuNavegacion } from '../lib/wordpress';
 
 const siteInfo = await getSiteInfo();
@@ -7,38 +6,78 @@ const siteInfo = await getSiteInfo();
 // Obtener menú dinámico desde WordPress
 let menuItems = [];
 try {
-  const menuData = await getMenuNavegacion('primary');
+  // ¡Asegúrate de que el nombre coincide con el que tienes en WP!
+  const menuData = await getMenuNavegacion('Menu');
   menuItems = menuData.items || [];
   console.log('✅ Menú cargado dinámicamente:', menuItems.length, 'elementos');
+  
+  // Asegurar que siempre existe el enlace de Contacto después de Noticias
+  const hasContacto = menuItems.some(item => 
+    item.label?.toLowerCase() === 'contacto' || 
+    item.url?.includes('/contacto')
+  );
+  
+  if (!hasContacto) {
+    // Encontrar el índice de Noticias
+    const noticiasIndex = menuItems.findIndex(item => 
+      item.label?.toLowerCase() === 'noticias' || 
+      item.url?.includes('/noticias')
+    );
+    
+    if (noticiasIndex !== -1) {
+      // Insertar Contacto después de Noticias
+      menuItems.splice(noticiasIndex + 1, 0, {
+        id: 'contacto-added',
+        label: 'Contacto',
+        url: '/contacto',
+        target: '_self'
+      });
+    } else {
+      // Si no hay Noticias, agregar Contacto al final
+      menuItems.push({
+        id: 'contacto-added',
+        label: 'Contacto',
+        url: '/contacto',
+        target: '_self'
+      });
+    }
+    console.log('➕ Enlace de Contacto añadido al menú');
+  }
 } catch (error) {
   console.error('❌ Error cargando menú dinámico:', error.message);
   // Fallback si falla
   menuItems = [
     { id: '1', label: 'Inicio', url: '/', target: '_self' },
-    { id: '2', label: 'Vinilos', url: '/vinilos/index', target: '_self' },
+    { id: '2', label: 'Vinilos', url: '/vinilos', target: '_self' },
     { id: '3', label: 'Programas', url: '/programas', target: '_self' },
-    { id: '4', label: 'Noticias', url: '/noticias', target: '_self' }
+    { id: '4', label: 'Noticias', url: '/noticias', target: '_self' },
+    { id: '5', label: 'Contacto', url: '/contacto', target: '_self' }
   ];
 }
 ---
 
-<header class="header">
+<header class="header" id="header">
   <div class="header-content">
-    <div class="logo">
-      <a href="/">
-        <img src={siteInfo.logo.url} alt={siteInfo.logo.altText} class="logo-img" />
-        VinylStation
-      </a>
+    <!-- Logo y título a la izquierda -->
+    <div class="header-left">
+      <div class="logo">
+        <a href="/">
+          <img src="/images/logos/logo vinylstation.png" alt="VinylStation Logo" class="logo-img" />
+          VinylStation
+        </a>
+      </div>
     </div>
+    
+    <!-- Menú en el centro -->
     <nav class="main-nav">
       <ul>
         {menuItems.map((item) => (
           <li key={item.id}>
             <a 
-              href={item.url} 
-              target={item.target}
+              href={item.path || item.url} 
+              target={item.target || '_self'}
               title={item.title || item.label}
-              class={item.cssClasses || ''}
+              class={Array.isArray(item.cssClasses) ? item.cssClasses.join(' ') : item.cssClasses || ''}
             >
               {item.label}
             </a>
@@ -46,81 +85,257 @@ try {
         ))}
       </ul>
     </nav>
-    <div class="radio-container">
-      <slot />
+    
+    <!-- Reproductor y botón a la derecha -->
+    <div class="header-right">
+      <!-- Botón de cambio de tema -->
+      <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema">
+        <span id="themeIcon">🌙</span>
+      </button>
+      <div class="radio-container">
+        <slot />
+      </div>
     </div>
   </div>
 </header>
 
+<!-- Script para efecto de transparencia al scroll -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const header = document.getElementById('header');
+    
+    function handleScroll() {
+      const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+      
+      if (scrollTop > 50) {
+        header.classList.add('scrolled');
+      } else {
+        header.classList.remove('scrolled');
+      }
+    }
+    
+    window.addEventListener('scroll', handleScroll);
+    
+    // Función para cambiar el tema
+    function toggleTheme() {
+      const html = document.documentElement;
+      const currentTheme = html.getAttribute('data-theme');
+      const newTheme = currentTheme === 'day' ? 'night' : 'day';
+      const themeIcon = document.getElementById('themeIcon');
+      
+      html.setAttribute('data-theme', newTheme);
+      localStorage.setItem('vinylstation-theme', newTheme);
+      
+      // Cambiar el icono
+      themeIcon.textContent = newTheme === 'day' ? '☀️' : '🌙';
+    }
+
+    // Inicializar tema al cargar la página
+    function initTheme() {
+      const savedTheme = localStorage.getItem('vinylstation-theme');
+      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const defaultTheme = savedTheme || (prefersDark ? 'night' : 'day');
+      const themeIcon = document.getElementById('themeIcon');
+      
+      document.documentElement.setAttribute('data-theme', defaultTheme);
+      themeIcon.textContent = defaultTheme === 'day' ? '☀️' : '🌙';
+    }
+
+    // Ejecutar al cargar la página
+    initTheme();
+    
+    // Añadir event listener al botón
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+      themeToggle.addEventListener('click', toggleTheme);
+    }
+
+    // Escuchar cambios en la preferencia del sistema
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+      if (!localStorage.getItem('vinylstation-theme')) {
+        const newTheme = e.matches ? 'night' : 'day';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        document.getElementById('themeIcon').textContent = newTheme === 'day' ? '☀️' : '🌙';
+      }
+    });
+  });
+</script>
+
 <style>
   .header {
-    background: var(--color-bg); /* Usar variable de color de fondo */
-    padding: 1rem;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    background: var(--color-bg);
+    padding: 1.5rem 2rem; /* Más padding horizontal */
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    color: var(--color-text); /* Asegurar color de texto por defecto */
+    color: var(--color-text);
+    transition: all 0.3s ease;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
   }
-
+  
+  /* Efecto de transparencia al hacer scroll */
+  .header.scrolled {
+    background: rgba(var(--color-bg-rgb, 10, 10, 10), 0.85);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    padding: 1rem 2rem;
+  }
+  
+  .header.scrolled .logo {
+    font-size: 1.6rem;
+  }
+  
+  .header.scrolled .logo-img {
+    width: 50px;
+    height: 50px;
+  }
+  
   .header-content {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 1rem;
+    width: 100%; /* Ancho completo */
     display: flex;
-    flex-direction: column;
+    justify-content: space-between; /* Extremos */
     align-items: center;
-    gap: 1rem; /* Espacio entre elementos */
+    gap: 2rem;
+  }
+  
+  .header-left {
+    flex: 0 0 auto; /* No crece ni se encoge */
+  }
+  
+  .main-nav {
+    flex: 1; /* Toma el espacio central */
+    display: flex;
+    justify-content: center; /* Centra el menú */
+  }
+  
+  .header-right {
+    flex: 0 0 auto; /* No crece ni se encoge */
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  /* Botón de cambio de tema en el header */
+  .theme-toggle {
+    background: var(--color-accent);
+    color: var(--color-darkest);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.2rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
   }
 
+  .theme-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  [data-theme="day"] .theme-toggle {
+    background: var(--color-darkest);
+    color: var(--color-gold);
+    box-shadow: 0 2px 8px rgba(5, 2, 31, 0.2);
+  }
+
+  [data-theme="day"] .theme-toggle:hover {
+    box-shadow: 0 4px 12px rgba(5, 2, 31, 0.3);
+  }
   .logo {
-    font-size: 1.8rem; /* Aumentar tamaño del logo */
+    font-size: 1.8rem;
     font-weight: bold;
   }
-
   .logo a {
-    color: var(--color-primary); /* Usar color primario para el logo */
+    color: var(--title-color); /* Usar color dinámico del tema */
     text-decoration: none;
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    transition: color 0.3s ease;
   }
-
   .logo-img {
-    width: 32px;
-    height: 32px;
+    width: 60px; /* Más grande */
+    height: 60px;
     object-fit: contain;
+    transition: all 0.3s ease;
+    animation: logoGlow 3s ease-in-out infinite alternate; /* Mismo efecto que el hero */
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
   }
-
+  
+  .logo-img:hover {
+    transform: scale(1.05);
+  }
+  
+  /* Animación de resplandor para el logo del header */
+  @keyframes logoGlow {
+    0% {
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 10px var(--title-color, rgba(197, 173, 123, 0.1)));
+    }
+    100% {
+      filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 20px var(--title-color, rgba(197, 173, 123, 0.3)));
+    }
+  }
+  
+  /* Animación específica para modo día */
+  [data-theme="day"] .logo-img {
+    filter: drop-shadow(0 4px 8px rgba(5, 2, 31, 0.3));
+  }
   .main-nav ul {
     display: flex;
     list-style: none;
     padding: 0;
     margin: 0;
-    gap: 1.5rem;
+    gap: 2rem; /* Más espacio entre elementos */
   }
-
   .main-nav a {
-    color: var(--color-text); /* Usar color de texto para los enlaces */
+    color: var(--title-color); /* Cambiar a color de títulos */
     text-decoration: none;
-    font-weight: 500;
-    transition: color 0.3s ease;
+    font-weight: 600;
+    font-size: 1.1rem; /* Un punto más grande */
+    text-transform: uppercase; /* Mayúsculas */
+    letter-spacing: 0.5px; /* Espaciado entre letras */
+    transition: all 0.3s ease;
+    position: relative;
   }
-
+  
+  /* Efecto underline animado */
+  .main-nav a::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--title-color);
+    transition: width 0.3s ease;
+  }
+  
   .main-nav a:hover {
-    color: var(--color-primary);
+    opacity: 0.8;
   }
-
-  .radio-container {
+  
+  .main-nav a:hover::after {
     width: 100%;
-    max-width: 300px; /* Limitar ancho del contenedor del reproductor */
   }
-
-  /* Estilos para el reproductor dentro del contenedor */
+  .radio-container {
+    width: 280px; /* Ancho fijo para el reproductor */
+    max-width: 280px;
+  }
   .radio-container iframe {
     width: 100%;
-    height: 80px; /* Ajustar altura del iframe */
+    height: 80px;
     border: none;
-    border-radius: 0.5rem; /* Bordes redondeados */
+    border-radius: 0.5rem;
   }
-
   .radio-container a {
     display: block;
     font-size: 0.8em;
@@ -130,27 +345,57 @@ try {
     color: var(--color-text);
     text-decoration: none;
   }
-
-
-  @media (min-width: 768px) {
-    .header-content {
-      flex-direction: row;
-      justify-content: space-between;
-      align-items: center;
-      gap: 2rem; /* Aumentar espacio entre elementos en escritorio */
+  @media (max-width: 1024px) {
+    .header {
+      padding: 1.5rem 1rem;
     }
-
-    .logo {
-      margin-bottom: 0;
+    
+    .header.scrolled {
+      padding: 1rem 1rem;
     }
-
+    
     .main-nav ul {
-      margin: 0;
+      gap: 1.5rem;
     }
-
+    
     .radio-container {
-      width: auto;
-      margin-top: 0;
+      width: 250px;
+      max-width: 250px;
+    }
+  }
+  
+  @media (max-width: 968px) {
+    .header-content {
+      flex-direction: column;
+      gap: 1rem;
+    }
+    
+    .header-left,
+    .header-right {
+      flex: none;
+    }
+    
+    .main-nav {
+      order: 2; /* Menú va en el medio en móvil */
+    }
+    
+    .header-left {
+      order: 1; /* Logo arriba */
+    }
+    
+    .header-right {
+      order: 3; /* Reproductor abajo */
+    }
+    
+    .main-nav ul {
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .radio-container {
+      width: 100%;
+      max-width: 300px;
     }
   }
 </style>
