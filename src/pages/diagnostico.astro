@@ -1,5 +1,18 @@
 ---
 // Página de diagnóstico temporal para verificar variables de entorno
+const env = {
+  PUBLIC_WORDPRESS_API_URL: import.meta.env.PUBLIC_WORDPRESS_API_URL || 'NO DEFINIDA',
+  PUBLIC_WORDPRESS_GRAPHQL_URL: import.meta.env.PUBLIC_WORDPRESS_GRAPHQL_URL || 'NO DEFINIDA',
+  MODE: import.meta.env.MODE,
+  PROD: import.meta.env.PROD,
+  SSR: import.meta.env.SSR
+};
+
+const restUrl = import.meta.env.PUBLIC_WORDPRESS_API_URL || 'https://cms.vinylstation.es/wp-json';
+const graphqlUrl = import.meta.env.PUBLIC_WORDPRESS_GRAPHQL_URL || 'https://cms.vinylstation.es/graphql';
+const currentUrl = Astro.url.toString();
+const currentHost = Astro.url.host;
+const currentProtocol = Astro.url.protocol;
 ---
 
 <!DOCTYPE html>
@@ -53,20 +66,14 @@
     
     <div class="section">
         <h2>1. Variables de Entorno del Servidor</h2>
-        <pre id="server-env">{
-  "PUBLIC_WORDPRESS_API_URL": "${import.meta.env.PUBLIC_WORDPRESS_API_URL || 'NO DEFINIDA'}",
-  "PUBLIC_WORDPRESS_GRAPHQL_URL": "${import.meta.env.PUBLIC_WORDPRESS_GRAPHQL_URL || 'NO DEFINIDA'}",
-  "MODE": "${import.meta.env.MODE}",
-  "PROD": ${import.meta.env.PROD},
-  "SSR": ${import.meta.env.SSR}
-}</pre>
+        <pre id="server-env">{JSON.stringify(env, null, 2)}</pre>
     </div>
     
     <div class="section">
         <h2>2. URLs Configuradas</h2>
         <div id="urls">
-            <p><strong>API REST:</strong> <span id="rest-url"></span></p>
-            <p><strong>GraphQL:</strong> <span id="graphql-url"></span></p>
+            <p><strong>API REST:</strong> <span id="rest-url">{restUrl}</span></p>
+            <p><strong>GraphQL:</strong> <span id="graphql-url">{graphqlUrl}</span></p>
         </div>
     </div>
     
@@ -80,19 +87,15 @@
     <div class="section">
         <h2>4. Información del Entorno</h2>
         <div id="env-info">
-            <p><strong>URL actual:</strong> ${Astro.url}</p>
-            <p><strong>Host:</strong> ${Astro.url.host}</p>
-            <p><strong>Protocolo:</strong> ${Astro.url.protocol}</p>
+            <p><strong>URL actual:</strong> {currentUrl}</p>
+            <p><strong>Host:</strong> {currentHost}</p>
+            <p><strong>Protocolo:</strong> {currentProtocol}</p>
         </div>
     </div>
 
-    <script>
-        const REST_URL = '${import.meta.env.PUBLIC_WORDPRESS_API_URL || 'https://cms.vinylstation.es/wp-json'}';
-        const GRAPHQL_URL = '${import.meta.env.PUBLIC_WORDPRESS_GRAPHQL_URL || 'https://cms.vinylstation.es/graphql'}';
-        
-        // Mostrar URLs
-        document.getElementById('rest-url').textContent = REST_URL;
-        document.getElementById('graphql-url').textContent = GRAPHQL_URL;
+    <script define:vars={{ restUrl, graphqlUrl }}>
+        const REST_URL = restUrl;
+        const GRAPHQL_URL = graphqlUrl;
         
         async function testREST() {
             const resultsDiv = document.getElementById('test-results');
@@ -102,16 +105,16 @@
                 const response = await fetch(REST_URL);
                 const data = await response.json();
                 
-                resultsDiv.innerHTML = \`
+                resultsDiv.innerHTML = `
                     <h3 class="success">✅ API REST funciona</h3>
-                    <p>Status: \${response.status}</p>
-                    <pre>\${JSON.stringify(data, null, 2).substring(0, 500)}...</pre>
-                \`;
+                    <p>Status: ${response.status}</p>
+                    <pre>${JSON.stringify(data, null, 2).substring(0, 500)}...</pre>
+                `;
             } catch (error) {
-                resultsDiv.innerHTML = \`
+                resultsDiv.innerHTML = `
                     <h3 class="error">❌ Error en API REST</h3>
-                    <p>\${error.message}</p>
-                \`;
+                    <p>${error.message}</p>
+                `;
             }
         }
         
@@ -119,14 +122,14 @@
             const resultsDiv = document.getElementById('test-results');
             resultsDiv.innerHTML = '<p>Probando GraphQL...</p>';
             
-            const query = \`
+            const query = `
                 query TestConnection {
                     generalSettings {
                         title
                         description
                     }
                 }
-            \`;
+            `;
             
             try {
                 const response = await fetch(GRAPHQL_URL, {
@@ -137,18 +140,22 @@
                 
                 const data = await response.json();
                 
-                resultsDiv.innerHTML = \`
+                resultsDiv.innerHTML = `
                     <h3 class="success">✅ GraphQL funciona</h3>
-                    <p>Status: \${response.status}</p>
-                    <pre>\${JSON.stringify(data, null, 2)}</pre>
-                \`;
+                    <p>Status: ${response.status}</p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
             } catch (error) {
-                resultsDiv.innerHTML = \`
+                resultsDiv.innerHTML = `
                     <h3 class="error">❌ Error en GraphQL</h3>
-                    <p>\${error.message}</p>
-                \`;
+                    <p>${error.message}</p>
+                `;
             }
         }
+        
+        // Hacer las funciones globales
+        window.testREST = testREST;
+        window.testGraphQL = testGraphQL;
     </script>
 </body>
 </html>
