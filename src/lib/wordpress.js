@@ -4,7 +4,14 @@ const WORDPRESS_GRAPHQL_URL =
   import.meta.env.PUBLIC_WORDPRESS_GRAPHQL_URL ||
   'https://cms.vinylstation.es/graphql';
 
-console.log('🔗 WordPress API URL:', WORDPRESS_GRAPHQL_URL);
+// Debug: Verificar variables de entorno
+console.log('🔗 WordPress GraphQL URL:', WORDPRESS_GRAPHQL_URL);
+console.log('🔍 Variables de entorno:', {
+  PUBLIC_WORDPRESS_API_URL: import.meta.env.PUBLIC_WORDPRESS_API_URL,
+  PUBLIC_WORDPRESS_GRAPHQL_URL: import.meta.env.PUBLIC_WORDPRESS_GRAPHQL_URL,
+  MODE: import.meta.env.MODE,
+  PROD: import.meta.env.PROD
+});
 
 function processImageURL(url) {
   if (!url) return '/images/placeholder-radio.jpg'; // Podríamos tener placeholders específicos por tipo

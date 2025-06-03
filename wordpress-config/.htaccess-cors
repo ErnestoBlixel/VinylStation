@@ -1,0 +1,25 @@
+# Configuración CORS para WordPress
+# Añadir estas líneas al archivo .htaccess en la raíz de WordPress
+
+<IfModule mod_headers.c>
+    # Permitir peticiones desde dominios específicos
+    SetEnvIf Origin "http(s)?://(localhost:3000|2e43605e\.vinylstation\.pages\.dev|vinylstation\.pages\.dev|demo\.vinylstation\.es|vinylstation\.es|www\.vinylstation\.es)$" AccessControlAllowOrigin=$0
+    Header always set Access-Control-Allow-Origin %{AccessControlAllowOrigin}e env=AccessControlAllowOrigin
+    
+    # Permitir credenciales
+    Header always set Access-Control-Allow-Credentials "true"
+    
+    # Permitir métodos
+    Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    
+    # Permitir headers
+    Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+    
+    # Cache de preflight
+    Header always set Access-Control-Max-Age "3600"
+</IfModule>
+
+# Manejar peticiones OPTIONS
+RewriteEngine On
+RewriteCond %{REQUEST_METHOD} OPTIONS
+RewriteRule ^(.*)$ $1 [R=200,L]

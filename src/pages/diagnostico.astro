@@ -1,0 +1,154 @@
+---
+// Página de diagnóstico temporal para verificar variables de entorno
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico - VinylStation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #2a2a2a;
+        }
+        h1 { color: #ff3333; }
+        h2 { color: #ff6b6b; }
+        .success { color: #4caf50; }
+        .error { color: #f44336; }
+        pre {
+            background: #000;
+            padding: 15px;
+            overflow-x: auto;
+            border-radius: 5px;
+        }
+        button {
+            background: #ff3333;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #cc2222;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Diagnóstico de Variables de Entorno</h1>
+    
+    <div class="section">
+        <h2>1. Variables de Entorno del Servidor</h2>
+        <pre id="server-env">{
+  "PUBLIC_WORDPRESS_API_URL": "${import.meta.env.PUBLIC_WORDPRESS_API_URL || 'NO DEFINIDA'}",
+  "PUBLIC_WORDPRESS_GRAPHQL_URL": "${import.meta.env.PUBLIC_WORDPRESS_GRAPHQL_URL || 'NO DEFINIDA'}",
+  "MODE": "${import.meta.env.MODE}",
+  "PROD": ${import.meta.env.PROD},
+  "SSR": ${import.meta.env.SSR}
+}</pre>
+    </div>
+    
+    <div class="section">
+        <h2>2. URLs Configuradas</h2>
+        <div id="urls">
+            <p><strong>API REST:</strong> <span id="rest-url"></span></p>
+            <p><strong>GraphQL:</strong> <span id="graphql-url"></span></p>
+        </div>
+    </div>
+    
+    <div class="section">
+        <h2>3. Test de Conectividad</h2>
+        <button onclick="testREST()">Probar API REST</button>
+        <button onclick="testGraphQL()">Probar GraphQL</button>
+        <div id="test-results"></div>
+    </div>
+    
+    <div class="section">
+        <h2>4. Información del Entorno</h2>
+        <div id="env-info">
+            <p><strong>URL actual:</strong> ${Astro.url}</p>
+            <p><strong>Host:</strong> ${Astro.url.host}</p>
+            <p><strong>Protocolo:</strong> ${Astro.url.protocol}</p>
+        </div>
+    </div>
+
+    <script>
+        const REST_URL = '${import.meta.env.PUBLIC_WORDPRESS_API_URL || 'https://cms.vinylstation.es/wp-json'}';
+        const GRAPHQL_URL = '${import.meta.env.PUBLIC_WORDPRESS_GRAPHQL_URL || 'https://cms.vinylstation.es/graphql'}';
+        
+        // Mostrar URLs
+        document.getElementById('rest-url').textContent = REST_URL;
+        document.getElementById('graphql-url').textContent = GRAPHQL_URL;
+        
+        async function testREST() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '<p>Probando API REST...</p>';
+            
+            try {
+                const response = await fetch(REST_URL);
+                const data = await response.json();
+                
+                resultsDiv.innerHTML = \`
+                    <h3 class="success">✅ API REST funciona</h3>
+                    <p>Status: \${response.status}</p>
+                    <pre>\${JSON.stringify(data, null, 2).substring(0, 500)}...</pre>
+                \`;
+            } catch (error) {
+                resultsDiv.innerHTML = \`
+                    <h3 class="error">❌ Error en API REST</h3>
+                    <p>\${error.message}</p>
+                \`;
+            }
+        }
+        
+        async function testGraphQL() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '<p>Probando GraphQL...</p>';
+            
+            const query = \`
+                query TestConnection {
+                    generalSettings {
+                        title
+                        description
+                    }
+                }
+            \`;
+            
+            try {
+                const response = await fetch(GRAPHQL_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+                
+                const data = await response.json();
+                
+                resultsDiv.innerHTML = \`
+                    <h3 class="success">✅ GraphQL funciona</h3>
+                    <p>Status: \${response.status}</p>
+                    <pre>\${JSON.stringify(data, null, 2)}</pre>
+                \`;
+            } catch (error) {
+                resultsDiv.innerHTML = \`
+                    <h3 class="error">❌ Error en GraphQL</h3>
+                    <p>\${error.message}</p>
+                \`;
+            }
+        }
+    </script>
+</body>
+</html>
