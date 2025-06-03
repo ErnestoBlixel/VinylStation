@@ -173,12 +173,12 @@ import VinylParticles from '../components/VinylParticles.astro'; // Vinilos flot
     transition: background 0.3s ease, color 0.3s ease; /* Transición suave */
     position: relative;
     overflow-x: hidden;
-    padding-top: 0; /* Sin padding en móvil (header no fijo) */
+    padding-top: 70px; /* Espacio para header fijo en todas las versiones */
   }
   
   @media (min-width: 768px) {
     body {
-      padding-top: 80px; /* Espacio para header fijo solo en desktop */
+      padding-top: 80px; /* Un poco más de espacio en desktop */
     }
   }
   

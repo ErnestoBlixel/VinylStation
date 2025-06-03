@@ -68,7 +68,7 @@ try {
       </div>
     </div>
     
-    <!-- Controles móviles: Play + Hamburguesa -->
+    <!-- Controles móviles: Play + Modo noche + Hamburguesa -->
     <div class="mobile-controls">
       <!-- Botón de play móvil -->
       <button class="mobile-play-btn" id="mobilePlayBtn" aria-label="Reproducir/Pausar Radio">
@@ -79,6 +79,11 @@ try {
           <rect x="6" y="4" width="4" height="16"></rect>
           <rect x="14" y="4" width="4" height="16"></rect>
         </svg>
+      </button>
+      
+      <!-- Botón de modo noche móvil (NUEVO) -->
+      <button class="mobile-theme-toggle-direct" id="mobileThemeToggleDirect" aria-label="Cambiar tema">
+        <span id="mobileThemeIconDirect">🌙</span>
       </button>
       
       <!-- Menú hamburguesa -->
@@ -296,6 +301,7 @@ try {
       const newTheme = currentTheme === 'day' ? 'night' : 'day';
       const themeIcon = document.getElementById('themeIcon');
       const mobileThemeIcon = document.getElementById('mobileThemeIcon');
+      const mobileThemeIconDirect = document.getElementById('mobileThemeIconDirect');
       const themeLabel = document.querySelector('.theme-label');
       
       html.setAttribute('data-theme', newTheme);
@@ -307,16 +313,18 @@ try {
       
       if (themeIcon) themeIcon.textContent = iconText;
       if (mobileThemeIcon) mobileThemeIcon.textContent = iconText;
+      if (mobileThemeIconDirect) mobileThemeIconDirect.textContent = iconText;
       if (themeLabel) themeLabel.textContent = labelText;
     }
 
     // === INICIALIZAR TEMA AL CARGAR LA PÁGINA ===
     function initTheme() {
       const savedTheme = localStorage.getItem('vinylstation-theme');
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      const defaultTheme = savedTheme || (prefersDark ? 'night' : 'day');
+      // CAMBIO: Siempre modo noche por defecto, ignorar preferencia del sistema
+      const defaultTheme = savedTheme || 'night';
       const themeIcon = document.getElementById('themeIcon');
       const mobileThemeIcon = document.getElementById('mobileThemeIcon');
+      const mobileThemeIconDirect = document.getElementById('mobileThemeIconDirect');
       const themeLabel = document.querySelector('.theme-label');
       
       document.documentElement.setAttribute('data-theme', defaultTheme);
@@ -326,6 +334,7 @@ try {
       
       if (themeIcon) themeIcon.textContent = iconText;
       if (mobileThemeIcon) mobileThemeIcon.textContent = iconText;
+      if (mobileThemeIconDirect) mobileThemeIconDirect.textContent = iconText;
       if (themeLabel) themeLabel.textContent = labelText;
     }
 
@@ -335,6 +344,7 @@ try {
     // Añadir event listeners a los botones de tema
     const themeToggle = document.getElementById('themeToggle');
     const mobileThemeToggle = document.getElementById('mobileThemeToggle');
+    const mobileThemeToggleDirect = document.getElementById('mobileThemeToggleDirect');
     
     if (themeToggle) {
       themeToggle.addEventListener('click', toggleTheme);
@@ -347,8 +357,13 @@ try {
         setTimeout(closeMobileMenu, 300);
       });
     }
+    
+    if (mobileThemeToggleDirect) {
+      mobileThemeToggleDirect.addEventListener('click', toggleTheme);
+    }
 
-    // Escuchar cambios en la preferencia del sistema
+    // Escuchar cambios en la preferencia del sistema (desactivado porque siempre usamos modo noche por defecto)
+    /*
     window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
       if (!localStorage.getItem('vinylstation-theme')) {
         const newTheme = e.matches ? 'night' : 'day';
@@ -359,13 +374,16 @@ try {
         
         const themeIcon = document.getElementById('themeIcon');
         const mobileThemeIcon = document.getElementById('mobileThemeIcon');
+        const mobileThemeIconDirect = document.getElementById('mobileThemeIconDirect');
         const themeLabel = document.querySelector('.theme-label');
         
         if (themeIcon) themeIcon.textContent = iconText;
         if (mobileThemeIcon) mobileThemeIcon.textContent = iconText;
+        if (mobileThemeIconDirect) mobileThemeIconDirect.textContent = iconText;
         if (themeLabel) themeLabel.textContent = labelText;
       }
     });
+    */
   });
 </script>
 
@@ -385,14 +403,12 @@ try {
     backdrop-filter: blur(10px);
   }
   
-  /* En móvil, header NO fijo */
+  /* Header más oscuro en móvil para mejor visibilidad */
   @media (max-width: 767px) {
     .header {
-      position: relative;
-      top: auto;
-      left: auto;
-      right: auto;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      background: rgba(var(--color-bg-rgb, 10, 10, 10), 0.95);
+      backdrop-filter: blur(15px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
       padding: 0.6rem 1rem;
     }
   }
@@ -445,8 +461,8 @@ try {
   }
   
   .logo-img {
-    width: 28px;
-    height: 28px;
+    width: 35px;
+    height: 35px;
     object-fit: contain;
     transition: all 0.3s ease;
     animation: logoGlow 3s ease-in-out infinite alternate;
@@ -454,7 +470,7 @@ try {
   }
   
   .logo-text {
-    font-size: 0.9rem;
+    font-size: 1.1rem;
     font-weight: 600; /* Más fino como solicitaste */
   }
   
@@ -497,7 +513,7 @@ try {
   .mobile-controls {
     display: none;
     align-items: center;
-    gap: 0.8rem;
+    gap: 0.6rem; /* Reducido para acomodar 3 botones */
   }
   
   @media (max-width: 767px) {
@@ -535,6 +551,37 @@ try {
   @keyframes playingPulse {
     0%, 100% { transform: scale(1); }
     50% { transform: scale(1.05); }
+  }
+  
+  /* === BOTÓN MODO NOCHE MÓVIL DIRECTO === */
+  .mobile-theme-toggle-direct {
+    background: linear-gradient(135deg, var(--title-color) 0%, #ff6b6b 100%);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(255, 51, 51, 0.3);
+    color: white;
+    font-size: 0.9rem;
+  }
+  
+  .mobile-theme-toggle-direct:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(255, 51, 51, 0.4);
+  }
+  
+  [data-theme="day"] .mobile-theme-toggle-direct {
+    background: linear-gradient(135deg, var(--color-darkest) 0%, var(--color-primary) 100%);
+    box-shadow: 0 2px 8px rgba(5, 2, 31, 0.3);
+  }
+  
+  [data-theme="day"] .mobile-theme-toggle-direct:hover {
+    box-shadow: 0 4px 12px rgba(5, 2, 31, 0.4);
   }
   
   /* === MENÚ HAMBURGUESA === */
