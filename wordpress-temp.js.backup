@@ -1,0 +1,60 @@
+import { request, gql } from 'graphql-request';
+
+// TEMPORAL: URLs hardcodeadas mientras se aplican las variables de entorno
+const WORDPRESS_GRAPHQL_URL = 'https://cms.vinylstation.es/graphql';
+const WORDPRESS_API_URL = 'https://cms.vinylstation.es/wp-json';
+
+console.log('🔗 WordPress GraphQL URL (HARDCODED):', WORDPRESS_GRAPHQL_URL);
+
+function processImageURL(url) {
+  if (!url) return '/images/placeholder-radio.jpg';
+  if (/^https?:\/\//.test(url)) return url;
+  const wpBase = WORDPRESS_API_URL.replace('/wp-json', '');
+  return url.startsWith('/') ? `${wpBase}${url}` : url;
+}
+
+export async function getSiteInfo() {
+  console.log('🔄 Obteniendo información del sitio (TEMPORAL)...');
+  const QUERY = gql`
+    query GetSiteInfo {
+      generalSettings {
+        title
+        description
+        url
+        timezone
+        language
+      }
+    }
+  `;
+  
+  try {
+    const { generalSettings } = await request(WORDPRESS_GRAPHQL_URL, QUERY);
+    
+    return {
+      title: generalSettings?.title || 'VinylStation',
+      description: generalSettings?.description || 'Tu emisora de vinilo 24/7',
+      url: generalSettings?.url || 'https://vinylstation.es',
+      timezone: generalSettings?.timezone || 'Europe/Madrid',
+      language: generalSettings?.language || 'es-ES',
+      logo: {
+        url: '/images/logos/vinyl-station-logo.svg',
+        altText: 'VinylStation',
+        source: 'fallback',
+      },
+    };
+  } catch (error) {
+    console.error("❌ Error temporal:", error.message);
+    return {
+      title: 'VinylStation',
+      description: 'Tu emisora de vinilo 24/7',
+      url: 'https://vinylstation.es',
+      timezone: 'Europe/Madrid',
+      language: 'es-ES',
+      logo: {
+        url: '/images/logos/vinyl-station-logo.svg',
+        altText: 'VinylStation',
+        source: 'fallback',
+      },
+    };
+  }
+}

@@ -1,10 +1,11 @@
 import { request, gql } from 'graphql-request';
 
-const WORDPRESS_GRAPHQL_URL =
-  import.meta.env.PUBLIC_WORDPRESS_GRAPHQL_URL ||
-  'https://cms.vinylstation.es/graphql';
+// TEMPORAL: Hardcoded mientras se aplican las variables de entorno en Cloudflare
+const WORDPRESS_GRAPHQL_URL = 'https://cms.vinylstation.es/graphql';
+// Original: import.meta.env.PUBLIC_WORDPRESS_GRAPHQL_URL || 'https://cms.vinylstation.es/graphql';
 
 // Debug: Verificar variables de entorno
+console.log('⚠️ USANDO URL HARDCODEADA TEMPORALMENTE');
 console.log('🔗 WordPress GraphQL URL:', WORDPRESS_GRAPHQL_URL);
 console.log('🔍 Variables de entorno:', {
   PUBLIC_WORDPRESS_API_URL: import.meta.env.PUBLIC_WORDPRESS_API_URL,
