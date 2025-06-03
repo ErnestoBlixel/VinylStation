@@ -1,0 +1,133 @@
+---
+// Página de prueba simple para verificar GraphQL
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test GraphQL Simple - VinylStation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        pre {
+            background: #000;
+            padding: 15px;
+            overflow-x: auto;
+            border-radius: 5px;
+        }
+        button {
+            background: #ff3333;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .error { color: #f44336; }
+        .success { color: #4caf50; }
+    </style>
+</head>
+<body>
+    <h1>Test Simple GraphQL</h1>
+    
+    <button onclick="testSimple()">Test Simple Query</button>
+    <button onclick="testMenu()">Test Menu Query</button>
+    <button onclick="testPrograms()">Test Programas Query</button>
+    
+    <div id="results"></div>
+
+    <script>
+        const GRAPHQL_URL = 'https://cms.vinylstation.es/graphql';
+        
+        async function testSimple() {
+            const query = `
+                query TestSimple {
+                    generalSettings {
+                        title
+                        description
+                    }
+                }
+            `;
+            
+            await runQuery('Simple Query', query);
+        }
+        
+        async function testMenu() {
+            const query = `
+                query TestMenu {
+                    menu(id: "primary", idType: NAME) {
+                        id
+                        name
+                        menuItems {
+                            nodes {
+                                id
+                                label
+                            }
+                        }
+                    }
+                }
+            `;
+            
+            await runQuery('Menu Query', query);
+        }
+        
+        async function testPrograms() {
+            const query = `
+                query TestPrograms {
+                    programas(first: 1) {
+                        nodes {
+                            id
+                            title
+                        }
+                    }
+                }
+            `;
+            
+            await runQuery('Programas Query', query);
+        }
+        
+        async function runQuery(name, query) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '<p>Ejecutando ' + name + '...</p>';
+            
+            try {
+                const response = await fetch(GRAPHQL_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query })
+                });
+                
+                const data = await response.json();
+                
+                if (data.errors) {
+                    resultsDiv.innerHTML = `
+                        <h3 class="error">❌ Error en ${name}</h3>
+                        <pre>${JSON.stringify(data.errors, null, 2)}</pre>
+                    `;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <h3 class="success">✅ ${name} funciona</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <h3 class="error">❌ Error de red en ${name}</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+    </script>
+</body>
+</html>

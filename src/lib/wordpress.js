@@ -15,11 +15,10 @@ console.log('🔍 Variables de entorno:', {
 });
 
 function processImageURL(url) {
-  if (!url) return '/images/placeholder-radio.jpg'; // Podríamos tener placeholders específicos por tipo
+  if (!url) return '/images/placeholder-radio.jpg';
   if (/^https?:\/\//.test(url)) return url;
-  const wpBase = import.meta.env.PUBLIC_WORDPRESS_API_URL
-    ? import.meta.env.PUBLIC_WORDPRESS_API_URL.replace('/wp-json', '')
-    : 'https://cms.vinylstation.es';
+  // TEMPORAL: Hardcoded
+  const wpBase = 'https://cms.vinylstation.es';
   return url.startsWith('/') ? `${wpBase}${url}` : url;
 }
 
