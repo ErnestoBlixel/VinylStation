@@ -13,11 +13,14 @@
   // ===============================
 
   const CONFIG = {
+    // HARDCODED: Forzar URL porque variables de entorno no están disponibles en Cloudflare
     GRAPHQL_URL: 'https://cms.vinylstation.es/graphql',
     DEBOUNCE_DELAY: 300,
     AUTOCOMPLETE_MIN_CHARS: 2,
     AUTOCOMPLETE_MAX_RESULTS: 5
   };
+
+  console.log('🔧 Usando configuración hardcodeada:', CONFIG.GRAPHQL_URL);
 
   // Helper: Debounce function
   function debounce(func, wait) {

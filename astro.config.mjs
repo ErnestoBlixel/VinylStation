@@ -21,10 +21,6 @@ export default defineConfig({
     assets: '_assets',
   },
   vite: {
-    define: {
-      'import.meta.env.PUBLIC_WORDPRESS_API_URL': JSON.stringify('https://cms.vinylstation.es/wp-json'),
-      'import.meta.env.PUBLIC_WORDPRESS_GRAPHQL_URL': JSON.stringify('https://cms.vinylstation.es/graphql'),
-    },
     server: {
       proxy: {
         '/api/wordpress': {

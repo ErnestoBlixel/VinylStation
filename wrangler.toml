@@ -1,0 +1,6 @@
+name = "vinylstation"
+compatibility_date = "2024-12-01"
+
+[vars]
+PUBLIC_WORDPRESS_API_URL = "https://cms.vinylstation.es/wp-json"
+PUBLIC_WORDPRESS_GRAPHQL_URL = "https://cms.vinylstation.es/graphql"

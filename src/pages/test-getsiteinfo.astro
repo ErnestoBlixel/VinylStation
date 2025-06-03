@@ -1,0 +1,81 @@
+---
+// Test específico para getSiteInfo
+import { getSiteInfo } from '../lib/wordpress.js';
+
+let siteInfo = null;
+let error = null;
+
+try {
+  siteInfo = await getSiteInfo();
+  console.log('✅ getSiteInfo resultado:', siteInfo);
+} catch (e) {
+  error = e;
+  console.error('❌ Error en getSiteInfo:', e);
+}
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test getSiteInfo - VinylStation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        pre {
+            background: #000;
+            padding: 15px;
+            overflow-x: auto;
+            border-radius: 5px;
+        }
+        .error { color: #f44336; }
+        .success { color: #4caf50; }
+        .warning { color: #ff9800; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test getSiteInfo()</h1>
+    
+    {error ? (
+      <div>
+        <h2 class="error">❌ Error detectado:</h2>
+        <pre>{error.message}</pre>
+        <pre>{error.stack}</pre>
+      </div>
+    ) : (
+      <div>
+        <h2 class="success">✅ getSiteInfo funcionó</h2>
+        
+        {siteInfo?.title === 'VinylStation (Error)' ? (
+          <div class="warning">
+            <h3>⚠️ Usando fallback (hay error en la consulta GraphQL)</h3>
+            <p>El título es "VinylStation (Error)", esto significa que la consulta GraphQL falló pero no lanzó excepción.</p>
+          </div>
+        ) : (
+          <div class="success">
+            <h3>✅ Datos obtenidos correctamente de WordPress</h3>
+          </div>
+        )}
+        
+        <h3>Resultado completo:</h3>
+        <pre>{JSON.stringify(siteInfo, null, 2)}</pre>
+      </div>
+    )}
+    
+    <hr>
+    <h2>📋 Variables de entorno:</h2>
+    <pre>{JSON.stringify({
+      PUBLIC_WORDPRESS_API_URL: import.meta.env.PUBLIC_WORDPRESS_API_URL,
+      PUBLIC_WORDPRESS_GRAPHQL_URL: import.meta.env.PUBLIC_WORDPRESS_GRAPHQL_URL,
+      MODE: import.meta.env.MODE,
+      PROD: import.meta.env.PROD
+    }, null, 2)}</pre>
+</body>
+</html>
