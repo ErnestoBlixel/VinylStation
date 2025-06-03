@@ -1,11 +1,13 @@
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
 import tailwind from '@astrojs/tailwind';
+import cloudflare from '@astrojs/cloudflare';
 
 // https://astro.build/config
 export default defineConfig({
   site: 'https://vinylstation.com',
-  output: 'server', // <<--- ESTO ACTIVA SSR Y SOLUCIONA TU PROBLEMA DE PAGINACIÓN
+  output: 'server',
+  adapter: cloudflare(),
   integrations: [
     react(),
     tailwind(),

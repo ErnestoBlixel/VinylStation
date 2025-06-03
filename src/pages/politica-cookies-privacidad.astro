@@ -1,7 +1,6 @@
 ---
 // Página de Política de Cookies y Privacidad - VinylStation Radio
 import MainLayout from '../layouts/MainLayout.astro';
-import { Fragment } from 'astro/components';
 
 // SEO y metadatos
 const pageTitle = 'Política de Cookies y Privacidad | VinylStation Radio';
@@ -13,10 +12,10 @@ const noIndex = true;
 
 <MainLayout title={pageTitle} description={pageDescription}>
   {noIndex && (
-    <Fragment slot="head">
-      <meta name="robots" content="noindex, nofollow" />
-      <meta name="googlebot" content="noindex, nofollow" />
-    </Fragment>
+    <>
+      <meta name="robots" content="noindex, nofollow" slot="head" />
+      <meta name="googlebot" content="noindex, nofollow" slot="head" />
+    </>
   )}
   <div class="legal-page">
     <div class="container">

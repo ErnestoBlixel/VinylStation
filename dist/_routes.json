@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "include": [
+    "/*"
+  ],
+  "exclude": [
+    "/_assets/*",
+    "/favicon.svg",
+    "/test-logo.html",
+    "/test-theme.html",
+    "/images/placeholder-news.jpg",
+    "/images/placeholder-radio.jpg",
+    "/images/placeholder-vinyl.jpg",
+    "/images/vinylstation.webp",
+    "/styles/global.css",
+    "/images/logos/logo vinylstation.png"
+  ]
+}

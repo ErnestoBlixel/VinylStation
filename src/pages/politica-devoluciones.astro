@@ -1,7 +1,6 @@
 ---
 // Página de Política de Devoluciones - VinylStation Radio
 import MainLayout from '../layouts/MainLayout.astro';
-import { Fragment } from 'astro/components';
 
 // SEO y metadatos
 const pageTitle = 'Política de Devoluciones | VinylStation Radio Store';
@@ -13,10 +12,10 @@ const noIndex = true;
 
 <MainLayout title={pageTitle} description={pageDescription}>
   {noIndex && (
-    <Fragment slot="head">
-      <meta name="robots" content="noindex, nofollow" />
-      <meta name="googlebot" content="noindex, nofollow" />
-    </Fragment>
+    <>
+      <meta name="robots" content="noindex, nofollow" slot="head" />
+      <meta name="googlebot" content="noindex, nofollow" slot="head" />
+    </>
   )}
   
   <!-- Contenedor principal unificado -->
@@ -152,8 +151,8 @@ const noIndex = true;
 
             <h3>Canales de Soporte</h3>
             <ul>
-              <li><strong>WhatsApp Prioritario:</strong> +34 722 41 50 33 (respuesta < 2 horas para incidencias urgentes)</li>
-              <li><strong>Email Especializado:</strong> tienda@vinylstation.es (respuesta < 24 horas)</li>
+              <li><strong>WhatsApp Prioritario:</strong> +34 722 41 50 33 (respuesta &lt; 2 horas para incidencias urgentes)</li>
+              <li><strong>Email Especializado:</strong> tienda@vinylstation.es (respuesta &lt; 24 horas)</li>
               <li><strong>Teléfono Directo:</strong> +34 722 41 50 33 (Lun-Vie: 10:00-18:00)</li>
             </ul>
 

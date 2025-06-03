@@ -11,9 +11,10 @@
     "astro": "astro"
   },
   "dependencies": {
+    "@astrojs/cloudflare": "^12.5.3",
     "@astrojs/react": "^3.0.10",
-    "@astrojs/tailwind": "^5.1.0",
-    "astro": "^4.4.0",
+    "@astrojs/tailwind": "^5.1.5",
+    "astro": "^5.8.1",
     "graphql": "^16.8.1",
     "graphql-request": "^6.1.0",
     "react": "^18.2.0",
