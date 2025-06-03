@@ -1,0 +1,269 @@
+---
+// Test específico con logging detallado
+import { getSiteInfo } from '../lib/wordpress.js';
+
+let siteInfo = null;
+let error = null;
+let startTime = Date.now();
+
+try {
+  siteInfo = await getSiteInfo();
+  console.log('✅ getSiteInfo resultado:', siteInfo);
+} catch (e) {
+  error = e;
+  console.error('❌ Error en getSiteInfo:', e);
+}
+
+const endTime = Date.now();
+const duration = endTime - startTime;
+---
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test getSiteInfo Mejorado - VinylStation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: white;
+        }
+        pre {
+            background: #000;
+            padding: 15px;
+            overflow-x: auto;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+        .error { color: #f44336; }
+        .success { color: #4caf50; }
+        .warning { color: #ff9800; }
+        .info { color: #2196f3; }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #2a2a2a;
+        }
+        button {
+            background: #ff3333;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test getSiteInfo() Mejorado</h1>
+    
+    <div class="section">
+        <h2>⏱️ Tiempo de respuesta: <span class="info">{duration}ms</span></h2>
+    </div>
+    
+    {error ? (
+      <div class="section">
+        <h2 class="error">❌ Error detectado:</h2>
+        <pre>{error.message}</pre>
+        <pre>{error.stack}</pre>
+      </div>
+    ) : (
+      <div class="section">
+        <h2 class="success">✅ getSiteInfo funcionó</h2>
+        
+        {siteInfo?.title === 'VinylStation (Error)' ? (
+          <div class="warning">
+            <h3>⚠️ Usando fallback (hay error en la consulta GraphQL)</h3>
+            <p>El título es "VinylStation (Error)", esto significa que la consulta GraphQL falló pero no lanzó excepción.</p>
+          </div>
+        ) : (
+          <div class="success">
+            <h3>🎉 ¡Datos obtenidos correctamente de WordPress!</h3>
+            <p><strong>Título:</strong> {siteInfo?.title}</p>
+            <p><strong>Descripción:</strong> {siteInfo?.description}</p>
+            <p><strong>URL:</strong> {siteInfo?.url}</p>
+            <p><strong>Logo source:</strong> {siteInfo?.logo?.source}</p>
+          </div>
+        )}
+        
+        <h3>Resultado completo:</h3>
+        <pre>{JSON.stringify(siteInfo, null, 2)}</pre>
+      </div>
+    )}
+    
+    <div class="section">
+        <h2>🧪 Tests adicionales</h2>
+        <button onclick="testBasicQuery()">Test Consulta Básica</button>
+        <button onclick="testExtendedQuery()">Test Consulta Extendida</button>
+        <button onclick="testLogo()">Test Logo</button>
+        <div id="test-results"></div>
+    </div>
+    
+    <div class="section">
+        <h2>📋 Variables de entorno:</h2>
+        <pre>{JSON.stringify({
+          PUBLIC_WORDPRESS_API_URL: import.meta.env.PUBLIC_WORDPRESS_API_URL,
+          PUBLIC_WORDPRESS_GRAPHQL_URL: import.meta.env.PUBLIC_WORDPRESS_GRAPHQL_URL,
+          MODE: import.meta.env.MODE,
+          PROD: import.meta.env.PROD
+        }, null, 2)}</pre>
+    </div>
+
+    <script>
+        const GRAPHQL_URL = import.meta.env.PUBLIC_WORDPRESS_GRAPHQL_URL || 'https://cms.vinylstation.es/graphql';
+        
+        async function testBasicQuery() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '<p>🔍 Probando consulta básica...</p>';
+            
+            const query = `
+                query GetBasicSiteInfo {
+                    generalSettings {
+                        title
+                        description
+                        url
+                    }
+                }
+            `;
+            
+            try {
+                const response = await fetch(GRAPHQL_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+                
+                const data = await response.json();
+                
+                if (data.errors) {
+                    resultsDiv.innerHTML = `
+                        <h3 class="error">❌ Error en consulta básica</h3>
+                        <pre>${JSON.stringify(data.errors, null, 2)}</pre>
+                    `;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <h3 class="success">✅ Consulta básica funciona</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <h3 class="error">❌ Error de red en consulta básica</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+        
+        async function testExtendedQuery() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '<p>🔍 Probando consulta extendida...</p>';
+            
+            const query = `
+                query GetExtendedSiteInfo {
+                    generalSettings {
+                        timezone
+                        language
+                    }
+                }
+            `;
+            
+            try {
+                const response = await fetch(GRAPHQL_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query })
+                });
+                
+                const data = await response.json();
+                
+                if (data.errors) {
+                    resultsDiv.innerHTML = `
+                        <h3 class="warning">⚠️ Campos extendidos no disponibles</h3>
+                        <pre>${JSON.stringify(data.errors, null, 2)}</pre>
+                    `;
+                } else {
+                    resultsDiv.innerHTML = `
+                        <h3 class="success">✅ Consulta extendida funciona</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    `;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <h3 class="error">❌ Error de red en consulta extendida</h3>
+                    <p>${error.message}</p>
+                `;
+            }
+        }
+        
+        async function testLogo() {
+            const resultsDiv = document.getElementById('test-results');
+            resultsDiv.innerHTML = '<p>🔍 Probando consultas de logo...</p>';
+            
+            const queries = [
+                {
+                    name: 'customLogo',
+                    query: `
+                        query GetCustomLogo {
+                            customLogo {
+                                node {
+                                    sourceUrl
+                                    altText
+                                    title
+                                }
+                            }
+                        }
+                    `
+                },
+                {
+                    name: 'siteLogo',
+                    query: `
+                        query GetSiteLogo {
+                            siteLogo {
+                                sourceUrl
+                                altText
+                            }
+                        }
+                    `
+                }
+            ];
+            
+            let results = '';
+            
+            for (const { name, query } of queries) {
+                try {
+                    const response = await fetch(GRAPHQL_URL, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ query })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.errors) {
+                        results += `<h4 class="warning">⚠️ ${name} no disponible</h4>`;
+                    } else {
+                        results += `<h4 class="success">✅ ${name} funciona</h4><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    }
+                } catch (error) {
+                    results += `<h4 class="error">❌ Error en ${name}: ${error.message}</h4>`;
+                }
+            }
+            
+            resultsDiv.innerHTML = results;
+        }
+        
+        // Hacer las funciones globales
+        window.testBasicQuery = testBasicQuery;
+        window.testExtendedQuery = testExtendedQuery;
+        window.testLogo = testLogo;
+    </script>
+</body>
+</html>

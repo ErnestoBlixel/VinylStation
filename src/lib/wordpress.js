@@ -22,33 +22,76 @@ function processImageURL(url) {
 
 export async function getSiteLogo() {
   console.log('🎯 Obteniendo logo del sitio...');
-  const LOGO = gql`
-    query GetCustomLogo {
-      customLogo {
-        node {
-          sourceUrl
-          altText
-          title
+  
+  // Intentar múltiples métodos para obtener el logo
+  const queries = [
+    // Método 1: Custom logo (WPGraphQL)
+    {
+      name: 'customLogo',
+      query: gql`
+        query GetCustomLogo {
+          customLogo {
+            node {
+              sourceUrl
+              altText
+              title
+            }
+          }
         }
-      }
+      `
+    },
+    // Método 2: Site logo (core WP)
+    {
+      name: 'siteLogo', 
+      query: gql`
+        query GetSiteLogo {
+          siteLogo {
+            sourceUrl
+            altText
+          }
+        }
+      `
+    },
+    // Método 3: Theme customizer
+    {
+      name: 'themeOptions',
+      query: gql`
+        query GetThemeLogo {
+          themeOptions {
+            siteLogo {
+              sourceUrl
+              altText
+            }
+          }
+        }
+      `
     }
-  `;
+  ];
 
-  try {
-    const { customLogo } = await request(WORDPRESS_GRAPHQL_URL, LOGO);
-    if (customLogo?.node?.sourceUrl) {
-      return {
-        url: processImageURL(customLogo.node.sourceUrl),
-        altText: customLogo.node.altText || 'VinylStation',
-        source: 'customLogo',
-      };
+  for (const { name, query } of queries) {
+    try {
+      const result = await request(WORDPRESS_GRAPHQL_URL, query);
+      const logoData = result[Object.keys(result)[0]];
+      
+      if (logoData?.node?.sourceUrl || logoData?.sourceUrl) {
+        const sourceUrl = logoData.node?.sourceUrl || logoData.sourceUrl;
+        const altText = logoData.node?.altText || logoData.altText || 'VinylStation';
+        
+        console.log(`✅ Logo obtenido via ${name}:`, sourceUrl);
+        return {
+          url: processImageURL(sourceUrl),
+          altText,
+          source: name,
+        };
+      }
+    } catch (error) {
+      console.log(`⚠️ ${name} no disponible:`, error.message);
     }
-  } catch {
-    console.warn('⚠️ customLogo no disponible, usando fallback');
   }
 
+  console.log('📁 Usando logo fallback local');
   return {
-    url: '/images/logos/vinyl-station-logo.svg', // Asegúrate que esta ruta es correcta
+    url: '/images/logos/vinyl-station-logo.svg',
     altText: 'VinylStation',
     source: 'fallback',
   };
@@ -56,59 +99,87 @@ export async function getSiteLogo() {
 
 export async function getSiteInfo() {
   console.log('🔄 Obteniendo información del sitio desde WordPress...');
-  const QUERY = gql`
-    query GetSiteInfo {
+  
+  // Consulta minimalista primero
+  const BASIC_QUERY = gql`
+    query GetBasicSiteInfo {
       generalSettings {
         title
         description
         url
-        timezone
-        language
       }
     }
   `;
+  
   try {
-    const { generalSettings } = await request(WORDPRESS_GRAPHQL_URL, QUERY);
+    console.log('📡 Intentando consulta básica...');
+    const { generalSettings } = await request(WORDPRESS_GRAPHQL_URL, BASIC_QUERY);
 
     if (!generalSettings?.title) {
-      console.warn('⚠️ No se obtuvo el título desde generalSettings, usando fallback.');
-      // Proporcionar un fallback si generalSettings falla
-      const logoFallback = await getSiteLogo();
-      return {
-        title: 'VinylStation',
-        description: 'Tu emisora de vinilo 24/7',
-        url: import.meta.env.SITE || 'https://vinylstation.es',
-        timezone: 'Europe/Madrid',
-        language: 'es-ES',
-        logo: logoFallback,
-      };
+      console.warn('⚠️ No se obtuvo el título desde generalSettings');
+      throw new Error('generalSettings.title is null');
+    }
+
+    console.log('✅ Datos básicos obtenidos:', generalSettings);
+    
+    // Intentar obtener campos adicionales
+    let timezone = 'Europe/Madrid';
+    let language = 'es-ES';
+    
+    try {
+      const EXTENDED_QUERY = gql`
+        query GetExtendedSiteInfo {
+          generalSettings {
+            timezone
+            language
+          }
+        }
+      `;
+      
+      const extendedResult = await request(WORDPRESS_GRAPHQL_URL, EXTENDED_QUERY);
+      timezone = extendedResult.generalSettings?.timezone || timezone;
+      language = extendedResult.generalSettings?.language || language;
+      console.log('✅ Datos extendidos obtenidos');
+    } catch (extError) {
+      console.log('⚠️ Campos extendidos no disponibles, usando defaults:', extError.message);
     }
 
     const logo = await getSiteLogo();
 
-    return {
+    const result = {
       title: generalSettings.title,
-      description: generalSettings.description,
-      url: generalSettings.url,
-      timezone: generalSettings.timezone,
-      language: generalSettings.language,
+      description: generalSettings.description || 'Tu emisora de vinilo 24/7',
+      url: generalSettings.url || import.meta.env.SITE || 'https://vinylstation.com',
+      timezone,
+      language,
       logo: {
         url: logo.url,
         altText: logo.altText,
         source: logo.source,
       },
     };
+    
+    console.log('🎉 getSiteInfo completado exitosamente:', result.title);
+    return result;
+    
   } catch (error) {
     console.error("❌ Error en getSiteInfo:", error.message);
-    const logoFallback = await getSiteLogo(); // Intenta obtener el logo incluso si generalSettings falla
-    return { // Devuelve un objeto de fallback completo
-        title: 'VinylStation (Error)',
-        description: 'Error al cargar la información del sitio.',
-        url: import.meta.env.SITE || 'https://vinylstation.es',
-        timezone: 'Europe/Madrid',
-        language: 'es-ES',
-        logo: logoFallback,
-      };
+    console.error("📋 Error completo:", error);
+    
+    // Log adicional para debugging
+    if (error.response?.errors) {
+      console.error('🔍 GraphQL Errors:', JSON.stringify(error.response.errors, null, 2));
+    }
+    
+    const logoFallback = await getSiteLogo();
+    return {
+      title: 'VinylStation (Error)',
+      description: 'Error al cargar la información del sitio.',
+      url: import.meta.env.SITE || 'https://vinylstation.com',
+      timezone: 'Europe/Madrid',
+      language: 'es-ES',
+      logo: logoFallback,
+    };
   }
 }
 
