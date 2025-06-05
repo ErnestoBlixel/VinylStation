@@ -1,9 +1,9 @@
 ---
-// Página de inicio - SOLO datos reales desde WordPress
+// Nueva página de inicio de VinylStation Radio
 import MainLayout from '../layouts/MainLayout.astro';
 import { getSiteInfo, getPageData, getProgramas, getNoticiasPaginadas } from '../lib/wordpress';
 
-// Helper para convertir "<p>Hola</p>" → "Hola"
+// Helper para convertir HTML a texto
 const stripHtml = (html) => {
   if (!html) return '';
   return html.replace(/<[^>]*>/g, '').trim();
@@ -18,23 +18,18 @@ let programasData = null;
 let noticiasData = null;
 
 try {
-  // Obtener información del sitio
   siteInfo = await getSiteInfo();
-  // Obtener datos de la página home
   pageData = await getPageData('home');
-  // Obtener todos los programas para el grid
-  programasData = await getProgramas({ limit: 50 });
-  // Obtener noticias recientes para el slider
-  noticiasData = await getNoticiasPaginadas({ page: 1, itemsPerPage: 12 });
-  // Verificar que tenemos los datos mínimos necesarios
-  if (!siteInfo || !siteInfo.title) throw new Error('No se pudo obtener el título del sitio desde WordPress');
-  if (!siteInfo.description) throw new Error('No se pudo obtener la descripción del sitio desde WordPress');
+  programasData = await getProgramas({ limit: 20 });
+  noticiasData = await getNoticiasPaginadas({ page: 1, itemsPerPage: 20 });
+  
+  if (!siteInfo || !siteInfo.title) throw new Error('No se pudo obtener el título del sitio');
 } catch (error) {
   hasError = true;
   errorMessage = `Error conectando con WordPress: ${error.message}`;
 }
 
-// Obtener programas y noticias del resultado
+// Obtener datos
 const programas = hasError ? [] : (programasData?.programas || []);
 const noticias = hasError ? [] : (noticiasData?.noticias || []);
 
@@ -49,249 +44,326 @@ const formatDate = (dateString) => {
   });
 };
 
-// Estas variables SIEMPRE existen
-const heroTitle = hasError ? null : (siteInfo?.title || pageData?.title);
-const heroDescription = hasError ? null : (siteInfo?.description || pageData?.excerpt);
-const logoImage = hasError ? null : (siteInfo?.logo?.url || pageData?.featuredImage?.url || '');
-const logoAlt = hasError ? '' : (siteInfo?.logo?.altText || pageData?.featuredImage?.altText || 'Logo');
-
-// SEO usando datos reales
-const pageTitle = hasError ? 'Error - VinylStation' : (pageData?.seo?.title || `${siteInfo?.title}`);
-const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.metaDesc || siteInfo?.description);
+// SEO
+const pageTitle = hasError ? 'Error - VinylStation' : (pageData?.seo?.title || 'VinylStation Radio - Emisora Online desde Fuensalida, Toledo');
+const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.metaDesc || 'VinylStation Radio es una emisora online dedicada a la diversidad musical y el talento emergente desde Fuensalida, Toledo. Pronto también en FM.');
 ---
 
 <MainLayout title={pageTitle} description={pageDescription}>
-  <!-- Contenedor principal unificado -->
-  <div class="main-content">
-    <div class="container hero-container">
-      {hasError ? (
-        // Vista de ERROR
-        <div class="error-container">
-          <div class="error-icon">⚠️</div>
-          <h1 class="error-title">Error de Conexión</h1>
-          <p class="error-message">{errorMessage}</p>
-          <div class="error-details">
-            <h3>Detalles técnicos:</h3>
-            <ul>
-              <li>Verificar conexión a: https://cms.vinylstation.es/graphql</li>
-              <li>Comprobar que WordPress esté funcionando</li>
-              <li>Revisar configuración de GraphQL</li>
-            </ul>
-          </div>
-          <div class="error-actions">
-            <button onclick="window.location.reload()" class="btn primary-btn">
-              🔄 Reintentar
-            </button>
-          </div>
+  {hasError ? (
+    <!-- Vista de ERROR -->
+    <div class="error-page">
+      <div class="container">
+        <div class="error-content">
+          <h1>Error de Conexión</h1>
+          <p>{errorMessage}</p>
+          <button onclick="window.location.reload()" class="btn btn-primary">
+            Reintentar
+          </button>
         </div>
-      ) : (
-        // Vista NORMAL con datos reales
-        <header class="page-header">
-          {true && (
-            <div class="site-icon-container">
-              <img src="/images/logos/logo vinylstation.png" alt="VinylStation Logo" class="site-icon" />
-            </div>
-          )}
-          <h1>{heroTitle}</h1>
-          <p class="page-description">{heroDescription}</p>
-          
-          <!-- Reproductor solo en desktop -->
-          <div class="radio-player-widget desktop-only">
-            <div class="radio-player-minimal">
-              <audio id="radio-audio-index" preload="none" data-stream-url="https://stream.zeno.fm/4g7qxnxrloluv"></audio>
+      </div>
+    </div>
+  ) : (
+    <!-- Vista NORMAL -->
+    <div class="main-content">
+      <!-- Hero Section -->
+      <section class="hero">
+        <div class="container">
+          <div class="hero-content">
+          <img src="/images/logos/logo vinylstation.png" alt="VinylStation Radio" class="hero-logo" />
+          <h1>{hasError ? 'VinylStation Radio' : (siteInfo?.title || 'VinylStation Radio')}</h1>
+          <p class="hero-subtitle">{hasError ? 'Una emisora nueva donde queremos conocerte y escuchar tu opinión' : (siteInfo?.description || 'Una emisora nueva donde queremos conocerte y escuchar tu opinión')}</p>
+            
+            <!-- Reproductor con diseño del header -->
+            <div class="radio-player-hero desktop-only">
+              <audio id="radio-stream-hero" preload="none" crossorigin="anonymous">
+                <source src="https://stream.zeno.fm/4g7qxnxrloluv" type="audio/mpeg">
+                Tu navegador no soporta audio HTML5.
+              </audio>
               
               <div class="player-controls">
-                <button id="play-pause-index" class="play-button" aria-label="Reproducir/Pausar">
-                  <svg id="play-icon-index" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <button id="play-pause-hero" class="play-button" aria-label="Reproducir/Pausar">
+                  <svg id="play-icon-hero" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polygon points="5,3 19,12 5,21"></polygon>
                   </svg>
-                  <svg id="pause-icon-index" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                  <svg id="pause-icon-hero" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
                     <rect x="6" y="4" width="4" height="16"></rect>
                     <rect x="14" y="4" width="4" height="16"></rect>
                   </svg>
                 </button>
                 
                 <div class="status-info">
-                  <span id="status-text-index">Radio en vivo</span>
-                  <div id="loading-indicator-index" class="loading-dot" style="display: none;"></div>
+                  <span id="status-text-hero">Radio en vivo</span>
+                  <div id="loading-indicator-hero" class="loading-dot" style="display: none;"></div>
                 </div>
                 
                 <div class="volume-control">
-                  <button id="volume-toggle-index" class="volume-button" aria-label="Silenciar/Activar sonido">
-                    <svg id="volume-on-index" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <button id="volume-toggle-hero" class="volume-button" aria-label="Silenciar/Activar sonido">
+                    <svg id="volume-on-hero" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                       <polygon points="11,5 6,9 2,9 2,15 6,15 11,19"></polygon>
                       <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
                     </svg>
-                    <svg id="volume-off-index" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                    <svg id="volume-off-hero" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
                       <polygon points="11,5 6,9 2,9 2,15 6,15 11,19"></polygon>
                       <line x1="23" y1="9" x2="17" y2="15"></line>
                       <line x1="17" y1="9" x2="23" y2="15"></line>
                     </svg>
                   </button>
-                  <input type="range" id="volume-slider-index" class="volume-slider" min="0" max="1" step="0.1" value="0.7">
+                  <input type="range" id="volume-slider-hero" class="volume-slider" min="0" max="1" step="0.1" value="0.7">
                 </div>
               </div>
             </div>
           </div>
-        </header>
-      )}
-    </div>
-    
-    <!-- Sección de Programas integrada sin líneas de corte -->
-    <section class="programs-section">
-      <div class="container">
-        <div class="section-header">
-          <h2>Nuestros Programas de Radio</h2>
-          <p>Sumérgete en la magia del vinilo con nuestra programación especializada. Cada programa es una experiencia única que celebra la cultura musical en formato analógico.</p>
         </div>
-      
-        <!-- Grid de Programas - 2 filas x 6 columnas -->
-        <div class="programs-grid">
-          {programas.length > 0 ? (
-            programas.slice(0, 12).map((programa) => {
-              // Imagen del programa
-              const imagen =
-                programa.imagenPrincipalUrl ||
-                programa.imagenPrincipal?.sourceUrl ||
-                '/images/placeholder-radio.jpg';
+      </section>
 
-              return (
-                <div class="program-card-grid">
-                  <div class="program-image-grid">
-                    <img 
-                      src={imagen} 
-                      alt={programa.imagenPrincipal?.altText || programa.title}
-                      onerror="this.src='/images/placeholder-radio.jpg'"
-                    />
-                    <div class="program-overlay-grid">
-                      <button class="play-btn-grid">▶️</button>
-                    </div>
-                  </div>
-                  <div class="program-title-grid">
-                    <h3>{programa.title}</h3>
-                  </div>
-                </div>
-              );
-            })
-          ) : (
-            <div class="no-programs">
-              <div class="no-programs-icon">📻</div>
-              <h3>No hay programas disponibles</h3>
-              <p>Los programas aparecerán aquí cuando sean publicados en WordPress.</p>
+      <!-- Sobre Nosotros Section -->
+      <section class="about">
+        <div class="container">
+          <div class="about-grid">
+            <div class="about-content">
+              <h2>Somos VinylStation Radio</h2>
+              <p>Una <strong>emisora nueva desde Fuensalida, Toledo</strong>, donde queremos conocerte y apoyar nuevos grupos junto a la música de siempre. Actualmente <strong>online petándolo</strong>, pero pronto también <strong>en FM</strong>.</p>
+              <div class="contact-button">
+                <a href="#gravity-form-container" class="btn btn-primary contact-btn" onclick="document.getElementById('gravity-form-container').scrollIntoView({behavior: 'smooth', block: 'center'});">Contáctanos</a>
+              </div>
             </div>
-          )}
+            <div class="about-image">
+              <img src="/images/vinylstation_local.jpg" alt="Estudio de VinylStation Radio en Fuensalida" class="studio-image" />
+            </div>
+          </div>
         </div>
-      
-        <div class="section-footer">
-          <a href="/programas" class="btn primary-btn">Ver Todos los Programas</a>
+      </section>
+
+      <!-- Banner de próximamente con merchandising -->
+      <section class="upcoming-banner merchandising-banner">
+        <div class="container">
+          <div class="feature-banner-wide">
+            <div class="banner-content-box">
+              <h3>Próximamente: Tienda VinylStation</h3>
+              <p>¡Prepárate para mostrar tu <strong>pasión por la música</strong>! Muy pronto podrás conseguir <strong>camisetas exclusivas, gorras, vinilos coleccionables, tazas personalizadas</strong> y mucho más merchandising oficial. Únete a nuestra <strong>comunidad musical</strong> y apoya a los <strong>artistas emergentes</strong>. ¡Forma parte de la <strong>familia VinylStation</strong>!</p>
+            </div>
+          </div>
         </div>
-      </div>
-    </section>
-    
-    <!-- Sección de Noticias -->
-    <section class="news-section">
-      <div class="container">
-        <div class="section-header">
-          <h2>Últimas Noticias</h2>
-          <p>Mantente al día con las últimas novedades del mundo del vinilo, lanzamientos exclusivos y todo lo que acontece en la escena musical analógica.</p>
-        </div>
-      
-        <!-- Slider de Noticias -->
-        <div class="news-slider">
-          <div class="slider-viewport">
-            <div class="slider-container" id="newsSlider">
-              {noticias.length > 0 ? (
-                noticias.map((noticia) => {
-                  // imagen destacada
-                  const imagen =
-                    noticia.imagenDestacadaUrl ||
-                    noticia.featuredImage?.node?.sourceUrl ||
-                    '/images/placeholder-news.jpg';
+      </section>
 
-                  // descripción como texto limpio
-                  const rawDesc =
-                    noticia.excerpt ||
-                    `Noticia "${noticia.title}" - Últimas noticias de VinylStation`;
-                  const descripcion = stripHtml(rawDesc);
-
-                  // categorías
-                  const categoriasNoticia = noticia.categorias?.nodes || [];
-                  const fechaPublicacion = formatDate(noticia.date);
-                  const categoria = categoriasNoticia.length > 0 ? categoriasNoticia[0].name : 'Música';
-
-                  return (
-                    <article class="news-card-slider">
-                      <div class="news-image-slider">
-                        <img
-                          src={imagen}
-                          alt={noticia.featuredImage?.node?.altText || noticia.title}
-                          loading="lazy"
-                          onerror="this.src='/images/placeholder-news.jpg'"
-                        />
-                        <div class="news-overlay-slider">
-                          <div class="news-category">{categoria}</div>
+      <!-- Programas Section con Marquee -->
+      <section class="programs">
+        <div class="container">
+          <div class="section-header">
+            <h2>Nuestros Programas</h2>
+            <p>Descubre nuestra <strong>programación especializada en música vinilo</strong> y cultura musical contemporánea. Combinamos <strong>clásicos atemporales</strong> con las últimas tendencias, incluyendo espacios para <strong>artistas emergentes locales y nacionales</strong>.</p>
+          </div>
+          
+          <div class="programs-marquee">
+            <div class="marquee-container">
+              <div class="marquee-track" id="programsMarquee">
+                {programas.length > 0 ? (
+                  programas.concat(programas).map((programa, index) => {
+                    const imagen = programa.imagenPrincipalUrl || 
+                                  programa.imagenPrincipal?.sourceUrl || 
+                                  '/images/placeholder-radio.jpg';
+                    
+                    return (
+                      <div class="program-card" key={`programa-${index}`}>
+                        <div class="program-image">
+                          <img 
+                            src={imagen} 
+                            alt={programa.title}
+                            onerror="this.src='/images/placeholder-radio.jpg'"
+                          />
+                          <div class="program-overlay">
+                            <button class="view-btn" title="Ver programa">
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 18l6-6-6-6"></path>
+                              </svg>
+                            </button>
+                          </div>
                         </div>
+                        <h3>{programa.title}</h3>
                       </div>
-                      <div class="news-content-slider">
-                        <div class="news-meta">
-                          <span class="news-date">{fechaPublicacion}</span>
-                          <span class="news-author">VinylStation</span>
-                        </div>
-                        <h3>{noticia.title}</h3>
-                        <p class="news-excerpt">{descripcion}</p>
-                        <a href={`/noticias/${noticia.slug || noticia.id}`} class="news-link">Leer más</a>
-                      </div>
-                    </article>
-                  );
-                })
-              ) : (
-                <div class="no-news-slider">
-                  <div class="no-news-icon">📰</div>
-                  <h3>No hay noticias disponibles</h3>
-                  <p>Las noticias aparecerán aquí cuando sean publicadas en WordPress.</p>
-                </div>
-              )}
+                    );
+                  })
+                ) : (
+                  <div class="no-content">
+                    <p>No hay programas disponibles</p>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
           
-          <!-- Controles del slider de noticias -->
-          <div class="slider-controls news-controls">
-            <button class="slider-btn prev-btn" id="newsPrevBtn">‹</button>
-            <div class="slider-dots" id="newsSliderDots"></div>
-            <button class="slider-btn next-btn" id="newsNextBtn">›</button>
+          <div class="section-footer">
+            <a href="/programas" class="btn btn-primary">Ver Todos los Programas</a>
           </div>
         </div>
-      
-        <div class="section-footer">
-          <a href="/noticias" class="btn primary-btn">Ver Todas las Noticias</a>
+      </section>
+
+      <!-- Banner "En Breve" con eventos -->
+      <section class="coming-soon-banner events-banner">
+        <div class="container">
+          <div class="feature-banner-wide">
+            <div class="banner-content-box">
+              <h3>En Breve: Tu Ticketera Musical</h3>
+              <p>VinylStation Radio será tu <strong>puerta de entrada exclusiva</strong> a los mejores conciertos y eventos de la región. Compra entradas para <strong>showcases exclusivos, conciertos emergentes, festivales de vinilo</strong> y eventos especiales. Acceso prioritario a <strong>descuentos especiales y experiencias VIP</strong>. ¡Prepárate para <strong>vivir la música</strong> como nunca!</p>
+            </div>
+          </div>
         </div>
-      </div>
-    </section>
-  </div>
+      </section>
+
+      <!-- Noticias Section con doble marquee -->
+      <section class="news">
+        <div class="container">
+          <div class="section-header">
+            <h2>Últimas Noticias</h2>
+            <p>Mantente al día con <strong>noticias de música, actualidad cultural</strong> y eventos de Toledo y provincia. Cobertura de <strong>salud, deporte</strong> y todo lo que acontece en <strong>Castilla-La Mancha</strong>. Tu fuente de <strong>información 24h desde Fuensalida</strong>.</p>
+          </div>
+          
+          <div class="news-marquee-container">
+            <!-- Primera fila - derecha -->
+            <div class="news-marquee">
+              <div class="marquee-track" id="newsMarquee1">
+                {noticias.length > 0 ? (
+                  noticias.slice(0, 10).concat(noticias.slice(0, 10)).map((noticia, index) => {
+                    const imagen = noticia.imagenDestacadaUrl || 
+                                  noticia.featuredImage?.node?.sourceUrl || 
+                                  '/images/placeholder-news.jpg';
+                    const descripcion = stripHtml(noticia.excerpt || '');
+                    const fecha = formatDate(noticia.date);
+                    
+                    return (
+                      <div class="news-card" key={`news1-${index}`}>
+                        <div class="news-image">
+                          <img 
+                            src={imagen} 
+                            alt={noticia.title}
+                            onerror="this.src='/images/placeholder-news.jpg'"
+                          />
+                        </div>
+                        <div class="news-content">
+                          <span class="news-date">{fecha}</span>
+                          <h4>{noticia.title}</h4>
+                          <p>{descripcion.substring(0, 100)}...</p>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div class="no-content">
+                    <p>No hay noticias disponibles</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <!-- Segunda fila - izquierda -->
+            <div class="news-marquee reverse">
+              <div class="marquee-track" id="newsMarquee2">
+                {noticias.length > 0 ? (
+                  noticias.slice(10, 20).concat(noticias.slice(10, 20)).map((noticia, index) => {
+                    const imagen = noticia.imagenDestacadaUrl || 
+                                  noticia.featuredImage?.node?.sourceUrl || 
+                                  '/images/placeholder-news.jpg';
+                    const descripcion = stripHtml(noticia.excerpt || '');
+                    const fecha = formatDate(noticia.date);
+                    
+                    return (
+                      <div class="news-card" key={`news2-${index}`}>
+                        <div class="news-image">
+                          <img 
+                            src={imagen} 
+                            alt={noticia.title}
+                            onerror="this.src='/images/placeholder-news.jpg'"
+                          />
+                        </div>
+                        <div class="news-content">
+                          <span class="news-date">{fecha}</span>
+                          <h4>{noticia.title}</h4>
+                          <p>{descripcion.substring(0, 100)}...</p>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div class="no-content">
+                    <p>No hay noticias disponibles</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          <div class="section-footer">
+            <a href="/noticias" class="btn btn-primary">Ver Todas las Noticias</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Contacto Layout Horizontal -->
+      <section class="horizontal-contact">
+        <div class="container">
+          <!-- Encabezado General -->
+          <div class="contact-header">
+            <h2>Contáctanos</h2>
+            <p>Queremos escucharte y conocer tu opinión. Ya seas oyente, artista emergente o simplemente quieras formar parte de nuestra comunidad musical, estamos <strong>deseando conectar contigo</strong>.</p>
+          </div>
+          
+          <div class="contact-layout">
+            <!-- Columna Izquierda - Textos -->
+            <div class="contact-text-column">
+              <div class="text-section">
+                <h2>¿Qué contenido te gustaría escuchar?</h2>
+                <p>Comenta y danos tu opinión, estamos <strong>deseando oírte</strong>. Tu voz es importante para crear la <strong>programación perfecta</strong>. Queremos conocer tus <strong>gustos musicales, artistas favoritos</strong> y qué tipo de contenido te emociona más.</p>
+              </div>
+              
+              <div class="text-section">
+                <h2>¿Quieres sonar en VinylStation?</h2>
+                <p>Si eres <strong>banda emergente o artista</strong>, este es tu momento. Queremos <strong>apoyar el talento musical</strong> y darle la difusión que merece. Envíanos tu <strong>propuesta musical, demos</strong> o cuéntanos tu proyecto. ¡Juntos haremos que tu <strong>música llegue a todos</strong>!</p>
+              </div>
+            </div>
+            
+            <!-- Columna Derecha - Formulario -->
+            <div class="contact-form-column">
+              <h3>Contáctanos</h3>
+              <div class="contact-form-container compact">
+                <div id="gravity-form-container" class="form-loading">
+                  <div class="loading-message">
+                    <svg class="spinner" viewBox="0 0 50 50">
+                      <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+                    </svg>
+                    <p>Cargando formulario de contacto...</p>
+                  </div>
+                  <div class="error-message" style="display: none;">
+                    <p class="error-text">Error al cargar el formulario.</p>
+                    <p>Por favor, contáctanos directamente:</p>
+                    <p><strong>Email:</strong> <a href="mailto:hola@vinylstation.com">hola@vinylstation.com</a></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  )}
 </MainLayout>
 
-<!-- Script para el grid de programas, slider de noticias y reproductor de radio -->
+<!-- Scripts -->
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    const playButtons = document.querySelectorAll('.play-btn-grid');
-    const newsCards = document.querySelectorAll('.news-card-slider');
-    
-    // === REPRODUCTOR DE RADIO SIMPLE (INDEX) - Solo desktop ===
-    class IndexRadioPlayer {
+    // === REPRODUCTOR DE RADIO MEJORADO CON STATE MANAGER ===
+    class HeroRadioPlayer {
       constructor() {
-        // Solo inicializar si estamos en desktop
-        if (window.innerWidth < 768) return;
-        
-        this.audio = document.getElementById('radio-audio-index');
-        this.playPauseBtn = document.getElementById('play-pause-index');
-        this.playIcon = document.getElementById('play-icon-index');
-        this.pauseIcon = document.getElementById('pause-icon-index');
-        this.statusText = document.getElementById('status-text-index');
-        this.loadingIndicator = document.getElementById('loading-indicator-index');
-        this.volumeToggle = document.getElementById('volume-toggle-index');
-        this.volumeOnIcon = document.getElementById('volume-on-index');
-        this.volumeOffIcon = document.getElementById('volume-off-index');
-        this.volumeSlider = document.getElementById('volume-slider-index');
+        this.audio = document.getElementById('radio-stream-hero');
+        this.playPauseBtn = document.getElementById('play-pause-hero');
+        this.playIcon = document.getElementById('play-icon-hero');
+        this.pauseIcon = document.getElementById('pause-icon-hero');
+        this.statusText = document.getElementById('status-text-hero');
+        this.loadingIndicator = document.getElementById('loading-indicator-hero');
+        this.volumeToggle = document.getElementById('volume-toggle-hero');
+        this.volumeOnIcon = document.getElementById('volume-on-hero');
+        this.volumeOffIcon = document.getElementById('volume-off-hero');
+        this.volumeSlider = document.getElementById('volume-slider-hero');
         
         this.isPlaying = false;
         this.isLoading = false;
@@ -300,39 +372,107 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
       }
       
       init() {
-        if (!this.audio) return;
-        const streamUrl = this.audio.getAttribute('data-stream-url');
-        this.audio.src = streamUrl;
+        if (!this.audio || !this.playPauseBtn) {
+          console.log('Elementos del reproductor hero no encontrados');
+          return;
+        }
+        
+        // Configurar volumen inicial
         this.audio.volume = parseFloat(this.volumeSlider?.value || 0.7);
         
         this.bindEvents();
+        
+        // Esperar a que el RadioStateManager esté listo
+        this.waitForStateManager();
+        
+        console.log('Reproductor hero inicializado');
+      }
+      
+      // Esperar a que el state manager esté disponible
+      waitForStateManager() {
+        const checkStateManager = () => {
+          if (window.radioStateManager) {
+            console.log('State manager detectado, sincronizando...');
+            // El state manager ya manejará este reproductor automáticamente
+            // Solo necesitamos asegurar que los eventos locales funcionen
+            this.syncWithStateManager();
+          } else {
+            setTimeout(checkStateManager, 100);
+          }
+        };
+        checkStateManager();
+      }
+      
+      // Sincronizar con el state manager
+      syncWithStateManager() {
+        if (window.radioStateManager) {
+          const state = window.radioStateManager.getState();
+          this.isPlaying = state.isPlaying;
+          this.updateUI();
+        }
       }
       
       bindEvents() {
-        // Play/Pause
+        // Play/Pause - ahora delega al state manager
         this.playPauseBtn?.addEventListener('click', () => this.togglePlayPause());
         
         // Volume
         this.volumeToggle?.addEventListener('click', () => this.toggleMute());
         this.volumeSlider?.addEventListener('input', (e) => this.updateVolume(e.target.value));
         
-        // Audio events
-        this.audio?.addEventListener('loadstart', () => this.setLoading(true));
-        this.audio?.addEventListener('canplay', () => this.setLoading(false));
-        this.audio?.addEventListener('play', () => this.setPlaying(true));
-        this.audio?.addEventListener('pause', () => this.setPlaying(false));
-        this.audio?.addEventListener('error', () => this.handleError());
-        this.audio?.addEventListener('stalled', () => this.setLoading(true));
-        this.audio?.addEventListener('waiting', () => this.setLoading(true));
-        this.audio?.addEventListener('playing', () => this.setLoading(false));
+        // Los eventos de audio ya los maneja el state manager
+        // Solo necesitamos eventos locales para UI
       }
       
       togglePlayPause() {
-        if (!this.audio) return;
+        // Usar el state manager para controlar la reproducción
+        if (window.radioStateManager) {
+          window.radioStateManager.togglePlayPause();
+        } else {
+          // Fallback si el state manager no está disponible
+          this.fallbackToggle();
+        }
+      }
+      
+      // Método fallback por si no está disponible el state manager
+      fallbackToggle() {
+        if (!this.audio) {
+          console.error('Audio element no disponible');
+          return;
+        }
+        
         if (this.isPlaying) {
           this.audio.pause();
+          console.log('Audio pausado (fallback)');
         } else {
-          this.audio.play().catch(() => this.handleError());
+          console.log('Intentando reproducir audio (fallback)...');
+          if (!this.audio.src) {
+            this.audio.src = 'https://stream.zeno.fm/4g7qxnxrloluv';
+          }
+          
+          this.audio.play()
+            .then(() => {
+              console.log('Audio reproduciéndose correctamente (fallback)');
+            })
+            .catch((error) => {
+              console.error('Error al reproducir:', error);
+              this.handleError();
+            });
+        }
+      }
+      
+      // Actualizar UI local
+      updateUI() {
+        if (this.isPlaying) {
+          if (this.playIcon) this.playIcon.style.display = 'none';
+          if (this.pauseIcon) this.pauseIcon.style.display = 'block';
+          if (this.statusText) this.statusText.textContent = 'En vivo';
+          this.playPauseBtn?.classList.add('playing');
+        } else {
+          if (this.playIcon) this.playIcon.style.display = 'block';
+          if (this.pauseIcon) this.pauseIcon.style.display = 'none';
+          if (this.statusText) this.statusText.textContent = 'Radio en vivo';
+          this.playPauseBtn?.classList.remove('playing');
         }
       }
       
@@ -368,6 +508,7 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
       
       toggleMute() {
         if (!this.audio) return;
+        
         this.audio.muted = !this.audio.muted;
         
         if (this.audio.muted) {
@@ -381,6 +522,7 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
       
       updateVolume(value) {
         if (!this.audio) return;
+        
         this.audio.volume = parseFloat(value);
         this.audio.muted = value == 0;
         
@@ -394,6 +536,7 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
       }
       
       handleError() {
+        console.error('Error en el reproductor de audio');
         this.setLoading(false);
         this.setPlaying(false);
         if (this.statusText) this.statusText.textContent = 'Error de conexión';
@@ -401,357 +544,332 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
         // Reintentar después de 3 segundos
         setTimeout(() => {
           if (this.statusText) this.statusText.textContent = 'Radio en vivo';
+          console.log('Reintentando conexión...');
         }, 3000);
       }
     }
     
-    // Inicializar reproductor desktop
-    new IndexRadioPlayer();
+    // Inicializar reproductor
+    console.log('Inicializando reproductor hero...');
+    const player = new HeroRadioPlayer();
     
-    // === PROGRAMAS ===
-    // Click en play buttons de programas
-    playButtons.forEach((playBtn, index) => {
-      playBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        
-        // Animación del botón
-        playBtn.style.transform = 'scale(0.8) rotate(15deg)';
-        setTimeout(() => {
-          playBtn.style.transform = '';
-        }, 200);
-        
-        // Obtener título del programa
-        const card = playBtn.closest('.program-card-grid');
-        const title = card.querySelector('.program-title-grid h3')?.textContent;
-        
-        console.log(`🎵 Reproduciendo programa: ${title}`);
-      });
-    });
+    // El state manager se encargará de detectar y configurar el reproductor automáticamente
+    // Debug: verificar elementos
+    console.log('Audio element:', document.getElementById('radio-stream-hero'));
+    console.log('Play button:', document.getElementById('play-pause-hero'));
     
-    // === SLIDER DE NOTICIAS ===
-    const newsSlider = document.getElementById('newsSlider');
-    const newsPrevBtn = document.getElementById('newsPrevBtn');
-    const newsNextBtn = document.getElementById('newsNextBtn');
-    const newsDotsContainer = document.getElementById('newsSliderDots');
-    
-    if (newsSlider && newsPrevBtn && newsNextBtn && newsDotsContainer) {
-      const newsSlides = newsSlider.querySelectorAll('.news-card-slider');
-      const totalSlides = newsSlides.length;
+    // Efecto marquee para programas
+    const programsMarquee = document.getElementById('programsMarquee');
+    if (programsMarquee) {
+      // CSS ya maneja la animación
       
-      // Si no hay noticias, ocultar controles
-      if (totalSlides === 0) {
-        newsPrevBtn.style.display = 'none';
-        newsNextBtn.style.display = 'none';
-        newsDotsContainer.style.display = 'none';
-        console.log('📰 No hay noticias disponibles - controles ocultos');
-        return;
-      }
-      
-      let currentSlide = 0;
-      let isTransitioning = false;
-      let autoSlideInterval;
-      
-      console.log(`📰 Slider de noticias iniciado con ${totalSlides} noticias`);
-      
-      // Configuración responsive
-      function getVisibleSlides() {
-        const containerWidth = newsSlider.parentElement.offsetWidth;
-        if (containerWidth >= 1200) return 4;
-        if (containerWidth >= 992) return 3;
-        if (containerWidth >= 768) return 2;
-        return 1;
-      }
-      
-      function getMaxSlide() {
-        const visibleSlides = getVisibleSlides();
-        return Math.max(0, totalSlides - visibleSlides);
-      }
-      
-      // Crear dots
-      function createDots() {
-        newsDotsContainer.innerHTML = '';
-        const maxSlides = getMaxSlide() + 1;
-        
-        // Solo crear dots si hay más slides que los visibles
-        if (maxSlides <= 1) {
-          newsDotsContainer.style.display = 'none';
-          return;
-        }
-        
-        newsDotsContainer.style.display = 'flex';
-        const step = Math.max(1, Math.floor(maxSlides / 8)); // Máximo 8 dots
-        
-        for (let i = 0; i < maxSlides; i += step) {
-          const dot = document.createElement('div');
-          dot.className = `dot ${i === 0 ? 'active' : ''}`;
-          dot.setAttribute('data-slide', i);
-          dot.addEventListener('click', () => goToSlide(i));
-          dot.title = `Noticia ${i + 1}`;
-          newsDotsContainer.appendChild(dot);
-        }
-      }
-      
-      // Actualizar dots
-      function updateDots() {
-        const dots = newsDotsContainer.querySelectorAll('.dot');
-        dots.forEach(dot => {
-          const slideIndex = parseInt(dot.getAttribute('data-slide'));
-          dot.classList.toggle('active', Math.abs(slideIndex - currentSlide) < 2);
-        });
-      }
-      
-      // Actualizar botones
-      function updateButtons() {
-        const maxSlide = getMaxSlide();
-        
-        if (maxSlide <= 0) {
-          newsPrevBtn.style.display = 'none';
-          newsNextBtn.style.display = 'none';
-          return;
-        }
-        
-        newsPrevBtn.style.display = 'flex';
-        newsNextBtn.style.display = 'flex';
-        
-        newsPrevBtn.disabled = currentSlide <= 0;
-        newsNextBtn.disabled = currentSlide >= maxSlide;
-        
-        newsPrevBtn.style.opacity = currentSlide <= 0 ? '0.5' : '1';
-        newsNextBtn.style.opacity = currentSlide >= maxSlide ? '0.5' : '1';
-      }
-      
-      // Ir a slide específico
-      function goToSlide(slideIndex, smooth = true) {
-        if (isTransitioning || totalSlides === 0) return;
-        
-        const maxSlide = getMaxSlide();
-        currentSlide = Math.max(0, Math.min(slideIndex, maxSlide));
-        
-        const slideWidth = newsSlides[0].offsetWidth;
-        const gap = 24; // 1.5rem
-        const translateX = currentSlide * (slideWidth + gap);
-        
-        if (smooth) {
-          isTransitioning = true;
-          setTimeout(() => {
-            isTransitioning = false;
-          }, 600);
-        }
-        
-        newsSlider.style.transform = `translateX(-${translateX}px)`;
-        
-        updateDots();
-        updateButtons();
-      }
-      
-      // Navegar slides
-      function nextSlide() {
-        const maxSlide = getMaxSlide();
-        if (currentSlide >= maxSlide) {
-          goToSlide(0); // Loop al inicio
-        } else {
-          goToSlide(currentSlide + 1);
-        }
-      }
-      
-      function prevSlide() {
-        const maxSlide = getMaxSlide();
-        if (currentSlide <= 0) {
-          goToSlide(maxSlide); // Loop al final
-        } else {
-          goToSlide(currentSlide - 1);
-        }
-      }
-      
-      // Event listeners
-      newsNextBtn.addEventListener('click', nextSlide);
-      newsPrevBtn.addEventListener('click', prevSlide);
-      
-      // Auto-slide
-      function startAutoSlide() {
-        if (totalSlides <= getVisibleSlides()) return;
-        autoSlideInterval = setInterval(nextSlide, 3000); // Cada 3 segundos
-      }
-      
-      function stopAutoSlide() {
-        if (autoSlideInterval) {
-          clearInterval(autoSlideInterval);
-          autoSlideInterval = null;
-        }
-      }
-      
-      // Control de auto-slide con hover
-      newsSlider.addEventListener('mouseenter', stopAutoSlide);
-      newsSlider.addEventListener('mouseleave', startAutoSlide);
-      
-      // Responsive
-      let resizeTimeout;
-      window.addEventListener('resize', () => {
-        clearTimeout(resizeTimeout);
-        resizeTimeout = setTimeout(() => {
-          goToSlide(currentSlide, false);
-          createDots();
-        }, 150);
-      });
-      
-      // Touch/swipe support
-      let touchStartX = 0;
-      let isDragging = false;
-      
-      newsSlider.addEventListener('touchstart', (e) => {
-        touchStartX = e.touches[0].clientX;
-        isDragging = true;
-        stopAutoSlide();
-      }, { passive: true });
-      
-      newsSlider.addEventListener('touchend', (e) => {
-        if (!isDragging) return;
-        isDragging = false;
-        
-        const touchEndX = e.changedTouches[0].clientX;
-        const diffX = touchStartX - touchEndX;
-        
-        if (Math.abs(diffX) > 50) {
-          if (diffX > 0) {
-            nextSlide();
-          } else {
-            prevSlide();
-          }
-        }
-        
-        startAutoSlide();
-      }, { passive: true });
-      
-      // Click en noticias
-      newsCards.forEach((card) => {
-        card.addEventListener('click', (e) => {
-          if (!e.target.classList.contains('news-link')) {
-            const link = card.querySelector('.news-link');
-            if (link) {
-              window.location.href = link.href;
-            }
-          }
+      // Añadir funcionalidad a los botones de ver programa
+      const viewButtons = document.querySelectorAll('.view-btn');
+      viewButtons.forEach((button, index) => {
+        button.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // Navegar a la página de programas
+          window.location.href = '/programas';
         });
       });
-      
-      // Inicialización
-      createDots();
-      updateButtons();
-      goToSlide(0, false);
-      startAutoSlide();
-      
-      console.log(`✅ Slider de noticias inicializado: ${totalSlides} noticias`);
     }
     
-    console.log(`✅ Página inicializada: ${playButtons.length} programas, ${newsCards.length} noticias`);
+    // Efecto marquee para noticias
+    const newsMarquees = document.querySelectorAll('[id^="newsMarquee"]');
+    newsMarquees.forEach(marquee => {
+      // CSS ya maneja la animación
+    });
+    
+    // Cargar formulario de contacto (usar el mismo script del contacto.astro)
+    loadContactForm();
   });
+  
+  // Función para cargar formulario (mejorada como contacto.astro)
+  async function loadContactForm() {
+    const container = document.getElementById('gravity-form-container');
+    const loadingMessage = container?.querySelector('.loading-message');
+    const errorMessage = container?.querySelector('.error-message');
+    
+    // Configuración de la API
+    const API_BASE = 'https://cms.vinylstation.es/wp-json/gf/v2';
+    const PUBLIC_KEY = '60fa0813d4';
+    const PRIVATE_KEY = '17a5d6a599a532d';
+    const FORM_ID = 1;
+    
+    try {
+      // 1. Obtener la estructura del formulario desde el proxy local
+      const formResponse = await fetch('/api/gravity-form');
+      
+      if (!formResponse.ok) {
+        throw new Error(`Error ${formResponse.status}: ${formResponse.statusText}`);
+      }
+      
+      const formData = await formResponse.json();
+      
+      // 2. Construir el formulario dinámicamente
+      const form = document.createElement('form');
+      form.id = 'gravityForm';
+      form.className = 'contact-form';
+      
+      // Agregar campos con animación escalonada
+      formData.fields.forEach((field, index) => {
+        const fieldGroup = document.createElement('div');
+        fieldGroup.className = 'form-group';
+        fieldGroup.style.opacity = '0';
+        fieldGroup.style.transform = 'translateY(20px)';
+        
+        const label = document.createElement('label');
+        label.htmlFor = `input_${field.id}`;
+        label.textContent = field.label + (field.required ? ' *' : '');
+        fieldGroup.appendChild(label);
+        
+        if (field.type === 'text' || field.type === 'name') {
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.id = `input_${field.id}`;
+          input.name = `input_${field.id}`;
+          input.placeholder = field.placeholder || '';
+          input.required = field.isRequired || false;
+          fieldGroup.appendChild(input);
+        } else if (field.type === 'email') {
+          const input = document.createElement('input');
+          input.type = 'email';
+          input.id = `input_${field.id}`;
+          input.name = `input_${field.id}`;
+          input.placeholder = field.placeholder || '';
+          input.required = field.isRequired || false;
+          fieldGroup.appendChild(input);
+        } else if (field.type === 'phone') {
+          const input = document.createElement('input');
+          input.type = 'tel';
+          input.id = `input_${field.id}`;
+          input.name = `input_${field.id}`;
+          input.placeholder = field.placeholder || '';
+          input.required = field.isRequired || false;
+          fieldGroup.appendChild(input);
+        } else if (field.type === 'textarea') {
+          const textarea = document.createElement('textarea');
+          textarea.id = `input_${field.id}`;
+          textarea.name = `input_${field.id}`;
+          textarea.placeholder = field.placeholder || '';
+          textarea.required = field.isRequired || false;
+          textarea.rows = 4; // Más compacto para home
+          fieldGroup.appendChild(textarea);
+        } else if (field.type === 'select' && field.choices) {
+          const select = document.createElement('select');
+          select.id = `input_${field.id}`;
+          select.name = `input_${field.id}`;
+          select.required = field.isRequired || false;
+          
+          // Opción vacía
+          const emptyOption = document.createElement('option');
+          emptyOption.value = '';
+          emptyOption.textContent = field.placeholder || 'Selecciona una opción';
+          select.appendChild(emptyOption);
+          
+          // Agregar opciones
+          field.choices.forEach(choice => {
+            const option = document.createElement('option');
+            option.value = choice.value;
+            option.textContent = choice.text;
+            select.appendChild(option);
+          });
+          
+          fieldGroup.appendChild(select);
+        }
+        
+        form.appendChild(fieldGroup);
+        
+        // Animar entrada del campo
+        setTimeout(() => {
+          fieldGroup.style.transition = 'all 0.5s ease-out';
+          fieldGroup.style.opacity = '1';
+          fieldGroup.style.transform = 'translateY(0)';
+        }, 100 + (index * 100));
+      });
+      
+      // Botón de envío
+      const submitDiv = document.createElement('div');
+      submitDiv.className = 'form-actions';
+      submitDiv.style.opacity = '0';
+      submitDiv.style.transform = 'translateY(20px)';
+      
+      const submitButton = document.createElement('button');
+      submitButton.type = 'submit';
+      submitButton.className = 'btn primary-btn';
+      submitButton.innerHTML = `<span>${formData.button?.text || 'Enviar mensaje'}</span>`;
+      submitDiv.appendChild(submitButton);
+      form.appendChild(submitDiv);
+      
+      // Animar botón
+      setTimeout(() => {
+        submitDiv.style.transition = 'all 0.5s ease-out';
+        submitDiv.style.opacity = '1';
+        submitDiv.style.transform = 'translateY(0)';
+      }, 600);
+      
+      // Mensaje de resultado
+      const formMessage = document.createElement('div');
+      formMessage.id = 'formMessage';
+      formMessage.className = 'form-message';
+      formMessage.style.display = 'none';
+      
+      // 3. Manejar envío del formulario
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        // Animación del botón
+        submitButton.innerHTML = '<span class="spinner-small"></span> Enviando...';
+        submitButton.disabled = true;
+        submitButton.classList.add('loading');
+        
+        const formDataToSend = new FormData(form);
+        const entry = {
+          form_id: String(FORM_ID)
+        };
+        
+        // Preparar valores para la API
+        for (let [key, value] of formDataToSend.entries()) {
+          if (value) {
+            const fieldId = key.replace('input_', '');
+            entry[fieldId] = value.toString();
+          }
+        }
+        
+        try {
+          // Enviar a través del proxy local
+          const submitResponse = await fetch('/api/gravity-form', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              input_values: entry
+            })
+          });
+          
+          if (!submitResponse.ok) {
+            throw new Error(`Error ${submitResponse.status}: ${submitResponse.statusText}`);
+          }
+          
+          // Éxito - animar mensaje
+          formMessage.className = 'form-message success';
+          formMessage.innerHTML = `
+            <div class="success-icon">✓</div>
+            <p><strong>¡Mensaje enviado correctamente!</strong></p>
+            <p>Te responderemos pronto. Si eres una banda emergente, estaremos encantados de escuchar tu propuesta.</p>
+          `;
+          formMessage.style.display = 'block';
+          form.reset();
+          formMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          
+          // Ocultar formulario con animación
+          form.style.transition = 'all 0.5s ease-out';
+          form.style.opacity = '0.5';
+          form.style.transform = 'scale(0.98)';
+          
+        } catch (error) {
+          console.error('Error:', error);
+          formMessage.className = 'form-message error';
+          formMessage.innerHTML = `
+            <div class="error-icon">✕</div>
+            <p><strong>No se pudo enviar el formulario automáticamente.</strong></p>
+            <p>Por favor, envíanos un email a: <a href="mailto:hola@vinylstation.com">hola@vinylstation.com</a></p>
+          `;
+          formMessage.style.display = 'block';
+        } finally {
+          submitButton.innerHTML = `<span>${formData.button?.text || 'Enviar mensaje'}</span>`;
+          submitButton.disabled = false;
+          submitButton.classList.remove('loading');
+        }
+      });
+      
+      // Reemplazar contenido del contenedor
+      container.innerHTML = '';
+      container.appendChild(form);
+      container.appendChild(formMessage);
+      container.classList.remove('form-loading');
+      
+    } catch (error) {
+      console.error('Error cargando formulario:', error);
+      if (loadingMessage) loadingMessage.style.display = 'none';
+      if (errorMessage) errorMessage.style.display = 'block';
+    }
+  }
 </script>
 
 <style>
-  /* Contenedor principal unificado */
+  /* ===== VARIABLES Y BASE ===== */
+  :root {
+    --primary-color: var(--title-color); /* Cambio de rojo a dorado */
+    --primary-dark: #a8935e; /* Dorado más oscuro */
+    --background: var(--color-bg);
+    --text-color: var(--color-text);
+    --card-bg: var(--color-card-bg);
+    --border-color: rgba(197, 173, 123, 0.1); /* Dorado con transparencia */
+    --section-padding: 6rem 0;
+    --container-padding: 0 2rem;
+  }
+  
   .main-content {
-    background: linear-gradient(
-      135deg,
-      var(--color-bg) 0%,
-      rgba(0, 0, 0, 0.02) 50%,
-      var(--color-bg) 100%
-    );
+    background: linear-gradient(135deg, var(--background) 0%, rgba(0, 0, 0, 0.02) 100%);
     min-height: 100vh;
-    position: relative;
-    overflow: hidden;
   }
   
   .container {
     max-width: 1200px;
     margin: 0 auto;
-    padding: 0 1rem;
-    position: relative;
-    z-index: 1;
+    padding: var(--container-padding);
   }
   
-  .hero-container {
-    padding: 3rem 1rem;
-    min-height: 70vh;
-    display: flex;
-    align-items: center;
-  }
-  
-  @media (max-width: 767px) {
-    .hero-container {
-      padding: 2rem 1rem;
-      min-height: 60vh;
+  /* Mejoras específicas para móvil */
+  @media (max-width: 768px) {
+    .container {
+      padding: 0 1rem; /* Padding consistente */
     }
   }
   
-  /* === ESTILOS PARA ERROR === */
-  .error-container {
+  @media (max-width: 480px) {
+    .container {
+      padding: 0 0.75rem; /* Padding más ajustado para móviles pequeños */
+    }
+  }
+  
+  .desktop-only {
+    display: block;
+  }
+  
+  @media (max-width: 768px) {
+    .desktop-only {
+      display: none !important;
+    }
+    :root {
+      --section-padding: 4rem 0;
+      --container-padding: 0 1rem;
+    }
+  }
+  
+  /* ===== HERO SECTION ===== */
+  .hero {
+    padding: 8rem 0 6rem;
     text-align: center;
-    width: 100%;
-    padding: 2rem;
-    background: #1a1a1a;
-    border-radius: 15px;
-    border: 2px solid #ff3333;
+    position: relative;
+    background: linear-gradient(135deg, rgba(255, 51, 51, 0.05) 0%, transparent 50%);
   }
   
-  .error-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
+  .hero-content {
+    max-width: 800px;
+    margin: 0 auto;
   }
   
-  .error-title {
-    color: var(--title-color);
-    font-size: 2.5rem;
-    margin-bottom: 1rem;
-  }
-  
-  .error-message {
-    color: #fff;
-    font-size: 1.2rem;
-    margin-bottom: 2rem;
-    background: #333;
-    padding: 1rem;
-    border-radius: 8px;
-    font-family: monospace;
-  }
-  
-  .error-details {
-    text-align: left;
-    max-width: 500px;
-    margin: 0 auto 2rem;
-    background: #2a2a2a;
-    padding: 1.5rem;
-    border-radius: 8px;
-  }
-  
-  .error-details h3 {
-    color: var(--title-color);
-    margin-bottom: 1rem;
-  }
-  
-  .error-details ul {
-    color: #ccc;
-    list-style-position: inside;
-  }
-  
-  .error-details li {
-    margin-bottom: 0.5rem;
-  }
-  
-  /* === ESTILOS NORMALES === */
-  .page-header {
-    text-align: center;
-    width: 100%;
-  }
-  
-  .site-icon-container {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 2rem;
-  }
-  
-  .site-icon {
+  .hero-logo {
+    width: 120px;
     height: 120px;
-    width: auto;
+    margin: 0 auto 2rem;
+    display: block;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
     animation: pulse 3s infinite ease-in-out;
   }
   
@@ -761,64 +879,29 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
     100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255, 51, 51, 0.5)); }
   }
   
-  h1 {
+  .hero h1 {
     font-size: 4rem;
-    margin: 0 0 1.5rem;
+    margin: 0 0 1rem;
+    font-weight: 700;
     color: var(--title-color);
-    position: relative;
-    display: inline-block;
-    font-weight: 800;
   }
   
-  h1::after {
-    content: '';
-    position: absolute;
-    bottom: -15px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100px;
-    height: 4px;
-    background: linear-gradient(90deg, 
-      transparent, 
-      var(--title-color),
-      transparent);
-    border-radius: 2px;
-  }
-  
-  .page-description {
-    max-width: 800px;
-    margin: 2rem auto 1rem;
-    color: #777;
-    font-size: 1.3rem;
+  .hero-subtitle {
+    font-size: 1.5rem;
+    color: #888;
+    margin: 0 0 3rem;
     line-height: 1.6;
   }
-
-  /* === RADIO PLAYER WIDGET - SIMPLE COMO HEADER === */
-  .radio-player-widget {
-    margin: 2rem auto;
-    max-width: 500px;
-  }
   
-  /* Clase para elementos solo desktop */
-  .desktop-only {
-    display: block;
-  }
-  
-  @media (max-width: 767px) {
-    .desktop-only {
-      display: none !important;
-    }
-  }
-  
-  .radio-player-minimal {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 12px 16px;
-    min-width: 280px;
+  .radio-player-hero {
     max-width: 320px;
     margin: 0 auto;
+    background: linear-gradient(135deg, rgba(197, 173, 123, 0.15) 0%, rgba(197, 173, 123, 0.08) 100%);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(197, 173, 123, 0.4);
+    border-radius: 12px;
+    padding: 16px 20px;
+    box-shadow: 0 8px 25px rgba(197, 173, 123, 0.3);
   }
   
   .player-controls {
@@ -828,7 +911,7 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
   }
   
   .play-button {
-    background: var(--color-primary, #ff3333);
+    background: var(--primary-color);
     border: none;
     border-radius: 50%;
     width: 40px;
@@ -842,12 +925,12 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
   }
   
   .play-button:hover {
-    background: var(--color-secondary, #bb2424);
+    background: var(--primary-dark);
     transform: scale(1.05);
   }
   
   .play-button.playing {
-    background: var(--color-secondary, #bb2424);
+    background: var(--primary-dark);
   }
   
   .status-info {
@@ -858,24 +941,25 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
     min-width: 0;
   }
   
-  #status-text-index {
+  #status-text-hero {
     font-size: 14px;
-    font-weight: 500;
-    color: var(--color-text, #ffffff);
+    font-weight: 600;
+    color: var(--title-color); /* Color dorado de los encabezados */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   }
   
   .loading-dot {
     width: 6px;
     height: 6px;
-    background: var(--color-primary, #ff3333);
+    background: var(--primary-color);
     border-radius: 50%;
-    animation: loadingPulse 1.5s infinite;
+    animation: pulse 1.5s infinite;
   }
   
-  @keyframes loadingPulse {
+  @keyframes pulse {
     0%, 100% { opacity: 0.4; transform: scale(1); }
     50% { opacity: 1; transform: scale(1.2); }
   }
@@ -889,23 +973,24 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
   .volume-button {
     background: none;
     border: none;
-    color: var(--color-text, #ffffff);
+    color: var(--title-color); /* Color dorado de los encabezados */
     cursor: pointer;
     padding: 4px;
     border-radius: 4px;
     transition: all 0.2s ease;
-    opacity: 0.7;
+    opacity: 0.9;
   }
   
   .volume-button:hover {
     opacity: 1;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(197, 173, 123, 0.2);
+    color: var(--title-color);
   }
   
   .volume-slider {
     width: 60px;
     height: 4px;
-    background: rgba(255, 255, 255, 0.2);
+    background: rgba(197, 173, 123, 0.4); /* Marco dorado más visible */
     border-radius: 2px;
     outline: none;
     cursor: pointer;
@@ -916,7 +1001,7 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
     -webkit-appearance: none;
     width: 14px;
     height: 14px;
-    background: var(--color-primary, #ff3333);
+    background: var(--primary-color);
     border-radius: 50%;
     cursor: pointer;
     transition: transform 0.2s ease;
@@ -929,216 +1014,324 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
   .volume-slider::-moz-range-thumb {
     width: 14px;
     height: 14px;
-    background: var(--color-primary, #ff3333);
+    background: var(--primary-color);
     border-radius: 50%;
     border: none;
     cursor: pointer;
   }
   
-  /* Responsive */
-  @media (max-width: 480px) {
-    .radio-player-minimal {
-      min-width: 240px;
-      padding: 10px 12px;
-    }
-    
-    .volume-slider {
-      width: 50px;
-    }
-    
-    #status-text-index {
-      font-size: 13px;
-    }
-  }
-
-  .hero-actions {
-    display: flex;
-    gap: 1.5rem;
-    justify-content: center;
-    flex-wrap: wrap;
-    margin-top: 3rem;
-  }
-
-  .btn {
-    display: inline-block;
-    padding: 1rem 2rem;
-    border-radius: 50px;
-    text-decoration: none;
-    font-weight: 700;
-    font-size: 1.1rem;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-    min-width: 180px;
-    text-align: center;
-    border: none;
-    cursor: pointer;
-  }
-
-  .primary-btn {
-    background: var(--color-primary, #ff3333);
-    color: #ffffff;
-    border: 2px solid var(--color-primary, #ff3333);
-  }
-
-  .primary-btn:hover {
-    background: var(--color-secondary, #bb2424);
-    border-color: var(--color-secondary, #bb2424);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
-  }
-
-  .secondary-btn {
-    background: transparent;
-    color: var(--color-primary, #ff3333);
-    border: 2px solid var(--color-primary, #ff3333);
-  }
-
-  .secondary-btn:hover {
-    background: var(--color-primary, #ff3333);
-    color: #ffffff;
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
+  /* ===== SOBRE NOSOTROS ===== */
+  .about {
+    padding: var(--section-padding);
   }
   
-  /* === ESTILOS PARA LA SECCIÓN DE PROGRAMAS === */
-  .programs-section {
-    padding: 0;
-    background: transparent;
-    position: relative;
-    z-index: 1;
-    margin-top: -2rem;
+  /* Solo en modo claro se aplican estilos de fondo diferenciados */
+  :root[data-theme="light"] .about {
+    background: rgba(255, 51, 51, 0.02);
   }
   
-  .programs-section .container {
-    padding: 4rem 1rem 6rem;
-  }
-  
-  .section-header {
-    text-align: left;
-    margin-bottom: 3rem;
-    position: relative;
-  }
-  
-  .section-header h2 {
-    font-size: 3.2rem;
-    margin-bottom: 1.5rem;
-    color: var(--title-color);
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    line-height: 1.1;
-    position: relative;
-    display: inline-block;
-    animation: titleSlideIn 1s ease-out;
-  }
-  
-  @keyframes titleSlideIn {
-    0% { transform: translateX(-30px); opacity: 0; }
-    100% { transform: translateX(0); opacity: 1; }
-  }
-  
-  .section-header p {
-    font-size: 1.3rem;
-    color: #777;
-    max-width: 800px;
-    line-height: 1.6;
-    margin: 2rem 0 0;
-    animation: textFadeIn 1s ease-out 0.3s both;
-  }
-  
-  @keyframes textFadeIn {
-    0% { transform: translateY(20px); opacity: 0; }
-    100% { transform: translateY(0); opacity: 1; }
-  }
-  
-  /* Grid de Programas - 2 filas x 6 columnas */
-  .programs-grid {
+  .about-grid {
     display: grid;
-    grid-template-columns: repeat(6, 1fr);
-    grid-template-rows: repeat(2, 1fr);
-    gap: 1.5rem;
-    padding: 2rem 0;
-    max-width: 100%;
-    margin: 0 auto;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: center;
   }
   
-  /* Program Cards Grid - Diseño limpio */
-  .program-card-grid {
-    background: var(--color-card-bg);
+  .about-content h2 {
+    font-size: 3rem;
+    margin: 0 0 2rem;
+    color: var(--title-color);
+    font-weight: 700;
+  }
+  
+  .about-content p {
+    font-size: 1.2rem;
+    line-height: 1.6; /* Ajustado para consistencia */
+    margin: 0 0 1.5rem;
+    color: var(--text-color);
+  }
+  
+    .contact-button {
+      margin-top: 2rem;
+      text-align: center;
+    }
+    
+    .contact-btn {
+      display: inline-block;
+      padding: 1rem 2rem;
+      background: var(--primary-color);
+      color: var(--color-bg); /* Texto en color de fondo para contraste */
+      text-decoration: none;
+      border-radius: 8px; /* Botón cuadrado */
+      font-weight: 600;
+      transition: all 0.3s ease;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 0 4px 15px rgba(197, 173, 123, 0.3); /* Sombra dorada */
+    }
+    
+    .contact-btn:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(197, 173, 123, 0.4); /* Sombra dorada */
+    }
+  
+  .studio-image {
+    width: 100%;
+    height: 400px;
+    object-fit: cover;
     border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* ===== BANNERS CONTENIDOS ===== */
+  .upcoming-banner, .coming-soon-banner {
+    padding: var(--section-padding);
     position: relative;
-    border: 1px solid rgba(255, 51, 51, 0.1);
-    animation: cardSlideIn 0.6s ease-out both;
   }
   
-  @keyframes cardSlideIn {
-    0% { transform: translateY(30px) scale(0.9); opacity: 0; }
-    100% { transform: translateY(0) scale(1); opacity: 1; }
+  /* Banner Merchandising - contenido */
+  .merchandising-banner .feature-banner-wide {
+    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5)), url('/images/merchandaising.png');
+    background-size: cover;
+    background-position: center;
   }
   
-  /* Delays escalonados para efecto visual */
-  .program-card-grid:nth-child(1) { animation-delay: 0.1s; }
-  .program-card-grid:nth-child(2) { animation-delay: 0.15s; }
-  .program-card-grid:nth-child(3) { animation-delay: 0.2s; }
-  .program-card-grid:nth-child(4) { animation-delay: 0.25s; }
-  .program-card-grid:nth-child(5) { animation-delay: 0.3s; }
-  .program-card-grid:nth-child(6) { animation-delay: 0.35s; }
-  .program-card-grid:nth-child(7) { animation-delay: 0.4s; }
-  .program-card-grid:nth-child(8) { animation-delay: 0.45s; }
-  .program-card-grid:nth-child(9) { animation-delay: 0.5s; }
-  .program-card-grid:nth-child(10) { animation-delay: 0.55s; }
-  .program-card-grid:nth-child(11) { animation-delay: 0.6s; }
-  .program-card-grid:nth-child(12) { animation-delay: 0.65s; }
+  /* Banner Eventos - contenido */
+  .events-banner .feature-banner-wide {
+    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5)), url('/images/eventos.png');
+    background-size: cover;
+    background-position: center;
+  }
   
-  .program-card-grid::before {
+  /* Solo en modo claro se destacan más */
+  :root[data-theme="light"] .upcoming-banner,
+  :root[data-theme="light"] .coming-soon-banner {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  }
+  
+  .feature-banner-wide {
+    background: linear-gradient(135deg, var(--card-bg) 0%, rgba(197, 173, 123, 0.05) 100%); /* Dorado */
+    padding: 4rem 2rem; /* Más alto */
+    border-radius: 12px;
+    border: 1px solid rgba(197, 173, 123, 0.1); /* Dorado */
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+    max-width: 1200px; /* Banners aún más anchos */
+    margin: 0 auto;
+    min-height: 300px; /* Altura mínima */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Cuadrado difuminado para el contenido */
+  .banner-content-box {
+    background: rgba(0, 0, 0, 0.6); /* Fondo moderadamente oscuro */
+    backdrop-filter: blur(15px);
+    border-radius: 16px;
+    padding: 2.5rem 3rem;
+    border: 1px solid rgba(197, 173, 123, 0.3);
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    max-width: 900px;
+    width: 100%;
+    position: relative;
+  }
+  
+  /* Fondo equilibrado en modo día */
+  :root[data-theme="light"] .banner-content-box {
+    background: rgba(0, 0, 0, 0.75); /* Fondo oscuro pero equilibrado */
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(20px);
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
+  
+  .feature-banner-wide::before {
     content: '';
     position: absolute;
     top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, transparent 30%, rgba(255, 51, 51, 0.05) 50%, transparent 70%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-    z-index: 1;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(197, 173, 123, 0.1), transparent); /* Dorado */
+    animation: shimmer 3s ease-in-out infinite;
   }
   
-  .program-card-grid:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25), 0 0 15px rgba(255, 51, 51, 0.2);
-    border-color: rgba(255, 51, 51, 0.3);
+  @keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
   }
   
-  .program-card-grid:hover::before {
-    opacity: 1;
+  .banner-content-box h3 {
+    font-size: 2.2rem;
+    margin: 0 0 1.5rem;
+    color: #f5f5f5; /* Blanco suave, no tan intenso */
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7); /* Sombra moderada */
   }
   
-  .program-image-grid {
+  /* Texto legible en modo día */
+  :root[data-theme="light"] .banner-content-box h3 {
+    color: #f5f5f5; /* Mismo color suave */
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+  }
+  
+  .banner-content-box p {
+    font-size: 1.1rem;
+    color: #e8e8e8; /* Gris claro legible, no tan blanco */
+    margin: 0;
+    line-height: 1.6; /* Reducido para textos más compactos */
+    text-align: center; /* Centrado para mejor presentación */
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); /* Sombra suave */
+    width: 100%; /* Usar todo el ancho disponible */
+  }
+  
+  /* Texto legible en modo día */
+  :root[data-theme="light"] .banner-content-box p {
+    color: #e8e8e8; /* Mismo gris claro */
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+  }
+  
+  /* ===== SECCIONES COMUNES ===== */
+  .section-header {
+    text-align: center;
+    margin-bottom: 4rem;
+  }
+  
+  .section-header h2 {
+    font-size: 3rem;
+    margin: 0 0 1rem;
+    color: var(--title-color);
+    font-weight: 700;
+  }
+  
+  .section-header p {
+    font-size: 1.1rem;
+    color: #888;
+    max-width: 900px; /* Más ancho para mejor distribución */
+    margin: 0 auto;
+    line-height: 1.6; /* Reducido para textos más compactos */
+    text-align: center; /* Centrado como los banners */
+  }
+  
+  /* Estilos para negritas en párrafos */
+  .section-header p strong,
+  .about-content p strong,
+  .text-section p strong {
+    color: var(--title-color); /* Dorado para resaltar */
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Negritas en banners con color suave */
+  .banner-content-box p strong {
+    color: #f0f0f0; /* Blanco suave para negritas en banners */
+    font-weight: 700;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7); /* Sombra moderada */
+  }
+  
+  .section-footer {
+    text-align: center;
+    margin-top: 3rem;
+  }
+  
+  /* ===== BOTONES ===== */
+  .btn {
+    display: inline-block;
+    padding: 1rem 2rem;
+    border-radius: 8px; /* Botones cuadrados */
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    border: 2px solid;
+    cursor: pointer;
+    text-align: center;
+  }
+  
+  .btn-primary {
+    background: var(--primary-color);
+    color: var(--color-bg); /* Texto en color de fondo para contraste */
+    border-color: var(--primary-color);
+  }
+  
+  .btn-primary:hover {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(197, 173, 123, 0.3); /* Sombra dorada */
+  }
+  
+  /* ===== PROGRAMAS SECTION ===== */
+  .programs {
+    padding: var(--section-padding);
+  }
+  
+  /* Solo en modo claro se aplican estilos de fondo diferenciados */
+  :root[data-theme="light"] .programs {
+    background: rgba(255, 51, 51, 0.01);
+  }
+  
+  .programs-marquee {
+    overflow: hidden;
+    position: relative;
+    margin: 2rem 0;
+  }
+  
+  .marquee-container {
+    position: relative;
+  }
+  
+  .marquee-track {
+    display: flex;
+    gap: 2rem;
+    animation: marqueeScroll 30s linear infinite;
+    width: fit-content;
+  }
+  
+  @keyframes marqueeScroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  
+  .program-card {
+    flex: 0 0 280px;
+    background: var(--card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+  }
+  
+  .program-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .program-image {
     position: relative;
     width: 100%;
-    aspect-ratio: 1 / 1;
+    height: 280px; /* Hacer las imágenes cuadradas 1:1 */
     overflow: hidden;
   }
   
-  .program-image-grid img {
+  .program-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
     transition: transform 0.3s ease;
   }
   
-  .program-card-grid:hover .program-image-grid img {
+  .program-card:hover .program-image img {
     transform: scale(1.1);
   }
   
-  .program-overlay-grid {
+  .program-overlay {
     position: absolute;
     top: 0;
     left: 0;
@@ -1152,589 +1345,1309 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
     transition: opacity 0.3s ease;
   }
   
-  .program-card-grid:hover .program-overlay-grid {
+  .program-card:hover .program-overlay {
     opacity: 1;
   }
   
-  .play-btn-grid {
-    background: linear-gradient(135deg, var(--title-color) 0%, #ff6b6b 100%);
+  .view-btn {
+    background: var(--primary-color);
     color: white;
     border: none;
     border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    font-size: 1.2rem;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    box-shadow: 0 4px 15px rgba(255, 51, 51, 0.4);
+    width: 60px;
+    height: 60px;
     display: flex;
     align-items: center;
     justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
     position: relative;
-    overflow: hidden;
   }
   
-  .play-btn-grid::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    transition: all 0.6s ease;
-    transform: translate(-50%, -50%);
+  .view-btn:hover {
+    background: var(--primary-dark);
+    transform: scale(1.1);
   }
   
-  .play-btn-grid:hover {
-    transform: scale(1.15) rotate(5deg);
-    box-shadow: 0 6px 20px rgba(255, 51, 51, 0.6);
+  .view-btn svg {
+    transition: transform 0.2s ease;
   }
   
-  .play-btn-grid:hover::before {
-    width: 70px;
-    height: 70px;
+  .view-btn:hover svg {
+    transform: translateX(2px);
   }
   
-  .play-btn-grid:active {
-    transform: scale(0.95);
-  }
-  
-  .program-title-grid {
-    padding: 1rem;
-    text-align: center;
-    background: linear-gradient(180deg, 
-      var(--color-card-bg) 0%, 
-      rgba(0, 0, 0, 0.02) 100%);
-  }
-  
-  .program-title-grid h3 {
-    color: var(--title-color);
-    font-size: 0.9rem;
+  .program-card h3 {
+    padding: 1.5rem;
     margin: 0;
+    font-size: 1.1rem;
+    color: var(--title-color);
+    font-weight: 600;
+    text-align: center;
+  }
+  
+  /* ===== NOTICIAS SECTION ===== */
+  .news {
+    padding: var(--section-padding);
+  }
+  
+  /* Solo en modo claro se aplican estilos de fondo diferenciados */
+  :root[data-theme="light"] .news {
+    background: rgba(255, 51, 51, 0.02);
+  }
+  
+  .news-marquee-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    margin: 2rem 0;
+  }
+  
+  .news-marquee {
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .news-marquee .marquee-track {
+    animation: marqueeScroll 40s linear infinite;
+  }
+  
+  .news-marquee.reverse .marquee-track {
+    animation: marqueeScrollReverse 35s linear infinite;
+  }
+  
+  @keyframes marqueeScrollReverse {
+    0% { transform: translateX(-50%); }
+    100% { transform: translateX(0); }
+  }
+  
+  .news-card {
+    flex: 0 0 350px;
+    background: var(--card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .news-card:hover {
+    transform: translateY(-3px);
+  }
+  
+  .news-image {
+    flex: 0 0 120px;
+    height: 120px;
+  }
+  
+  .news-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .news-content {
+    flex: 1;
+    padding: 1rem 1rem 1rem 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  
+  .news-date {
+    font-size: 0.9rem;
+    color: var(--primary-color);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  
+  .news-content h4 {
+    font-size: 1rem;
+    margin: 0 0 0.5rem;
+    color: var(--title-color);
+    font-weight: 600;
     line-height: 1.3;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    font-weight: 600;
-    transition: color 0.3s ease;
   }
   
-  .program-card-grid:hover .program-title-grid h3 {
-    color: #ff6b6b;
-  }
-  
-  .section-footer {
-    text-align: center;
-    margin-top: 3rem;
-  }
-  
-  /* Responsive para el grid */
-  @media (max-width: 1200px) {
-    .programs-grid {
-      grid-template-columns: repeat(5, 1fr);
-    }
-  }
-  
-  @media (max-width: 992px) {
-    .programs-grid {
-      grid-template-columns: repeat(4, 1fr);
-      grid-template-rows: repeat(3, 1fr);
-    }
-  }
-  
-  @media (max-width: 768px) {
-    .main-content {
-      min-height: auto;
-    }
-    
-    .hero-container {
-      padding: 2rem 1rem;
-      min-height: 60vh;
-    }
-    
-    .programs-section {
-      margin-top: -1rem;
-    }
-    
-    .programs-section .container {
-      padding: 2rem 1rem 4rem;
-    }
-
-    .site-icon {
-      height: 80px;
-    }
-    
-    h1 {
-      font-size: 2.5rem;
-    }
-    
-    .page-description {
-      font-size: 1.1rem;
-      margin: 1.5rem auto 1rem;
-    }
-
-    .hero-actions {
-      flex-direction: column;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .btn {
-      width: 200px;
-      padding: 0.9rem 1.5rem;
-      font-size: 1rem;
-    }
-
-    .error-title {
-      font-size: 2rem;
-    }
-    
-    .error-message {
-      font-size: 1rem;
-    }
-    
-    .section-header h2 {
-      font-size: 2.5rem;
-    }
-    
-    .section-header p {
-      font-size: 1.1rem;
-    }
-    
-    .programs-grid {
-      grid-template-columns: repeat(3, 1fr);
-      grid-template-rows: repeat(4, 1fr);
-      gap: 1rem;
-      padding: 1.5rem 0;
-    }
-    
-    .program-title-grid {
-      padding: 0.8rem;
-    }
-    
-    .program-title-grid h3 {
-      font-size: 0.8rem;
-    }
-    
-    .play-btn-grid {
-      width: 40px;
-      height: 40px;
-      font-size: 1rem;
-    }
-  }
-  
-  @media (max-width: 576px) {
-    .programs-grid {
-      grid-template-columns: repeat(2, 1fr);
-      grid-template-rows: repeat(6, 1fr);
-      gap: 0.8rem;
-    }
-    
-    .program-title-grid {
-      padding: 0.6rem;
-    }
-    
-    .program-title-grid h3 {
-      font-size: 0.75rem;
-      -webkit-line-clamp: 1;
-    }
-  }
-  
-  @media (max-width: 480px) {
-    h1 {
-      font-size: 2rem;
-    }
-    
-    .page-description {
-      font-size: 1rem;
-    }
-    
-    .error-title {
-      font-size: 1.5rem;
-    }
-  }
-  
-  @media (max-width: 400px) {
-    .programs-grid {
-      grid-template-columns: 1fr;
-      grid-template-rows: repeat(12, 1fr);
-    }
-  }
-  
-  /* === ESTILOS PARA ESTADOS VACÍOS === */
-  .no-programs,
-  .no-news-slider {
-    text-align: center;
-    padding: 4rem 2rem;
-    color: #666;
-    grid-column: 1 / -1;
-    background: var(--color-card-bg);
-    border-radius: 12px;
-    border: 2px dashed rgba(255, 51, 51, 0.2);
-  }
-  
-  .no-programs-icon,
-  .no-news-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-    opacity: 0.5;
-  }
-  
-  .no-programs h3,
-  .no-news-slider h3 {
-    color: var(--title-color);
-    margin-bottom: 0.5rem;
-    font-size: 1.5rem;
-  }
-  
-  .no-programs p,
-  .no-news-slider p {
+  .news-content p {
+    font-size: 0.9rem;
     color: #888;
-    font-size: 1rem;
-    line-height: 1.5;
-  }
-  
-  /* === ESTILOS PARA LA SECCIÓN DE NOTICIAS - SLIDER === */
-  .news-section {
-    padding: 0;
-    background: transparent;
-    position: relative;
-    z-index: 1;
-    margin-top: -2rem;
-  }
-  
-  .news-section .container {
-    padding: 4rem 1rem 6rem;
-  }
-  
-  /* Slider de Noticias */
-  .news-slider {
-    position: relative;
-    margin-bottom: 2rem;
-    overflow: hidden;
-    width: 100%;
-    max-width: 1200px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-  
-  .slider-viewport {
-    width: 100%;
-    overflow: hidden;
-    position: relative;
-  }
-  
-  .slider-container {
-    display: flex;
-    gap: 1.5rem;
-    padding: 2rem 0;
-    position: relative;
-    width: fit-content;
-    transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    will-change: transform;
-  }
-  
-  /* News Cards Slider */
-  .news-card-slider {
-    flex: 0 0 300px;
-    background: var(--color-card-bg);
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    border: 1px solid rgba(255, 51, 51, 0.1);
-    animation: cardSlideIn 0.6s ease-out both;
-  }
-  
-  .news-card-slider::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, transparent 30%, rgba(255, 51, 51, 0.05) 50%, transparent 70%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-    z-index: 1;
-  }
-  
-  .news-card-slider:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25), 0 0 15px rgba(255, 51, 51, 0.2);
-    border-color: rgba(255, 51, 51, 0.3);
-  }
-  
-  .news-card-slider:hover::before {
-    opacity: 1;
-  }
-  
-  .news-image-slider {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 16 / 9;
-    overflow: hidden;
-  }
-  
-  .news-image-slider img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    transition: transform 0.3s ease;
-  }
-  
-  .news-card-slider:hover .news-image-slider img {
-    transform: scale(1.1);
-  }
-  
-  .news-overlay-slider {
-    position: absolute;
-    top: 1rem;
-    left: 1rem;
-    z-index: 2;
-  }
-  
-  .news-category {
-    background: linear-gradient(135deg, var(--title-color) 0%, #ff6b6b 100%);
-    color: white;
-    padding: 0.3rem 0.8rem;
-    border-radius: 15px;
-    font-size: 0.7rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    box-shadow: 0 2px 8px rgba(255, 51, 51, 0.3);
-  }
-  
-  .news-content-slider {
-    padding: 1.2rem;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-  }
-  
-  .news-meta {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0.8rem;
-    font-size: 0.75rem;
-    color: #888;
-  }
-  
-  .news-date {
-    color: var(--title-color);
-    font-weight: 600;
-  }
-  
-  .news-author {
-    color: #666;
-  }
-  
-  .news-content-slider h3 {
-    color: var(--title-color);
-    font-size: 1rem;
-    margin: 0 0 0.8rem;
+    margin: 0;
     line-height: 1.4;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    font-weight: 700;
-    transition: color 0.3s ease;
   }
   
-  .news-card-slider:hover .news-content-slider h3 {
-    color: #ff6b6b;
+  /* ===== CONTACTO HORIZONTAL ===== */
+  .horizontal-contact {
+    padding: 4rem 0; /* Reducido de 6rem a 4rem */
+    background: var(--background);
   }
   
-  .news-excerpt {
-    color: #777;
-    font-size: 0.85rem;
-    line-height: 1.5;
+  /* Encabezado general de contacto */
+  .contact-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+  
+  .contact-header h2 {
+    font-size: 3rem;
     margin: 0 0 1rem;
-    display: -webkit-box;
-    -webkit-line-clamp: 3;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    flex: 1;
-  }
-  
-  .news-link {
     color: var(--title-color);
-    text-decoration: none;
-    font-weight: 600;
-    font-size: 0.85rem;
-    transition: all 0.3s ease;
-    position: relative;
-    align-self: flex-start;
+    font-weight: 700;
   }
   
-  .news-link::after {
-    content: '→';
-    margin-left: 0.5rem;
-    transition: transform 0.3s ease;
+  .contact-header p {
+    font-size: 1.2rem;
+    color: var(--text-color);
+    max-width: 800px;
+    margin: 0 auto;
+    line-height: 1.6;
+    text-align: center;
   }
   
-  .news-link:hover {
-    color: #ff6b6b;
+  .contact-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem; /* Reducido de 4rem a 2.5rem */
+    align-items: start;
   }
   
-  .news-link:hover::after {
-    transform: translateX(3px);
-  }
-  
-  /* Controles del slider de noticias */
-  .news-controls {
-    margin-top: 1rem;
-  }
-  
-  .slider-controls {
+  /* Columna de textos (izquierda) */
+  .contact-text-column {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 1rem;
-    margin-top: 2rem;
+    flex-direction: column;
+    gap: 2rem; /* Reducido de 3rem a 2rem */
+    height: 100%;
+    justify-content: space-between;
   }
   
-  .slider-btn {
-    background: linear-gradient(135deg, var(--title-color) 0%, #ff6b6b 100%);
-    color: white;
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    font-size: 1.5rem;
-    cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  .text-section {
+    background: var(--card-bg);
+    padding: 2rem; /* Reducido de 2.5rem a 2rem */
+    border-radius: 12px;
+    border: 1px solid rgba(197, 173, 123, 0.1);
     position: relative;
-    overflow: hidden;
-    backdrop-filter: blur(10px);
-    box-shadow: 0 4px 15px rgba(255, 51, 51, 0.3);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Centrar contenido verticalmente */
+    min-height: 180px; /* Altura mínima controlada */
   }
   
-  .slider-btn::before {
+  .text-section:first-child::before {
     content: '';
     position: absolute;
     top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.6s ease;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #4ade80 0%, #16a34a 100%);
+    border-radius: 12px 12px 0 0;
   }
   
-  .slider-btn:hover {
-    transform: scale(1.1);
-    box-shadow: 0 6px 20px rgba(255, 51, 51, 0.5);
-    border-color: rgba(255, 255, 255, 0.4);
-  }
-  
-  .slider-btn:hover::before {
-    left: 100%;
-  }
-  
-  .slider-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-    transform: scale(0.9);
-  }
-  
-  .slider-dots {
-    display: flex;
-    gap: 0.4rem;
-  }
-  
-  .dot {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: var(--color-text-secondary, #888);
-    cursor: pointer;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    position: relative;
-    border: 2px solid transparent;
-  }
-  
-  .dot::before {
+  .text-section:last-child::before {
     content: '';
     position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    background: var(--title-color);
-    border-radius: 50%;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    border-radius: 12px 12px 0 0;
+  }
+  
+  .text-section h2 {
+    font-size: 1.8rem;
+    margin: 0 0 1rem;
+    color: var(--title-color);
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  
+  .text-section p {
+    font-size: 1rem;
+    color: var(--text-color);
+    margin: 0;
+    line-height: 1.6;
+  }
+  
+  /* Columna del formulario (derecha) */
+  .contact-form-column {
+    background: var(--card-bg);
+    padding: 2rem; /* Reducido de 2.5rem a 2rem */
+    border-radius: 12px;
+    border: 1px solid rgba(197, 173, 123, 0.2);
+    height: fit-content;
+    position: sticky;
+    top: 2rem;
+  }
+  
+  .contact-form-column h3 {
+    font-size: 2rem;
+    margin: 0 0 1.5rem; /* Reducido de 2rem a 1.5rem */
+    color: var(--title-color);
+    font-weight: 700;
+    text-align: center;
+  }
+  
+  /* ===== FORMULARIO ===== */
+  .contact-form-container {
+    max-width: 100%;
+    margin: 0;
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: left;
+  }
+  
+  .form-group label {
+    font-weight: 600;
+    color: var(--title-color);
+    font-size: 1rem;
+  }
+  
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(197, 173, 123, 0.15); /* Dorado */
+    border-radius: 8px; /* Más cuadrado */
+    padding: 1rem;
+    color: var(--text-color);
+    font-size: 1rem;
     transition: all 0.3s ease;
-    transform: translate(-50%, -50%);
+    font-family: inherit;
   }
   
-  .dot:hover {
-    background: rgba(255, 51, 51, 0.3);
-    border-color: var(--title-color);
-    transform: scale(1.2);
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--title-color); /* Dorado */
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 4px rgba(197, 173, 123, 0.1); /* Dorado */
   }
   
-  .dot.active {
-    background: var(--title-color);
-    transform: scale(1.3);
-    box-shadow: 0 0 12px rgba(255, 51, 51, 0.6);
+  .form-group select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23c5ad7b' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E"); /* Dorado */
+    background-repeat: no-repeat;
+    background-position: right 1.2rem center;
+    padding-right: 3rem;
   }
   
-  .dot.active::before {
-    width: 6px;
-    height: 6px;
+  .form-group select option {
+    background: #1a1a1a;
+    color: #fff;
+    padding: 0.5rem;
   }
   
-  /* Responsive para el slider de noticias */
-  @media (max-width: 992px) {
-    .news-card-slider {
-      flex: 0 0 280px;
-    }
+  .form-group input::placeholder,
+  .form-group textarea::placeholder {
+    color: #666;
   }
   
+  .form-actions {
+    text-align: center;
+    margin-top: 1rem;
+  }
+  
+  .success-message {
+    text-align: center;
+    padding: 2rem;
+    background: rgba(76, 175, 80, 0.1);
+    border: 2px solid #4caf50;
+    border-radius: 8px;
+    color: #4caf50;
+  }
+  
+  .success-message h3 {
+    margin: 0 0 1rem;
+    color: #4caf50;
+  }
+  
+  .success-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: block;
+    color: #4caf50;
+  }
+  
+  .loading-message {
+    text-align: center;
+    padding: 2rem;
+    color: #888;
+  }
+  
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #333;
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+  }
+  
+  .spinner-small {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 0.5rem;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  .error-message {
+    text-align: center;
+    padding: 2rem;
+    color: var(--title-color); /* Dorado */
+  }
+  
+  .error-message a {
+    color: var(--title-color); /* Dorado */
+    text-decoration: underline;
+  }
+  
+  .no-content {
+    flex: 0 0 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 2rem;
+    color: #888;
+  }
+  
+  /* ===== ERROR PAGE ===== */
+  .error-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+  }
+  
+  .error-content h1 {
+    font-size: 3rem;
+    margin: 0 0 1rem;
+    color: var(--primary-color);
+  }
+  
+  .error-content p {
+    font-size: 1.2rem;
+    margin: 0 0 2rem;
+    color: var(--text-color);
+  }
+  
+  /* ===== RESPONSIVE ===== */
   @media (max-width: 768px) {
-    .news-section {
-      margin-top: -1rem;
+    .hero {
+      padding: 6rem 0 4rem;
+      text-align: center;
     }
     
-    .news-section .container {
-      padding: 2rem 1rem 4rem;
+    .hero-content {
+      padding: 0 1rem; /* Añadir padding para móvil */
+      max-width: 100%; /* Usar todo el ancho disponible */
     }
     
-    .news-card-slider {
+    .hero h1 {
+      font-size: 2.5rem;
+      margin: 0 0 1rem;
+      line-height: 1.2; /* Mejor line-height para móvil */
+      word-wrap: break-word; /* Romper palabras largas si es necesario */
+    }
+    
+    .hero-subtitle {
+      font-size: 1.2rem;
+      margin: 0 0 2rem;
+      line-height: 1.4; /* Mejor legibilidad */
+      padding: 0 0.5rem; /* Padding adicional */
+    }
+    
+    .hero-logo {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 1.5rem; /* Reducir margen bottom */
+    }
+    
+    .about-grid {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+    
+    .about-content h2,
+    .section-header h2,
+    .contact-header h2 {
+      font-size: 2rem;
+    }
+    
+    .contact-header {
+      margin-bottom: 2rem;
+      padding: 0 0.5rem; /* Añadir padding para tablet/móvil */
+    }
+    
+    .contact-header h2 {
+      font-size: 2rem;
+    }
+    
+    .contact-header p {
+      font-size: 1rem;
+      line-height: 1.5; /* Mejor legibilidad */
+    }
+    
+    .contact-layout {
+      grid-template-columns: 1fr;
+      gap: 3rem;
+    }
+    
+    .contact-text-column {
+      gap: 2rem;
+    }
+    
+    .text-section {
+      padding: 2rem;
+    }
+    
+    .text-section h2 {
+      font-size: 1.6rem;
+    }
+    
+    .contact-form-column {
+      padding: 2rem;
+      position: static;
+    }
+    
+    .contact-form-column h3 {
+      font-size: 1.8rem;
+    }
+    
+    .about-content p,
+    .section-header p {
+      font-size: 1rem;
+    }
+    
+    .feature-banner-wide {
+      padding: 3rem 1.5rem;
+      min-height: 250px;
+      max-width: 100%;
+    }
+    
+    .banner-content-box {
+      padding: 2rem 1.5rem;
+      border-radius: 12px;
+    }
+    
+    .banner-content-box h3 {
+      font-size: 1.6rem;
+    }
+    
+    .banner-content-box p {
+      font-size: 1rem;
+      text-align: center; /* Mantener centrado en móvil */
+    }
+    
+    .section-header p {
+      max-width: 100%;
+      text-align: center; /* Centrado también en móvil */
+    }
+    
+    .program-card {
       flex: 0 0 250px;
     }
     
-    .news-content-slider {
+    .program-image {
+      height: 250px; /* Mantener 1:1 en móvil también */
+    }
+    
+    .news-card {
+      flex: 0 0 300px;
+      flex-direction: column;
+    }
+    
+    .news-image {
+      flex: none;
+      height: 150px;
+    }
+    
+    .news-content {
       padding: 1rem;
     }
     
-    .news-content-slider h3 {
+    .studio-image {
+      height: 250px;
+    }
+    
+    .contact-form-container {
+      padding: 0;
+    }
+    
+    .dual-contact-grid {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+    
+    .contact-layout {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+    
+    .contact-text-column {
+      gap: 1.5rem;
+    }
+    
+    .text-section {
+      padding: 1.5rem;
+    }
+    
+    .text-section h2 {
+      font-size: 1.4rem;
+    }
+    
+    .text-section p {
+      font-size: 0.95rem;
+    }
+    
+    .contact-form-column {
+      padding: 1.5rem;
+    }
+    
+    .contact-form-column h3 {
+      font-size: 1.6rem;
+    }
+    
+    .merchandising-banner,
+    .events-banner {
+      background-attachment: scroll;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .hero {
+      padding: 5rem 0 3rem; /* Reducir padding vertical */
+      text-align: center;
+    }
+    
+    .hero-content {
+      padding: 0 0.5rem; /* Padding más ajustado */
+      max-width: 100%;
+    }
+    
+    .hero h1 {
+      font-size: 2rem; /* Título más pequeño para móviles pequeños */
+      margin: 0 0 0.8rem;
+      line-height: 1.1;
+      word-wrap: break-word;
+      padding: 0 0.25rem; /* Padding adicional para evitar que toque los bordes */
+    }
+    
+    .hero-subtitle {
+      font-size: 1rem; /* Subtítulo más pequeño */
+      margin: 0 0 1.5rem;
+      line-height: 1.3;
+      padding: 0 0.25rem;
+      max-width: 100%; /* Asegurar que no se desborde */
+    }
+    
+    .hero-logo {
+      width: 60px; /* Logo más pequeño para móviles pequeños */
+      height: 60px;
+      margin: 0 auto 1rem;
+    }
+    .program-card {
+      flex: 0 0 200px;
+    }
+    
+    .program-image {
+      height: 200px; /* Mantener 1:1 */
+    }
+    
+    .news-card {
+      flex: 0 0 250px;
+    }
+    
+    .btn {
+      padding: 0.8rem 1.5rem;
+      font-size: 1rem;
+    }
+    
+    .feature-banner-wide {
+      padding: 2.5rem 1rem;
+      min-height: 200px;
+    }
+    
+    .banner-content-box {
+      padding: 1.5rem 1.2rem;
+      border-radius: 10px;
+    }
+    
+    .banner-content-box h3 {
+      font-size: 1.4rem;
+    }
+    
+    .banner-content-box p {
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    
+    .contact-column {
+      padding: 1.5rem;
+    }
+    
+    .contact-column h2 {
+      font-size: 1.5rem;
+    }
+    
+    .feature-item {
+      font-size: 0.9rem;
+      padding: 0.6rem 0;
+    }
+    
+    .contact-header h2 {
+      font-size: 1.8rem;
+    }
+    
+    .contact-header {
+      margin-bottom: 1.5rem;
+      padding: 0 0.5rem; /* Añadir padding para móvil muy pequeño */
+    }
+    
+    .contact-header p {
+      font-size: 0.95rem;
+      padding: 0 0.25rem; /* Padding adicional para el texto */
+      line-height: 1.5; /* Mejor legibilidad */
+    }
+    
+    .text-section {
+      padding: 1.2rem;
+    }
+    
+    .text-section h2 {
+      font-size: 1.2rem;
+    }
+    
+    .text-section p {
       font-size: 0.9rem;
     }
     
-    .news-excerpt {
-      font-size: 0.8rem;
-      -webkit-line-clamp: 2;
+    .contact-form-column {
+      padding: 1.2rem;
     }
     
-    .slider-btn {
-      width: 40px;
-      height: 40px;
-      font-size: 1.2rem;
+    .contact-form-column h3 {
+      font-size: 1.4rem;
+    }
+  }
+</style>
+
+<!-- Estilos avanzados para formulario compacto -->
+<style is:global>
+  /* ===============================================
+     GRAVITY FORMS ENHANCED STYLES - HOME COMPACT
+     =============================================== */
+
+  /* ===== VARIABLES CSS PARA FORMULARIO ===== */
+  :root {
+    --gf-primary: var(--title-color); /* Dorado */
+    --gf-primary-dark: #a8935e; /* Dorado más oscuro */
+    --gf-primary-light: rgba(197, 173, 123, 0.1);
+    --gf-secondary: #ffffff;
+    --gf-bg-card: rgba(255, 255, 255, 0.03);
+    --gf-bg-input: rgba(255, 255, 255, 0.05);
+    --gf-border: rgba(197, 173, 123, 0.15); /* Dorado con transparencia */
+    --gf-border-hover: rgba(197, 173, 123, 0.3);
+    --gf-border-focus: var(--gf-primary);
+    --gf-text: #ffffff;
+    --gf-text-muted: #888888;
+    --gf-text-placeholder: #555555;
+    --gf-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    --gf-shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.4);
+    --gf-shadow-focus: 0 0 0 4px rgba(197, 173, 123, 0.1); /* Dorado con transparencia */
+    --gf-radius: 8px; /* Bordes cuadrados */
+    --gf-radius-large: 12px;
+    --gf-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --gf-backdrop: blur(15px);
+  }
+
+  /* ===== FORMULARIO COMPACTO MEJORADO ===== */
+  .contact-form-container.compact {
+    max-width: 500px !important;
+    padding: 2.5rem !important;
+    border-radius: var(--gf-radius-large) !important;
+    background: transparent !important; /* Sin fondo */
+    box-shadow: none !important; /* Sin sombra */
+    backdrop-filter: none !important; /* Sin blur */
+    position: relative !important;
+    overflow: hidden !important;
+    border: none !important; /* Sin borde */
+  }
+
+  /* Efecto de brillo compacto - DESACTIVADO para fondo transparente */
+  .contact-form-container.compact::before {
+    display: none !important;
+  }
+
+  /* ===== FORMULARIO COMPACTO ===== */
+  .contact-form-container.compact .contact-form {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+    position: relative !important;
+    z-index: 1 !important;
+  }
+
+  /* Grupos de campos compactos */
+  .contact-form-container.compact .form-group {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.6rem !important;
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+    animation: slideInForm 0.6s ease-out both !important;
+    position: relative !important;
+  }
+
+  .contact-form-container.compact .form-group:nth-child(1) { animation-delay: 0.1s !important; }
+  .contact-form-container.compact .form-group:nth-child(2) { animation-delay: 0.2s !important; }
+  .contact-form-container.compact .form-group:nth-child(3) { animation-delay: 0.3s !important; }
+  .contact-form-container.compact .form-group:nth-child(4) { animation-delay: 0.4s !important; }
+
+  @keyframes slideInForm {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Etiquetas compactas */
+  .contact-form-container.compact .form-group label {
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+    letter-spacing: 0.5px !important;
+    text-transform: uppercase !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    position: relative !important;
+    margin-bottom: 0.3rem !important;
+    text-align: left !important;
+  }
+
+  .contact-form-container.compact .form-group label::after {
+    content: '' !important;
+    height: 2px !important;
+    flex: 1 !important;
+    background: linear-gradient(90deg, var(--gf-primary) 0%, transparent 100%) !important;
+    opacity: 0.3 !important;
+  }
+
+  /* ===== CAMPOS COMPACTOS ===== */
+  .contact-form-container.compact .form-group input,
+  .contact-form-container.compact .form-group select,
+  .contact-form-container.compact .form-group textarea {
+    background: var(--gf-bg-input) !important;
+    border: 2px solid var(--gf-border) !important;
+    border-radius: var(--gf-radius) !important;
+    padding: 1rem 1.2rem !important;
+    color: var(--gf-text) !important;
+    font-size: 1rem !important;
+    font-family: inherit !important;
+    font-weight: 400 !important;
+    transition: var(--gf-transition) !important;
+    position: relative !important;
+    backdrop-filter: blur(10px) !important;
+    box-shadow: 
+      inset 0 2px 4px rgba(0, 0, 0, 0.1),
+      0 2px 8px rgba(0, 0, 0, 0.05) !important;
+  }
+
+  /* Efectos hover compactos */
+  .contact-form-container.compact .form-group input:hover,
+  .contact-form-container.compact .form-group select:hover,
+  .contact-form-container.compact .form-group textarea:hover {
+    border-color: var(--gf-border-hover) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 
+      inset 0 2px 4px rgba(0, 0, 0, 0.1),
+      0 6px 15px rgba(197, 173, 123, 0.1) !important; /* Dorado */
+  }
+
+  /* Efectos focus compactos */
+  .contact-form-container.compact .form-group input:focus,
+  .contact-form-container.compact .form-group select:focus,
+  .contact-form-container.compact .form-group textarea:focus {
+    outline: none !important;
+    border-color: var(--gf-border-focus) !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 
+      inset 0 2px 4px rgba(0, 0, 0, 0.1),
+      var(--gf-shadow-focus),
+      0 8px 20px rgba(197, 173, 123, 0.15) !important; /* Dorado */
+    transform: translateY(-2px) scale(1.01) !important;
+  }
+
+  /* Placeholders compactos */
+  .contact-form-container.compact .form-group input::placeholder,
+  .contact-form-container.compact .form-group textarea::placeholder {
+    color: var(--gf-text-placeholder) !important;
+    opacity: 0.8 !important;
+    font-style: italic !important;
+    font-weight: 300 !important;
+    transition: var(--gf-transition) !important;
+  }
+
+  .contact-form-container.compact .form-group input:focus::placeholder,
+  .contact-form-container.compact .form-group textarea:focus::placeholder {
+    opacity: 0.5 !important;
+    transform: translateX(3px) !important;
+  }
+
+  /* ===== SELECT COMPACTO ===== */
+  .contact-form-container.compact .form-group select {
+    cursor: pointer !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c5ad7b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e") !important; /* Dorado */
+    background-repeat: no-repeat !important;
+    background-position: right 1rem center !important;
+    background-size: 1rem !important;
+    padding-right: 3rem !important;
+    position: relative !important;
+  }
+
+  .contact-form-container.compact .form-group select:focus {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+  }
+
+  .contact-form-container.compact .form-group select option {
+    background: #1a1a1a !important;
+    color: var(--gf-text) !important;
+    padding: 0.8rem !important;
+    border: none !important;
+    font-weight: 400 !important;
+  }
+
+  /* ===== TEXTAREA COMPACTO ===== */
+  .contact-form-container.compact .form-group textarea {
+    resize: vertical !important;
+    min-height: 100px !important;
+    line-height: 1.6 !important;
+    font-family: inherit !important;
+  }
+
+  .contact-form-container.compact .form-group textarea:focus {
+    min-height: 120px !important;
+  }
+
+  /* ===== BOTÓN COMPACTO ===== */
+  .contact-form-container.compact .form-actions {
+    margin-top: 1.5rem !important;
+    display: flex !important;
+    justify-content: center !important;
+    position: relative !important;
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+    animation: slideInForm 0.6s ease-out 0.5s both !important;
+  }
+
+  .contact-form-container.compact .form-actions .btn {
+    min-width: 200px !important;
+    padding: 1.1rem 2.5rem !important;
+    font-size: 1.1rem !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    position: relative !important;
+    overflow: hidden !important;
+    border: none !important;
+    cursor: pointer !important;
+    background: linear-gradient(
+      135deg, 
+      var(--gf-primary) 0%, 
+      var(--gf-primary-dark) 100%
+    ) !important;
+    color: var(--color-bg) !important; /* Texto en color de fondo para contraste */
+    border-radius: 8px !important; /* Botones cuadrados */
+    transition: var(--gf-transition) !important;
+  }
+
+  /* Efecto de ondas compacto */
+  .contact-form-container.compact .form-actions .btn::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    width: 0 !important;
+    height: 0 !important;
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    transform: translate(-50%, -50%) !important;
+    transition: width 0.6s ease, height 0.6s ease !important;
+    z-index: 0 !important;
+  }
+
+  .contact-form-container.compact .form-actions .btn:hover::before {
+    width: 300px !important;
+    height: 300px !important;
+  }
+
+  /* Efecto de brillo compacto */
+  .contact-form-container.compact .form-actions .btn::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: -100% !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: linear-gradient(
+      90deg, 
+      transparent, 
+      rgba(255, 255, 255, 0.3), 
+      transparent
+    ) !important;
+    transition: left 0.6s ease !important;
+    z-index: 1 !important;
+  }
+
+  .contact-form-container.compact .form-actions .btn:hover::after {
+    left: 100% !important;
+  }
+
+  .contact-form-container.compact .form-actions .btn span {
+    position: relative !important;
+    z-index: 2 !important;
+    display: inline-block !important;
+    transition: var(--gf-transition) !important;
+  }
+
+  .contact-form-container.compact .form-actions .btn:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 
+      0 12px 30px rgba(197, 173, 123, 0.4), /* Dorado */
+      0 0 0 6px rgba(197, 173, 123, 0.1) !important;
+    background: linear-gradient(
+      135deg, 
+      #d4bb85 0%, /* Dorado más claro */
+      var(--gf-primary) 100%
+    ) !important;
+  }
+
+  .contact-form-container.compact .form-actions .btn:hover span {
+    transform: scale(1.05) !important;
+  }
+
+  .contact-form-container.compact .form-actions .btn:active {
+    transform: translateY(-1px) !important;
+    transition: transform 0.1s ease !important;
+  }
+
+  /* Estados del botón compacto */
+  .contact-form-container.compact .form-actions .btn:disabled {
+    opacity: 0.7 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    background: #666 !important;
+  }
+
+  .contact-form-container.compact .form-actions .btn.loading {
+    pointer-events: none !important;
+    background: linear-gradient(
+      135deg, 
+      var(--gf-primary) 0%, 
+      var(--gf-primary-dark) 100%
+    ) !important;
+  }
+
+  /* ===== SPINNER COMPACTO ===== */
+  .contact-form-container.compact .spinner {
+    animation: rotate 2s linear infinite !important;
+    z-index: 2 !important;
+    width: 35px !important;
+    height: 35px !important;
+    margin: 0 auto 1rem !important;
+  }
+  
+  .contact-form-container.compact .spinner .path {
+    stroke: var(--title-color) !important; /* Dorado */
+    stroke-linecap: round !important;
+    animation: dash 1.5s ease-in-out infinite !important;
+  }
+  
+  @keyframes rotate {
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  
+  @keyframes dash {
+    0% {
+      stroke-dasharray: 1, 150;
+      stroke-dashoffset: 0;
+    }
+    50% {
+      stroke-dasharray: 90, 150;
+      stroke-dashoffset: -35;
+    }
+    100% {
+      stroke-dasharray: 90, 150;
+      stroke-dashoffset: -124;
+    }
+  }
+
+  .contact-form-container.compact .spinner-small {
+    display: inline-block !important;
+    width: 16px !important;
+    height: 16px !important;
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+    border-top-color: white !important;
+    border-radius: 50% !important;
+    animation: spin 0.8s linear infinite !important;
+    margin-right: 0.5rem !important;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* ===== MENSAJES COMPACTOS ===== */
+  .contact-form-container.compact .form-message {
+    padding: 1.2rem 1.5rem !important;
+    border-radius: var(--gf-radius) !important;
+    margin-top: 1.5rem !important;
+    font-weight: 600 !important;
+    text-align: center !important;
+    animation: messageSlideIn 0.6s ease-out !important;
+    backdrop-filter: blur(10px) !important;
+    font-size: 1rem !important;
+    position: relative !important;
+    overflow: hidden !important;
+  }
+
+  @keyframes messageSlideIn {
+    from {
+      transform: translateY(-15px) scale(0.95);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+  }
+
+  .contact-form-container.compact .form-message.success {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.15), rgba(76, 175, 80, 0.05)) !important;
+    border: 2px solid #4caf50 !important;
+    color: #4caf50 !important;
+    box-shadow: 
+      0 6px 20px rgba(76, 175, 80, 0.2),
+      inset 0 1px 0 rgba(76, 175, 80, 0.2) !important;
+  }
+
+  .contact-form-container.compact .form-message.error {
+    background: linear-gradient(135deg, rgba(197, 173, 123, 0.15), rgba(197, 173, 123, 0.05)) !important;
+    border: 2px solid var(--gf-primary) !important;
+    color: var(--gf-primary) !important;
+    box-shadow: 
+      0 6px 20px rgba(197, 173, 123, 0.2),
+      inset 0 1px 0 rgba(197, 173, 123, 0.2) !important;
+  }
+
+  /* Iconos compactos */
+  .contact-form-container.compact .success-icon,
+  .contact-form-container.compact .error-icon {
+    font-size: 2.5rem !important;
+    margin-bottom: 0.8rem !important;
+    display: block !important;
+    animation: iconPop 0.5s ease-out !important;
+  }
+
+  @keyframes iconPop {
+    0% { transform: scale(0) rotate(-90deg); }
+    50% { transform: scale(1.1) rotate(-45deg); }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+
+  .contact-form-container.compact .success-icon {
+    color: #4caf50 !important;
+  }
+
+  .contact-form-container.compact .error-icon {
+    color: var(--gf-primary) !important;
+  }
+
+  /* Mensajes de carga compactos */
+  .contact-form-container.compact .loading-message {
+    text-align: center !important;
+    padding: 2rem !important;
+    color: #888 !important;
+  }
+  
+  .contact-form-container.compact .loading-message p {
+    color: #777 !important;
+    font-size: 1rem !important;
+  }
+
+  .contact-form-container.compact .error-message {
+    text-align: center !important;
+    padding: 1.5rem !important;
+  }
+  
+  .contact-form-container.compact .error-message .error-text {
+    color: var(--gf-primary) !important;
+    font-size: 1.1rem !important;
+    margin-bottom: 1rem !important;
+    font-weight: 600 !important;
+  }
+  
+  .contact-form-container.compact .error-message p {
+    color: #777 !important;
+    margin: 0.5rem 0 !important;
+    font-size: 0.9rem !important;
+  }
+  
+  .contact-form-container.compact .error-message a {
+    color: var(--gf-primary) !important;
+    text-decoration: none !important;
+  }
+  
+  .contact-form-container.compact .error-message a:hover {
+    text-decoration: underline !important;
+  }
+
+  /* ===== RESPONSIVE COMPACTO ===== */
+  @media (max-width: 768px) {
+    .contact-form-container.compact {
+      padding: 2rem 1.5rem !important;
+      border-radius: 12px !important;
+      max-width: 100% !important;
+    }
+    
+    .contact-form-container.compact .form-group {
+      gap: 0.5rem !important;
+    }
+    
+    .contact-form-container.compact .form-group label {
+      font-size: 0.9rem !important;
+    }
+    
+    .contact-form-container.compact .form-group input,
+    .contact-form-container.compact .form-group select,
+    .contact-form-container.compact .form-group textarea {
+      padding: 0.9rem 1rem !important;
+      font-size: 16px !important; /* Evita zoom en iOS */
+    }
+    
+    .contact-form-container.compact .form-actions .btn {
+      width: 100% !important;
+      min-width: unset !important;
+      font-size: 1rem !important;
+      padding: 1rem 2rem !important;
+    }
+    
+    .contact-form-container.compact .form-message {
+      padding: 1rem 1.2rem !important;
+      font-size: 0.95rem !important;
+    }
+    
+    .contact-form-container.compact .form-group textarea {
+      min-height: 80px !important;
+    }
+    
+    .contact-form-container.compact .form-group textarea:focus {
+      min-height: 100px !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .contact-form-container.compact {
+      padding: 1.8rem 1.2rem !important;
+    }
+    
+    .contact-form-container.compact .form-group {
+      gap: 0.4rem !important;
+    }
+    
+    .contact-form-container.compact .form-group label {
+      font-size: 0.85rem !important;
+      letter-spacing: 0.3px !important;
+    }
+    
+    .contact-form-container.compact .form-actions .btn {
+      font-size: 0.95rem !important;
+      letter-spacing: 0.8px !important;
+      padding: 0.9rem 1.8rem !important;
+    }
+    
+    .contact-form-container.compact .success-icon,
+    .contact-form-container.compact .error-icon {
+      font-size: 2rem !important;
+    }
+  }
+
+  /* ===== MEJORAS DE ACCESIBILIDAD COMPACTAS ===== */
+  .contact-form-container.compact .form-group input:focus-visible,
+  .contact-form-container.compact .form-group select:focus-visible,
+  .contact-form-container.compact .form-group textarea:focus-visible {
+    outline: 2px solid var(--gf-primary) !important;
+    outline-offset: 2px !important;
+  }
+
+  .contact-form-container.compact .form-actions .btn:focus-visible {
+    outline: 2px solid rgba(197, 173, 123, 0.8) !important; /* Dorado */
+    outline-offset: 3px !important;
+  }
+
+  /* ===== REDUCIR MOVIMIENTO COMPACTO ===== */
+  @media (prefers-reduced-motion: reduce) {
+    .contact-form-container.compact *,
+    .contact-form-container.compact *::before,
+    .contact-form-container.compact *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
     }
   }
 </style>

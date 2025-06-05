@@ -71,11 +71,11 @@ try {
     <!-- Controles móviles: Play + Modo noche + Hamburguesa -->
     <div class="mobile-controls">
       <!-- Botón de play móvil -->
-      <button class="mobile-play-btn" id="mobilePlayBtn" aria-label="Reproducir/Pausar Radio">
-        <svg id="mobile-play-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <button class="mobile-play-btn" id="play-pause" aria-label="Reproducir/Pausar Radio">
+        <svg id="play-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <polygon points="5,3 19,12 5,21"></polygon>
         </svg>
-        <svg id="mobile-pause-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+        <svg id="pause-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
           <rect x="6" y="4" width="4" height="16"></rect>
           <rect x="14" y="4" width="4" height="16"></rect>
         </svg>
@@ -156,7 +156,10 @@ try {
   <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
   
   <!-- Audio para reproductor móvil (oculto) -->
-  <audio id="mobileRadioAudio" preload="none" data-stream-url="https://stream.zeno.fm/4g7qxnxrloluv" style="display: none;"></audio>
+  <audio id="radio-stream" preload="none" crossorigin="anonymous" style="display: none;">
+    <source src="https://stream.zeno.fm/4g7qxnxrloluv" type="audio/mpeg">
+    Tu navegador no soporta audio HTML5.
+  </audio>
 </header>
 
 <!-- Script para efecto de transparencia al scroll y menú móvil -->
@@ -170,36 +173,72 @@ try {
     
     let isMenuOpen = false;
     
-    // === REPRODUCTOR MÓVIL SIMPLE ===
+    // === REPRODUCTOR MÓVIL CON STATE MANAGER ===
     class MobileHeaderPlayer {
       constructor() {
-        this.audio = document.getElementById('mobileRadioAudio');
-        this.playBtn = document.getElementById('mobilePlayBtn');
-        this.playIcon = document.getElementById('mobile-play-icon');
-        this.pauseIcon = document.getElementById('mobile-pause-icon');
+        this.audio = document.getElementById('radio-stream');
+        this.playBtn = document.getElementById('play-pause');
+        this.playIcon = document.getElementById('play-icon');
+        this.pauseIcon = document.getElementById('pause-icon');
         this.isPlaying = false;
         
         this.init();
       }
       
       init() {
-        if (!this.audio || !this.playBtn) return;
-        
-        const streamUrl = this.audio.getAttribute('data-stream-url');
-        this.audio.src = streamUrl;
-        this.audio.volume = 0.7;
+        if (!this.audio || !this.playBtn) {
+          console.log('Elementos del reproductor móvil no encontrados');
+          return;
+        }
         
         this.bindEvents();
+        
+        // Esperar a que el RadioStateManager esté listo
+        this.waitForStateManager();
+        
+        console.log('Reproductor móvil inicializado');
+      }
+      
+      // Esperar a que el state manager esté disponible
+      waitForStateManager() {
+        const checkStateManager = () => {
+          if (window.radioStateManager) {
+            console.log('State manager detectado en header, sincronizando...');
+            // El state manager ya manejará este reproductor automáticamente
+            this.syncWithStateManager();
+          } else {
+            setTimeout(checkStateManager, 100);
+          }
+        };
+        checkStateManager();
+      }
+      
+      // Sincronizar con el state manager
+      syncWithStateManager() {
+        if (window.radioStateManager) {
+          const state = window.radioStateManager.getState();
+          this.isPlaying = state.isPlaying;
+          this.updateUI();
+        }
       }
       
       bindEvents() {
+        // El botón ahora delega al state manager
         this.playBtn?.addEventListener('click', () => this.togglePlay());
-        this.audio?.addEventListener('play', () => this.setPlaying(true));
-        this.audio?.addEventListener('pause', () => this.setPlaying(false));
-        this.audio?.addEventListener('error', () => this.handleError());
       }
       
       togglePlay() {
+        // Usar el state manager para controlar la reproducción
+        if (window.radioStateManager) {
+          window.radioStateManager.togglePlayPause();
+        } else {
+          // Fallback si el state manager no está disponible
+          this.fallbackToggle();
+        }
+      }
+      
+      // Método fallback por si no está disponible el state manager
+      fallbackToggle() {
         if (!this.audio) return;
         
         if (this.isPlaying) {
@@ -207,6 +246,11 @@ try {
         } else {
           this.audio.play().catch(() => this.handleError());
         }
+      }
+      
+      // Actualizar UI local
+      updateUI() {
+        this.setPlaying(this.isPlaying);
       }
       
       setPlaying(playing) {

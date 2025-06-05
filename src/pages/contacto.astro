@@ -1,5 +1,6 @@
 ---
 import MainLayout from '../layouts/MainLayout.astro';
+import Hero from '../components/Hero.astro';
 import { getSiteInfo, getPageData } from '../lib/wordpress';
 
 // Variables para controlar errores
@@ -17,9 +18,9 @@ try {
   errorMessage = `Error conectando con WordPress: ${error.message}`;
 }
 
-// Datos de la página
-const heroTitle = hasError ? null : (pageData?.title || "Contacto");
-const heroDescription = hasError ? null : (pageData?.excerpt || "Ponte en contacto con VinylStation Radio. Estamos aquí para escucharte.");
+// Datos de la página usando SEO
+const heroTitle = hasError ? "Error - Contacto" : (pageData?.title || "Contacto");
+const heroDescription = hasError ? "Error cargando contenido" : (pageData?.excerpt || "Ponte en contacto con VinylStation Radio. Estamos aquí para escucharte.");
 const pageTitle = hasError ? 'Error - Contacto' : (pageData?.seo?.title || `${heroTitle} - VinylStation`);
 const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.metaDesc || heroDescription);
 
@@ -40,8 +41,8 @@ const contactInfo = {
 
 <MainLayout title={pageTitle} description={pageDescription}>
   <div class="main-content">
-    <div class="container hero-container">
-      {hasError ? (
+    {hasError ? (
+      <div class="container hero-container">
         <div class="error-container">
           <div class="error-icon">⚠️</div>
           <h1 class="error-title">Error de Conexión</h1>
@@ -53,147 +54,150 @@ const contactInfo = {
             <a href="/" class="btn secondary-btn">← Volver al inicio</a>
           </div>
         </div>
-      ) : (
-        <header class="page-header">
-          <div class="site-icon-container">
-            <img src="/images/logos/logo vinylstation.png" alt="VinylStation Logo" class="site-icon" />
-          </div>
-          <h1>{heroTitle}</h1>
-          <p class="page-description">{heroDescription}</p>
-        </header>
-      )}
-    </div>
-    
-    <!-- Sección de Contacto -->
-    <section class="contact-section">
-      <div class="container">
-        <div class="contact-grid">
-          <!-- Información de contacto -->
-          <div class="contact-info">
-            <h2>Información de Contacto</h2>
-            <p class="contact-intro">
-              VinylStation Radio es tu emisora especializada en música vinilo. 
-              Estamos aquí para compartir contigo la mejor música y experiencias analógicas.
-            </p>
-            
-            <div class="contact-details">
-              <div class="contact-item">
-                <div class="contact-icon">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-                <div class="contact-text">
-                  <h3>Teléfono</h3>
-                  <a href={`tel:${contactInfo.phone.replace(/\s/g, '')}`}>{contactInfo.phone}</a>
-                </div>
-              </div>
-              
-              <div class="contact-item">
-                <div class="contact-icon">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/>
-                    <path d="M3 7l9 6l9 -6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-                  </svg>
-                </div>
-                <div class="contact-text">
-                  <h3>Email</h3>
-                  <a href={`mailto:${contactInfo.email}`}>{contactInfo.email}</a>
-                </div>
-              </div>
-              
-              <div class="contact-item">
-                <div class="contact-icon">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2"/>
-                    <circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2"/>
-                  </svg>
-                </div>
-                <div class="contact-text">
-                  <h3>Dirección</h3>
-                  <p>
-                    {contactInfo.address.city}<br/>
-                    {contactInfo.address.postalCode} {contactInfo.address.province}<br/>
-                    {contactInfo.address.country}
-                  </p>
-                </div>
-              </div>
-              
-              <div class="contact-item">
-                <div class="contact-icon">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-                    <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
-                    <path d="M2 12h20" stroke="currentColor" stroke-width="2"/>
-                    <path d="M12 2a15.3 15.3 0 0 1 4 10a15.3 15.3 0 0 1 -4 10a15.3 15.3 0 0 1 -4 -10a15.3 15.3 0 0 1 4 -10z" stroke="currentColor" stroke-width="2"/>
-                  </svg>
-                </div>
-                <div class="contact-text">
-                  <h3>Web</h3>
-                  <a href={contactInfo.web} target="_blank" rel="noopener noreferrer">vinylstation.com</a>
-                </div>
-              </div>
-            </div>
-            
-            <div class="social-links">
-              <h3>Síguenos</h3>
-              <div class="social-icons">
-                <a href="https://www.facebook.com/profile.php?id=61573773924772" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="Facebook">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
-                  </svg>
-                </a>
-                <a href="https://www.instagram.com/vinylstation_radio/" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="Instagram">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zM5.838 12a6.162 6.162 0 1 1 12.324 0 6.162 6.162 0 0 1-12.324 0zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm4.965-10.405a1.44 1.44 0 1 1 2.881.001 1.44 1.44 0 0 1-2.881-.001z"/>
-                  </svg>
-                </a>
-                <a href="https://www.tiktok.com/@vinylstation_radio" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="TikTok">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-.88-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
-                  </svg>
-                </a>
-                <a href="https://zeno.fm/radio/vinyl-station-radio/" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="Zeno FM">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M4 4h16v16H4V4z"/>
-                    <path d="M7 8h10l-8 8h8" stroke="white" stroke-width="1.5" fill="none"/>
-                    <circle cx="6" cy="7" r="1" fill="white"/>
-                    <circle cx="18" cy="17" r="1" fill="white"/>
-                  </svg>
-                </a>
-                <a href="https://soundcloud.com/vinyl-station-radio" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="SoundCloud">
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-                    <path d="M3 14v4h1v-4zm1.5-.5v5h1v-5zm1.5-1v7h1v-7zm1.5.5v6h1v-6zm1.5-1v8h1v-8zm1.5.5v7h1v-7zm1.5-1.5v10h1v-10zm1.5.5v9h1v-9z"/>
-                    <path d="M16 10c2.21 0 4 1.79 4 4s-1.79 4-4 4H8v-2h8c1.1 0 2-.9 2-2s-.9-2-2-2c-.55 0-1.05.22-1.41.59-.36.36-.59.86-.59 1.41h-2c0-1.1.45-2.1 1.17-2.83C13.9 10.45 14.9 10 16 10z"/>
-                  </svg>
-                </a>
-              </div>
-            </div>
-          </div>
-          
-          <!-- Formulario de contacto -->
-          <div class="contact-form-container">
-            <h2>Envíanos un mensaje</h2>
-            <p>¿Tienes alguna pregunta? ¿Quieres colaborar con nosotros? Escríbenos y te responderemos lo antes posible.</p>
-            
-            <!-- Gravity Forms Container -->
-            <div id="gravity-form-container" class="form-loading">
-              <div class="loading-message">
-                <svg class="spinner" viewBox="0 0 50 50">
-                  <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
-                </svg>
-                <p>Cargando formulario de contacto...</p>
-              </div>
-              <div class="error-message" style="display: none;">
-                <p class="error-text">Error al cargar el formulario.</p>
-                <p>Por favor, contáctanos directamente:</p>
-                <p><strong>Email:</strong> <a href="mailto:hola@vinylstation.com">hola@vinylstation.com</a></p>
-                <p><strong>Teléfono:</strong> <a href="tel:+34925676778">+34 925 676 778</a></p>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
-    </section>
+    ) : (
+      <>
+        {/* HERO UNIFICADO */}
+        <Hero 
+          title={heroTitle}
+          description={heroDescription}
+          showPlayer={true}
+          showStats={false}
+          showActions={false}
+        />
+        
+        {/* Sección de Contacto */}
+        <section class="contact-section">
+          <div class="container">
+            <div class="contact-grid">
+              <!-- Información de contacto -->
+              <div class="contact-info">
+                <h2>Información de Contacto</h2>
+                <p class="contact-intro">
+                  VinylStation Radio es tu emisora especializada en música vinilo. 
+                  Estamos aquí para compartir contigo la mejor música y experiencias analógicas.
+                </p>
+                
+                <div class="contact-details">
+                  <div class="contact-item">
+                    <div class="contact-icon">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </div>
+                    <div class="contact-text">
+                      <h3>Teléfono</h3>
+                      <a href={`tel:${contactInfo.phone.replace(/\s/g, '')}`}>{contactInfo.phone}</a>
+                    </div>
+                  </div>
+                  
+                  <div class="contact-item">
+                    <div class="contact-icon">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/>
+                        <path d="M3 7l9 6l9 -6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </div>
+                    <div class="contact-text">
+                      <h3>Email</h3>
+                      <a href={`mailto:${contactInfo.email}`}>{contactInfo.email}</a>
+                    </div>
+                  </div>
+                  
+                  <div class="contact-item">
+                    <div class="contact-icon">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2"/>
+                        <circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2"/>
+                      </svg>
+                    </div>
+                    <div class="contact-text">
+                      <h3>Dirección</h3>
+                      <p>
+                        {contactInfo.address.city}<br/>
+                        {contactInfo.address.postalCode} {contactInfo.address.province}<br/>
+                        {contactInfo.address.country}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div class="contact-item">
+                    <div class="contact-icon">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                        <path d="M2 12h20" stroke="currentColor" stroke-width="2"/>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10a15.3 15.3 0 0 1 -4 10a15.3 15.3 0 0 1 -4 -10a15.3 15.3 0 0 1 4 -10z" stroke="currentColor" stroke-width="2"/>
+                      </svg>
+                    </div>
+                    <div class="contact-text">
+                      <h3>Web</h3>
+                      <a href={contactInfo.web} target="_blank" rel="noopener noreferrer">vinylstation.com</a>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="social-links">
+                  <h3>Síguenos</h3>
+                  <div class="social-icons">
+                    <a href="https://www.facebook.com/profile.php?id=61573773924772" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="Facebook">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                      </svg>
+                    </a>
+                    <a href="https://www.instagram.com/vinylstation_radio/" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="Instagram">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zM5.838 12a6.162 6.162 0 1 1 12.324 0 6.162 6.162 0 0 1-12.324 0zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm4.965-10.405a1.44 1.44 0 1 1 2.881.001 1.44 1.44 0 0 1-2.881-.001z"/>
+                      </svg>
+                    </a>
+                    <a href="https://www.tiktok.com/@vinylstation_radio" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="TikTok">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-.88-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
+                      </svg>
+                    </a>
+                    <a href="https://zeno.fm/radio/vinyl-station-radio/" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="Zeno FM">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M4 4h16v16H4V4z"/>
+                        <path d="M7 8h10l-8 8h8" stroke="white" stroke-width="1.5" fill="none"/>
+                        <circle cx="6" cy="7" r="1" fill="white"/>
+                        <circle cx="18" cy="17" r="1" fill="white"/>
+                      </svg>
+                    </a>
+                    <a href="https://soundcloud.com/vinyl-station-radio" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="SoundCloud">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3 14v4h1v-4zm1.5-.5v5h1v-5zm1.5-1v7h1v-7zm1.5.5v6h1v-6zm1.5-1v8h1v-8zm1.5.5v7h1v-7zm1.5-1.5v10h1v-10zm1.5.5v9h1v-9z"/>
+                        <path d="M16 10c2.21 0 4 1.79 4 4s-1.79 4-4 4H8v-2h8c1.1 0 2-.9 2-2s-.9-2-2-2c-.55 0-1.05.22-1.41.59-.36.36-.59.86-.59 1.41h-2c0-1.1.45-2.1 1.17-2.83C13.9 10.45 14.9 10 16 10z"/>
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Formulario de contacto -->
+              <div class="contact-form-container">
+                <h2>Envíanos un mensaje</h2>
+                <p>¿Tienes alguna pregunta? ¿Quieres colaborar con nosotros? Escríbenos y te responderemos lo antes posible.</p>
+                
+                <!-- Gravity Forms Container -->
+                <div id="gravity-form-container" class="form-loading">
+                  <div class="loading-message">
+                    <svg class="spinner" viewBox="0 0 50 50">
+                      <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+                    </svg>
+                    <p>Cargando formulario de contacto...</p>
+                  </div>
+                  <div class="error-message" style="display: none;">
+                    <p class="error-text">Error al cargar el formulario.</p>
+                    <p>Por favor, contáctanos directamente:</p>
+                    <p><strong>Email:</strong> <a href="mailto:hola@vinylstation.com">hola@vinylstation.com</a></p>
+                    <p><strong>Teléfono:</strong> <a href="tel:+34925676778">+34 925 676 778</a></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </>
+    )}
   </div>
 </MainLayout>
 
@@ -470,7 +474,7 @@ const contactInfo = {
 </style>
 
 <style>
-  /* Contenedor principal unificado - IGUAL QUE HOME */
+  /* Contenedor principal unificado */
   .main-content {
     background: linear-gradient(
       135deg,
@@ -493,7 +497,7 @@ const contactInfo = {
     background: linear-gradient(
       45deg, 
       transparent 30%, 
-      rgba(255, 51, 51, 0.02) 50%, 
+      rgba(197, 173, 123, 0.02) 50%, 
       transparent 70%
     );
     animation: backgroundShimmer 20s ease-in-out infinite;
@@ -528,7 +532,9 @@ const contactInfo = {
     padding: 2rem;
     background: #1a1a1a;
     border-radius: 15px;
-    border: 2px solid #ff3333;
+    border: 2px solid var(--title-color);
+    margin: 4rem auto;
+    max-width: 600px;
   }
   
   .error-icon {
@@ -558,103 +564,45 @@ const contactInfo = {
     justify-content: center;
     flex-wrap: wrap;
   }
-  
-  /* === ESTILOS NORMALES === */
-  .page-header {
-    text-align: center;
-    width: 100%;
-  }
-  
-  .site-icon-container {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 2rem;
-  }
-  
-  .site-icon {
-    height: 120px;
-    width: auto;
-    animation: pulse 3s infinite ease-in-out;
-  }
-  
-  @keyframes pulse {
-    0% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255, 51, 51, 0.5)); }
-    50% { transform: scale(1.05); filter: drop-shadow(0 0 8px rgba(255, 51, 51, 0.8)); }
-    100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255, 51, 51, 0.5)); }
-  }
-  
-  h1 {
-    font-size: 4rem;
-    margin: 0 0 1.5rem;
-    color: var(--title-color);
-    position: relative;
-    display: inline-block;
-    font-weight: 800;
-  }
-  
-  h1::after {
-    content: '';
-    position: absolute;
-    bottom: -15px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100px;
-    height: 4px;
-    background: linear-gradient(90deg, 
-      transparent, 
-      var(--title-color),
-      transparent);
-    border-radius: 2px;
-  }
-  
-  .page-description {
-    max-width: 800px;
-    margin: 2rem auto 1rem;
-    color: #777;
-    font-size: 1.3rem;
-    line-height: 1.6;
-  }
 
   .btn {
     display: inline-block;
     padding: 1rem 2rem;
-    border-radius: 50px;
+    border-radius: 8px;
     text-decoration: none;
-    font-weight: 700;
+    font-weight: 600;
     font-size: 1.1rem;
     transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-    min-width: 180px;
-    text-align: center;
-    border: none;
+    border: 2px solid;
     cursor: pointer;
+    text-align: center;
+    min-width: 180px;
   }
 
   .primary-btn {
-    background: var(--color-primary, #ff3333);
-    color: #ffffff;
-    border: 2px solid var(--color-primary, #ff3333);
+    background: var(--title-color);
+    color: var(--color-bg);
+    border-color: var(--title-color);
   }
 
   .primary-btn:hover {
-    background: var(--color-secondary, #bb2424);
-    border-color: var(--color-secondary, #bb2424);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
+    background: #a8935e;
+    border-color: #a8935e;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(197, 173, 123, 0.3);
   }
 
   .secondary-btn {
     background: transparent;
-    color: var(--color-primary, #ff3333);
-    border: 2px solid var(--color-primary, #ff3333);
+    color: var(--title-color);
+    border-color: var(--title-color);
   }
 
   .secondary-btn:hover {
-    background: var(--color-primary, #ff3333);
-    color: #ffffff;
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
+    background: var(--title-color);
+    color: var(--color-bg);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(197, 173, 123, 0.3);
   }
 
   /* === SECCIÓN DE CONTACTO === */
@@ -712,20 +660,20 @@ const contactInfo = {
     padding: 1.5rem;
     background: var(--color-card-bg);
     border-radius: 12px;
-    border: 1px solid rgba(255, 51, 51, 0.1);
+    border: 1px solid rgba(197, 173, 123, 0.1);
     transition: all 0.3s ease;
   }
   
   .contact-item:hover {
     transform: translateX(5px);
-    border-color: rgba(255, 51, 51, 0.3);
+    border-color: rgba(197, 173, 123, 0.3);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
   }
   
   .contact-icon {
     width: 50px;
     height: 50px;
-    background: linear-gradient(135deg, rgba(255,51,51,0.15), rgba(255,51,51,0.05));
+    background: linear-gradient(135deg, rgba(197, 173, 123, 0.15), rgba(197, 173, 123, 0.05));
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -832,11 +780,11 @@ const contactInfo = {
   .contact-form-container {
     background: linear-gradient(135deg, 
       rgba(255, 255, 255, 0.03) 0%, 
-      rgba(255, 51, 51, 0.02) 50%,
+      rgba(197, 173, 123, 0.02) 50%,
       rgba(255, 255, 255, 0.01) 100%);
     padding: 3rem;
     border-radius: 20px;
-    border: 1px solid rgba(255, 51, 51, 0.15);
+    border: 1px solid rgba(197, 173, 123, 0.15);
     box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3),
                 inset 0 1px 0 rgba(255, 255, 255, 0.1);
     backdrop-filter: blur(15px);
@@ -854,7 +802,7 @@ const contactInfo = {
     right: -50%;
     width: 200%;
     height: 200%;
-    background: radial-gradient(circle, rgba(255, 51, 51, 0.1) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(197, 173, 123, 0.1) 0%, transparent 70%);
     animation: pulse 10s ease-in-out infinite;
   }
   
@@ -909,7 +857,7 @@ const contactInfo = {
   .form-group select,
   .form-group textarea {
     background: rgba(255, 255, 255, 0.03);
-    border: 2px solid rgba(255, 51, 51, 0.15);
+    border: 2px solid rgba(197, 173, 123, 0.15);
     border-radius: 12px;
     padding: 1rem 1.2rem;
     color: #fff;
@@ -923,7 +871,7 @@ const contactInfo = {
   .form-group input:hover,
   .form-group select:hover,
   .form-group textarea:hover {
-    border-color: rgba(255, 51, 51, 0.3);
+    border-color: rgba(197, 173, 123, 0.3);
     background: rgba(255, 255, 255, 0.05);
   }
   
@@ -933,8 +881,8 @@ const contactInfo = {
     outline: none;
     border-color: var(--title-color);
     background: rgba(255, 255, 255, 0.07);
-    box-shadow: 0 0 0 4px rgba(255, 51, 51, 0.1),
-                0 8px 25px rgba(255, 51, 51, 0.15);
+    box-shadow: 0 0 0 4px rgba(197, 173, 123, 0.1),
+                0 8px 25px rgba(197, 173, 123, 0.15);
     transform: translateY(-2px);
   }
   
@@ -947,7 +895,7 @@ const contactInfo = {
   .form-group select {
     cursor: pointer;
     appearance: none;
-    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23ff3333' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23c5ad7b' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 1.2rem center;
     padding-right: 3rem;
@@ -1023,7 +971,7 @@ const contactInfo = {
   }
   
   .form-message.error {
-    background: rgba(255, 51, 51, 0.1);
+    background: rgba(197, 173, 123, 0.1);
     border: 2px solid var(--title-color);
     color: var(--title-color);
   }
@@ -1106,179 +1054,6 @@ const contactInfo = {
     font-size: 0.85rem;
   }
   
-  /* ===== ESTILOS DEL FORMULARIO MEJORADOS ===== */
-  #gravity-form-container {
-    width: 100%;
-  }
-  
-  .contact-form {
-    display: flex;
-    flex-direction: column;
-    gap: 1.8rem;
-  }
-  
-  .form-group {
-    display: flex;
-    flex-direction: column;
-    gap: 0.6rem;
-    animation: fadeInUp 0.5s ease-out both;
-  }
-  
-  .form-group:nth-child(1) { animation-delay: 0.1s; }
-  .form-group:nth-child(2) { animation-delay: 0.2s; }
-  .form-group:nth-child(3) { animation-delay: 0.3s; }
-  .form-group:nth-child(4) { animation-delay: 0.4s; }
-  .form-group:nth-child(5) { animation-delay: 0.5s; }
-  
-  .form-group label {
-    color: var(--title-color);
-    font-weight: 700;
-    font-size: 1rem;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  
-  .form-group label::after {
-    content: '';
-    height: 2px;
-    flex: 1;
-    background: linear-gradient(90deg, var(--title-color) 0%, transparent 100%);
-    opacity: 0.2;
-  }
-  
-  .form-group input,
-  .form-group select,
-  .form-group textarea {
-    background: rgba(255, 255, 255, 0.03);
-    border: 2px solid rgba(255, 51, 51, 0.15);
-    border-radius: 12px;
-    padding: 1rem 1.2rem;
-    color: #fff;
-    font-size: 1.05rem;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    font-family: inherit;
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-  
-  .form-group input:hover,
-  .form-group select:hover,
-  .form-group textarea:hover {
-    border-color: rgba(255, 51, 51, 0.3);
-    background: rgba(255, 255, 255, 0.05);
-  }
-  
-  .form-group input:focus,
-  .form-group select:focus,
-  .form-group textarea:focus {
-    outline: none;
-    border-color: var(--title-color);
-    background: rgba(255, 255, 255, 0.07);
-    box-shadow: 
-      inset 0 2px 4px rgba(0, 0, 0, 0.1),
-      0 0 0 4px rgba(255, 51, 51, 0.1);
-    transform: translateY(-2px);
-  }
-  
-  .form-group input::placeholder,
-  .form-group textarea::placeholder {
-    color: #555;
-    opacity: 1;
-  }
-  
-  .form-group select {
-    cursor: pointer;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23ff3333' d='M10.293 3.293L6 7.586 1.707 3.293A1 1 0 00.293 4.707l5 5a1 1 0 001.414 0l5-5a1 1 0 10-1.414-1.414z'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 1rem center;
-    background-size: 1rem;
-    padding-right: 3rem;
-    appearance: none;
-    -webkit-appearance: none;
-    -moz-appearance: none;
-  }
-  
-  .form-group select option {
-    background: #1a1a1a;
-    color: #fff;
-    padding: 0.5rem;
-  }
-  
-  .form-group textarea {
-    resize: vertical;
-    min-height: 140px;
-    line-height: 1.6;
-  }
-  
-  /* Animación para campos requeridos */
-  .form-group input:required:invalid,
-  .form-group select:required:invalid,
-  .form-group textarea:required:invalid {
-    animation: none;
-  }
-  
-  .form-group input:required:invalid:focus,
-  .form-group select:required:invalid:focus,
-  .form-group textarea:required:invalid:focus {
-    border-color: #ff6b6b;
-    animation: shake 0.3s ease-in-out;
-  }
-  
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-5px); }
-    75% { transform: translateX(5px); }
-  }
-  
-  .form-actions {
-    margin-top: 1.5rem;
-    display: flex;
-    justify-content: center;
-    animation: fadeInUp 0.6s ease-out 0.6s both;
-  }
-  
-  .form-actions .btn {
-    min-width: 220px;
-    padding: 1.2rem 2.5rem;
-    font-size: 1.2rem;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    position: relative;
-    overflow: hidden;
-  }
-  
-  .form-actions .btn::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 0;
-    height: 0;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
-    transform: translate(-50%, -50%);
-    transition: width 0.6s, height 0.6s;
-  }
-  
-  .form-actions .btn:hover::before {
-    width: 300px;
-    height: 300px;
-  }
-  
-  .form-actions .btn:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-    transform: none !important;
-  }
-  
-  .form-actions .btn:disabled:hover {
-    transform: none !important;
-    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
-  }
-  
   /* Responsive */
   @media (max-width: 992px) {
     .contact-grid {
@@ -1313,19 +1088,6 @@ const contactInfo = {
     
     .contact-section .container {
       padding: 2rem 1rem 4rem;
-    }
-
-    .site-icon {
-      height: 80px;
-    }
-    
-    h1 {
-      font-size: 2.5rem;
-    }
-    
-    .page-description {
-      font-size: 1.1rem;
-      margin: 1.5rem auto 1rem;
     }
 
     .btn {
@@ -1373,11 +1135,11 @@ const contactInfo = {
   }
   
   @media (max-width: 480px) {
-    h1 {
+    .error-title {
       font-size: 2rem;
     }
     
-    .page-description {
+    .error-message {
       font-size: 1rem;
     }
     
@@ -1402,26 +1164,26 @@ const contactInfo = {
 <!-- Estilos mejorados para Gravity Forms -->
 <style is:global>
   /* ===============================================
-     GRAVITY FORMS ENHANCED STYLES - VINYLSTATION
+     GRAVITY FORMS ENHANCED STYLES - VINYLSTATION CONTACTO
      =============================================== */
 
   /* ===== VARIABLES CSS ===== */
   :root {
-    --gf-primary: #ff3333;
-    --gf-primary-dark: #bb2424;
-    --gf-primary-light: rgba(255, 51, 51, 0.1);
+    --gf-primary: var(--title-color);
+    --gf-primary-dark: #a8935e;
+    --gf-primary-light: rgba(197, 173, 123, 0.1);
     --gf-secondary: #ffffff;
     --gf-bg-card: rgba(255, 255, 255, 0.03);
     --gf-bg-input: rgba(255, 255, 255, 0.05);
-    --gf-border: rgba(255, 51, 51, 0.15);
-    --gf-border-hover: rgba(255, 51, 51, 0.3);
+    --gf-border: rgba(197, 173, 123, 0.15);
+    --gf-border-hover: rgba(197, 173, 123, 0.3);
     --gf-border-focus: var(--gf-primary);
     --gf-text: #ffffff;
     --gf-text-muted: #888888;
     --gf-text-placeholder: #555555;
     --gf-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
     --gf-shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.4);
-    --gf-shadow-focus: 0 0 0 4px rgba(255, 51, 51, 0.1);
+    --gf-shadow-focus: 0 0 0 4px rgba(197, 173, 123, 0.1);
     --gf-radius: 12px;
     --gf-radius-large: 20px;
     --gf-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1433,9 +1195,9 @@ const contactInfo = {
     background: linear-gradient(
       135deg, 
       rgba(255, 255, 255, 0.05) 0%, 
-      rgba(255, 51, 51, 0.03) 25%,
+      rgba(197, 173, 123, 0.03) 25%,
       rgba(0, 0, 0, 0.02) 50%,
-      rgba(255, 51, 51, 0.02) 75%,
+      rgba(197, 173, 123, 0.02) 75%,
       rgba(255, 255, 255, 0.03) 100%
     ) !important;
     padding: 3.5rem !important;
@@ -1462,10 +1224,10 @@ const contactInfo = {
     background: conic-gradient(
       from 0deg at 50% 50%,
       transparent 0deg,
-      rgba(255, 51, 51, 0.05) 60deg,
-      rgba(255, 51, 51, 0.1) 120deg,
+      rgba(197, 173, 123, 0.05) 60deg,
+      rgba(197, 173, 123, 0.1) 120deg,
       transparent 180deg,
-      rgba(255, 51, 51, 0.03) 240deg,
+      rgba(197, 173, 123, 0.03) 240deg,
       transparent 360deg
     ) !important;
     animation: rotateGlow 20s linear infinite !important;
@@ -1476,31 +1238,6 @@ const contactInfo = {
   @keyframes rotateGlow {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
-  }
-
-  /* Partículas flotantes decorativas */
-  .contact-form-container::after {
-    content: '' !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    background-image: 
-      radial-gradient(circle at 20% 20%, rgba(255, 51, 51, 0.1) 1px, transparent 1px),
-      radial-gradient(circle at 80% 40%, rgba(255, 51, 51, 0.05) 1px, transparent 1px),
-      radial-gradient(circle at 40% 80%, rgba(255, 51, 51, 0.08) 1px, transparent 1px) !important;
-    background-size: 100px 100px, 150px 150px, 80px 80px !important;
-    animation: floatParticles 25s ease-in-out infinite !important;
-    pointer-events: none !important;
-    opacity: 0.6 !important;
-    z-index: -1 !important;
-  }
-
-  @keyframes floatParticles {
-    0%, 100% { transform: translate(0, 0); }
-    33% { transform: translate(10px, -15px); }
-    66% { transform: translate(-5px, 10px); }
   }
 
   /* ===== TÍTULOS MEJORADOS ===== */
@@ -1515,7 +1252,7 @@ const contactInfo = {
     background: linear-gradient(
       135deg, 
       var(--gf-primary) 0%, 
-      #ff6666 50%, 
+      #d4bb85 50%, 
       var(--gf-primary) 100%
     ) !important;
     background-clip: text !important;
@@ -1594,19 +1331,6 @@ const contactInfo = {
     text-align: left !important;
   }
 
-  .contact-form .form-group label::before {
-    display: none !important;
-  }
-
-  @keyframes labelPulse {
-    0%, 100% { opacity: 1; transform: scaleY(1); }
-    50% { opacity: 0.7; transform: scaleY(1.2); }
-  }
-
-  .contact-form .form-group label::after {
-    display: none !important;
-  }
-
   /* ===== CAMPOS DE ENTRADA MEJORADOS ===== */
   .contact-form .form-group input,
   .contact-form .form-group select,
@@ -1636,7 +1360,7 @@ const contactInfo = {
     transform: translateY(-2px) !important;
     box-shadow: 
       inset 0 2px 4px rgba(0, 0, 0, 0.1),
-      0 8px 20px rgba(255, 51, 51, 0.1) !important;
+      0 8px 20px rgba(197, 173, 123, 0.1) !important;
   }
 
   /* Efectos focus */
@@ -1649,30 +1373,8 @@ const contactInfo = {
     box-shadow: 
       inset 0 2px 4px rgba(0, 0, 0, 0.1),
       var(--gf-shadow-focus),
-      0 12px 30px rgba(255, 51, 51, 0.15) !important;
+      0 12px 30px rgba(197, 173, 123, 0.15) !important;
     transform: translateY(-3px) scale(1.01) !important;
-  }
-
-  /* Estados de validación mejorados */
-  .contact-form .form-group input:valid:not(:placeholder-shown),
-  .contact-form .form-group select:valid,
-  .contact-form .form-group textarea:valid:not(:placeholder-shown) {
-    border-color: #4caf50 !important;
-    background: rgba(76, 175, 80, 0.05) !important;
-  }
-
-  .contact-form .form-group input:invalid:not(:placeholder-shown):not(:focus),
-  .contact-form .form-group select:invalid:not(:focus),
-  .contact-form .form-group textarea:invalid:not(:placeholder-shown):not(:focus) {
-    border-color: #ff6b6b !important;
-    background: rgba(255, 107, 107, 0.05) !important;
-    animation: shake 0.4s ease-in-out !important;
-  }
-
-  @keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-8px); }
-    75% { transform: translateX(8px); }
   }
 
   /* Placeholders mejorados */
@@ -1697,7 +1399,7 @@ const contactInfo = {
     appearance: none !important;
     -webkit-appearance: none !important;
     -moz-appearance: none !important;
-    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff3333' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c5ad7b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e") !important;
     background-repeat: no-repeat !important;
     background-position: right 1.2rem center !important;
     background-size: 1.2rem !important;
@@ -1715,12 +1417,6 @@ const contactInfo = {
     padding: 1rem !important;
     border: none !important;
     font-weight: 400 !important;
-  }
-
-  .contact-form .form-group select option:hover,
-  .contact-form .form-group select option:focus {
-    background: var(--gf-primary) !important;
-    color: white !important;
   }
 
   /* ===== TEXTAREA MEJORADO ===== */
@@ -1763,7 +1459,7 @@ const contactInfo = {
       var(--gf-primary-dark) 100%
     ) !important;
     color: white !important;
-    border-radius: 50px !important;
+    border-radius: 8px !important;
     transition: var(--gf-transition) !important;
     transform-style: preserve-3d !important;
     perspective: 1000px !important;
@@ -1819,13 +1515,13 @@ const contactInfo = {
   }
 
   .contact-form .form-actions .btn:hover {
-    transform: translateY(-4px) rotateX(5deg) !important;
+    transform: translateY(-4px) !important;
     box-shadow: 
-      0 15px 40px rgba(255, 51, 51, 0.4),
-      0 0 0 8px rgba(255, 51, 51, 0.1) !important;
+      0 15px 40px rgba(197, 173, 123, 0.4),
+      0 0 0 8px rgba(197, 173, 123, 0.1) !important;
     background: linear-gradient(
       135deg, 
-      #ff4444 0%, 
+      #d4bb85 0%, 
       var(--gf-primary) 100%
     ) !important;
   }
@@ -1835,7 +1531,7 @@ const contactInfo = {
   }
 
   .contact-form .form-actions .btn:active {
-    transform: translateY(-2px) rotateX(2deg) !important;
+    transform: translateY(-2px) !important;
     transition: transform 0.1s ease !important;
   }
 
@@ -1844,12 +1540,6 @@ const contactInfo = {
     opacity: 0.7 !important;
     cursor: not-allowed !important;
     transform: none !important;
-    background: #666 !important;
-  }
-
-  .contact-form .form-actions .btn:disabled:hover {
-    transform: none !important;
-    box-shadow: none !important;
     background: #666 !important;
   }
 
@@ -1903,23 +1593,6 @@ const contactInfo = {
     }
   }
 
-  .form-message::before {
-    content: '' !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: -100% !important;
-    width: 100% !important;
-    height: 100% !important;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent) !important;
-    animation: messageShine 2s ease-in-out infinite !important;
-  }
-
-  @keyframes messageShine {
-    0% { left: -100%; }
-    50% { left: 100%; }
-    100% { left: 100%; }
-  }
-
   .form-message.success {
     background: linear-gradient(135deg, rgba(76, 175, 80, 0.15), rgba(76, 175, 80, 0.05)) !important;
     border: 2px solid #4caf50 !important;
@@ -1930,12 +1603,12 @@ const contactInfo = {
   }
 
   .form-message.error {
-    background: linear-gradient(135deg, rgba(255, 51, 51, 0.15), rgba(255, 51, 51, 0.05)) !important;
+    background: linear-gradient(135deg, rgba(197, 173, 123, 0.15), rgba(197, 173, 123, 0.05)) !important;
     border: 2px solid var(--gf-primary) !important;
     color: var(--gf-primary) !important;
     box-shadow: 
-      0 8px 25px rgba(255, 51, 51, 0.2),
-      inset 0 1px 0 rgba(255, 51, 51, 0.2) !important;
+      0 8px 25px rgba(197, 173, 123, 0.2),
+      inset 0 1px 0 rgba(197, 173, 123, 0.2) !important;
   }
 
   /* Iconos para mensajes */
@@ -2022,11 +1695,6 @@ const contactInfo = {
       letter-spacing: 0.5px !important;
     }
     
-    .contact-form .form-group label::before {
-      width: 3px !important;
-      height: 16px !important;
-    }
-    
     .contact-form .form-actions .btn {
       font-size: 1rem !important;
       letter-spacing: 1px !important;
@@ -2042,7 +1710,7 @@ const contactInfo = {
   }
 
   .contact-form .form-actions .btn:focus-visible {
-    outline: 3px solid rgba(255, 51, 51, 0.8) !important;
+    outline: 3px solid rgba(197, 173, 123, 0.8) !important;
     outline-offset: 4px !important;
   }
 

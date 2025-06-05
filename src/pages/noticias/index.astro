@@ -1,6 +1,6 @@
 ---
 import MainLayout from '../../layouts/MainLayout.astro';
-import { getSiteInfo, getPageData, getNoticiasPaginadas, getCategoriasNoticias } from '../../lib/wordpress.js';
+import { getSiteInfo, getPageData, getNoticiasPaginadasConTotal, getCategoriasNoticias } from '../../lib/wordpress.js';
 
 // Helper para convertir "<p>Hola</p>" → "Hola"
 const stripHtml = (html) =>
@@ -36,8 +36,8 @@ try {
   
   console.log('🔍 Intentando obtener noticias...');
   
-  // Obtener noticias paginadas
-  noticiasData = await getNoticiasPaginadas({ 
+  // ========= USAR LA NUEVA FUNCIÓN CON TOTAL DINÁMICO =========
+  noticiasData = await getNoticiasPaginadasConTotal({ 
     page, 
     itemsPerPage,
     categoria: categoria !== 'all' ? categoria : null 
@@ -64,7 +64,9 @@ const noticias = hasError ? [] : (noticiasData?.noticias || []);
 const categorias = hasError ? [] : (categoriasData?.categorias || []);
 const pageInfo = noticiasData?.pageInfo || {};
 const totalPages = pageInfo.totalPages || 1;
-const totalNoticias = pageInfo.totalNoticias || pageInfo.total || noticias.length;
+// ======= USAR TOTAL REAL DINÁMICO (SIN HARDCODEO) =========
+// Ahora el total se obtiene dinámicamente desde WordPress
+const totalNoticias = pageInfo.totalNoticias || pageInfo.total || 0;
 
 console.log('📝 Estado final de noticias:', {
   hasError,

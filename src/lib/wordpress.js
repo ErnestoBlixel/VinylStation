@@ -1872,6 +1872,247 @@ export async function getCategoriasNoticias() {
 }
 
 
+// ===============================
+// FUNCIONES DINÁMICAS PARA TOTALES (NUEVA IMPLEMENTACIÓN)
+// ===============================
+
+// Función para obtener el total real de noticias dinámicamente
+export async function getTotalNoticias() {
+  console.log('📊 Obteniendo total real de noticias...');
+  
+  try {
+    // Método 1: Intentar usar offset pagination si está disponible
+    const QUERY_OFFSET = gql`
+      query GetTotalNoticiasOffset {
+        noticias(first: 1) {
+          pageInfo {
+            offsetPagination {
+              total
+            }
+          }
+        }
+      }
+    `;
+
+    try {
+      const { noticias } = await request(WORDPRESS_GRAPHQL_URL, QUERY_OFFSET);
+      const total = noticias?.pageInfo?.offsetPagination?.total;
+      
+      if (total && total > 0) {
+        console.log(`✅ Total de noticias (offset): ${total}`);
+        return total;
+      }
+    } catch (offsetError) {
+      console.log('⚠️ Offset pagination no disponible, usando conteo manual...');
+    }
+    
+    // Método 2: Contar manualmente
+    return await contarNoticiasManualmente();
+    
+  } catch (error) {
+    console.error('❌ Error obteniendo total de noticias:', error.message);
+    // Fallback: usar el último valor conocido
+    return 108;
+  }
+}
+
+// Función para contar noticias manualmente
+async function contarNoticiasManualmente() {
+  console.log('🔢 Contando noticias manualmente...');
+  
+  const QUERY_COUNT = gql`
+    query CountNoticias($first: Int!, $after: String) {
+      noticias(first: $first, after: $after) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        nodes {
+          id
+        }
+      }
+    }
+  `;
+
+  let totalCount = 0;
+  let hasNextPage = true;
+  let cursor = null;
+  const BATCH_SIZE = 100;
+  let iterations = 0;
+  
+  try {
+    while (hasNextPage && iterations < 50) { // Límite de seguridad
+      iterations++;
+      
+      const variables = { 
+        first: BATCH_SIZE, 
+        ...(cursor && { after: cursor }) 
+      };
+      
+      const data = await request(WORDPRESS_GRAPHQL_URL, QUERY_COUNT, variables);
+      const nodes = data?.noticias?.nodes || [];
+      const pageInfo = data?.noticias?.pageInfo;
+      
+      totalCount += nodes.length;
+      hasNextPage = pageInfo?.hasNextPage || false;
+      cursor = pageInfo?.endCursor;
+      
+      console.log(`   Batch ${iterations}: +${nodes.length} noticias (total: ${totalCount})`);
+      
+      // Si obtenemos menos del batch size, probablemente terminamos
+      if (nodes.length < BATCH_SIZE) {
+        hasNextPage = false;
+      }
+    }
+    
+    console.log(`✅ Total de noticias contadas: ${totalCount}`);
+    return totalCount;
+    
+  } catch (error) {
+    console.error('❌ Error contando noticias:', error.message);
+    return 108; // Fallback conocido
+  }
+}
+
+// Función para obtener el total real de vinilos dinámicamente
+export async function getTotalVinilos() {
+  console.log('📊 Obteniendo total real de vinilos...');
+  
+  try {
+    // Método 1: Intentar usar offset pagination si está disponible
+    const QUERY_OFFSET = gql`
+      query GetTotalVinilosOffset {
+        vinilos(first: 1) {
+          pageInfo {
+            offsetPagination {
+              total
+            }
+          }
+        }
+      }
+    `;
+
+    try {
+      const { vinilos } = await request(WORDPRESS_GRAPHQL_URL, QUERY_OFFSET);
+      const total = vinilos?.pageInfo?.offsetPagination?.total;
+      
+      if (total && total > 0) {
+        console.log(`✅ Total de vinilos (offset): ${total}`);
+        return total;
+      }
+    } catch (offsetError) {
+      console.log('⚠️ Offset pagination no disponible para vinilos, usando conteo manual...');
+    }
+    
+    // Método 2: Contar manualmente
+    return await contarVinilosManualmente();
+    
+  } catch (error) {
+    console.error('❌ Error obteniendo total de vinilos:', error.message);
+    return 4218; // Fallback conocido
+  }
+}
+
+// Función para contar vinilos manualmente
+async function contarVinilosManualmente() {
+  console.log('🔢 Contando vinilos manualmente...');
+  
+  const QUERY_COUNT = gql`
+    query CountVinilos($first: Int!, $after: String) {
+      vinilos(first: $first, after: $after) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        nodes {
+          id
+        }
+      }
+    }
+  `;
+
+  let totalCount = 0;
+  let hasNextPage = true;
+  let cursor = null;
+  const BATCH_SIZE = 100;
+  let iterations = 0;
+  
+  try {
+    while (hasNextPage && iterations < 100) { // Límite más alto para vinilos
+      iterations++;
+      
+      const variables = { 
+        first: BATCH_SIZE, 
+        ...(cursor && { after: cursor }) 
+      };
+      
+      const data = await request(WORDPRESS_GRAPHQL_URL, QUERY_COUNT, variables);
+      const nodes = data?.vinilos?.nodes || [];
+      const pageInfo = data?.vinilos?.pageInfo;
+      
+      totalCount += nodes.length;
+      hasNextPage = pageInfo?.hasNextPage || false;
+      cursor = pageInfo?.endCursor;
+      
+      if (iterations % 10 === 0) { // Log cada 10 batches para vinilos
+        console.log(`   Batch ${iterations}: +${nodes.length} vinilos (total: ${totalCount})`);
+      }
+      
+      // Si obtenemos menos del batch size, probablemente terminamos
+      if (nodes.length < BATCH_SIZE) {
+        hasNextPage = false;
+      }
+    }
+    
+    console.log(`✅ Total de vinilos contados: ${totalCount}`);
+    return totalCount;
+    
+  } catch (error) {
+    console.error('❌ Error contando vinilos:', error.message);
+    return 4218; // Fallback conocido
+  }
+}
+
+// Versión mejorada de getNoticiasPaginadas que incluye total real
+export async function getNoticiasPaginadasConTotal({ page = 1, itemsPerPage = 12, categoria = null } = {}) {
+  console.log(`📰 Obteniendo página ${page} con total real...`);
+  
+  // Obtener noticias paginadas normalmente
+  const resultado = await getNoticiasPaginadas({ page, itemsPerPage, categoria });
+  
+  // Solo obtener el total real si no lo tenemos o si es la primera página
+  if (page === 1 || !resultado.pageInfo.total || resultado.pageInfo.total === 0) {
+    const totalReal = await getTotalNoticias();
+    
+    // Actualizar el pageInfo con el total real
+    resultado.pageInfo.total = totalReal;
+    resultado.pageInfo.totalNoticias = totalReal;
+    resultado.pageInfo.totalPages = Math.ceil(totalReal / itemsPerPage);
+  }
+  
+  return resultado;
+}
+
+// Versión mejorada de getVinilosPaginados que incluye total real
+export async function getVinilosPaginadosConTotal({ page = 1, itemsPerPage = 20 } = {}) {
+  console.log(`📀 Obteniendo página ${page} de vinilos con total real...`);
+  
+  // Obtener vinilos paginados normalmente
+  const resultado = await getVinilosPaginados({ page, itemsPerPage });
+  
+  // Solo obtener el total real si no lo tenemos o si es la primera página
+  if (page === 1 || !resultado.pageInfo.total || resultado.pageInfo.total === 0) {
+    const totalReal = await getTotalVinilos();
+    
+    // Actualizar el pageInfo con el total real
+    resultado.pageInfo.total = totalReal;
+    resultado.pageInfo.totalVinilos = totalReal;
+    resultado.pageInfo.totalPages = Math.ceil(totalReal / itemsPerPage);
+  }
+  
+  return resultado;
+}
+
 // Exportación por defecto con todas las funciones
 export default {
   getSiteLogo,
@@ -1891,4 +2132,9 @@ export default {
   getVinilosPaginadosOptimizado: getVinilosPaginados,
   getArtistasUnicos,
   getTodosLosVinilos,
+  // Nuevas funciones dinámicas
+  getTotalNoticias,
+  getTotalVinilos,
+  getNoticiasPaginadasConTotal,
+  getVinilosPaginadosConTotal,
 };

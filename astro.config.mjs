@@ -5,6 +5,7 @@ import tailwind from '@astrojs/tailwind';
 // https://astro.build/config
 export default defineConfig({
   site: 'https://vinylstation.com',
+  output: 'server', // 🎯 ACTIVAR SSR PARA PAGINACIÓN DINÁMICA
   integrations: [
     react(),
     tailwind(),

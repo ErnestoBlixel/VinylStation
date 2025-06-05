@@ -71,11 +71,11 @@ const description =
 <style>
 .home-hero {
   position: relative;
-  padding: 7rem 2rem;
+  padding: 8rem 2rem;
   text-align: center;
   background: linear-gradient(135deg, #1a1a1a 0%, #232323 100%);
   overflow: hidden;
-  min-height: 400px;
+  min-height: 500px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -93,10 +93,10 @@ const description =
 }
 /* Logo principal del hero con animación */
 .hero-main-logo {
-  width: 80px;
-  height: 80px;
+  width: 100px;
+  height: 100px;
   object-fit: contain;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
   transition: all 0.3s ease;
   animation: logoGlow 3s ease-in-out infinite alternate;
@@ -116,11 +116,55 @@ const description =
   }
 }
 
-/* Tamaños responsivos */
+/* Tamaños responsivos mejorados */
 @media (min-width: 768px) {
+  .home-hero {
+    padding: 9rem 2rem;
+    min-height: 600px;
+  }
+  
   .hero-main-logo {
-    width: 120px;
-    height: 120px;
-    margin-bottom: 2rem;
+    width: 140px;
+    height: 140px;
+    margin-bottom: 2.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .home-hero {
+    padding: 6rem 1.5rem;
+    min-height: 450px;
+  }
+  
+  .hero-main-logo {
+    width: 90px;
+    height: 90px;
+    margin-bottom: 1.5rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .home-hero {
+    padding: 5rem 1rem;
+    min-height: 400px;
+  }
+  
+  .hero-main-logo {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 1.2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-hero {
+    padding: 4rem 1rem;
+    min-height: 350px;
+  }
+  
+  .hero-main-logo {
+    width: 70px;
+    height: 70px;
+    margin-bottom: 1rem;
   }
 }

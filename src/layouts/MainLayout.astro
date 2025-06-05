@@ -81,6 +81,9 @@ import VinylParticles from '../components/VinylParticles.astro'; // Vinilos flot
 
   {/* Funcionalidades interactivas adicionales (compatible con Cloudflare) */}
   <script src="/scripts/interactive-features.js" defer></script>
+  
+  {/* Radio State Manager - Mantener estado entre páginas */}
+  <script src="/scripts/radio-state-manager.js" defer></script>
 </body>
 </html>
 
@@ -218,18 +221,22 @@ import VinylParticles from '../components/VinylParticles.astro'; // Vinilos flot
     /* text-decoration: underline; Podrías añadir subrayado en hover/focus si lo deseas */
   }
 
-  /* Headings con colores específicos */
+  /* Headings con colores específicos - JERARQUÍA CORREGIDA */
   h1, h2, h3, h4, h5, h6 {
     color: var(--title-color); /* Dorado en noche, azul oscuro en día */
-    font-weight: 700;
+    font-weight: 600; /* Menos grueso */
     line-height: 1.3;
     margin-bottom: 0.75em;
     transition: color 0.3s ease;
   }
   
-  h1 { font-size: 2.5rem; }
-  h2 { font-size: 2rem; }
-  h3 { font-size: 1.75rem; }
+  /* Tamaños desktop - jerarquía clara */
+  h1 { font-size: 3.2rem; font-weight: 700; }
+  h2 { font-size: 2.4rem; font-weight: 600; }
+  h3 { font-size: 1.8rem; font-weight: 600; }
+  h4 { font-size: 1.4rem; font-weight: 500; }
+  h5 { font-size: 1.2rem; font-weight: 500; }
+  h6 { font-size: 1rem; font-weight: 500; }
   
   /* Párrafos globales con colores automáticos día/noche */
   p {
@@ -347,13 +354,16 @@ import VinylParticles from '../components/VinylParticles.astro'; // Vinilos flot
   }
 
 
-  /* Responsive */
+  /* Responsive - JERARQUÍA MEJORADA */
   @media (max-width: 992px) { /* Breakpoint para tablets */
     .container {
         max-width: 960px;
     }
-    h1 { font-size: 2.25rem; }
-    h2 { font-size: 1.75rem; }
+    /* Mantener jerarquía clara en tablets */
+    h1 { font-size: 2.8rem; }
+    h2 { font-size: 2.2rem; }
+    h3 { font-size: 1.6rem; }
+    h4 { font-size: 1.3rem; }
   }
 
   @media (max-width: 768px) { /* Breakpoint para tablets pequeñas y móviles grandes */
@@ -367,19 +377,40 @@ import VinylParticles from '../components/VinylParticles.astro'; // Vinilos flot
       padding-top: 2rem;
       padding-bottom: 2rem;
     }
-    h1 { font-size: 2rem; }
-    h2 { font-size: 1.5rem; }
+    
+    /* Jerarquía móvil mejorada - h1 SIEMPRE más grande que h2 */
+    h1 { font-size: 2.4rem; font-weight: 700; }
+    h2 { font-size: 1.8rem; font-weight: 600; }
+    h3 { font-size: 1.4rem; font-weight: 600; }
+    h4 { font-size: 1.2rem; font-weight: 500; }
+    h5 { font-size: 1.1rem; font-weight: 500; }
+    h6 { font-size: 1rem; font-weight: 500; }
+    
     .btn {
       padding: 0.75rem 1.25rem;
       font-size: 0.9rem;
     }
   }
 
-  @media (max-width: 576px) { /* Breakpoint para móviles */
-     /* Ajustes más específicos para móviles si son necesarios */
+  @media (max-width: 576px) { /* Breakpoint para móviles pequeños */
      body {
-        font-size: 15px; /* Podrías ajustar el tamaño de fuente base para móviles */
+        font-size: 15px;
      }
+     
+     /* Jerarquía móvil pequeño - aún más clara */
+     h1 { font-size: 2rem; font-weight: 700; }
+     h2 { font-size: 1.5rem; font-weight: 600; }
+     h3 { font-size: 1.2rem; font-weight: 600; }
+     h4 { font-size: 1.1rem; font-weight: 500; }
+     h5 { font-size: 1rem; font-weight: 500; }
+     h6 { font-size: 0.9rem; font-weight: 500; }
+  }
+  
+  @media (max-width: 480px) { /* Móviles muy pequeños */
+     /* Jerarquía para pantallas muy pequeñas */
+     h1 { font-size: 1.8rem; font-weight: 700; }
+     h2 { font-size: 1.3rem; font-weight: 600; }
+     h3 { font-size: 1.1rem; font-weight: 600; }
   }
 
   /* Botón de cambio de tema global (ahora se maneja en el Header) */

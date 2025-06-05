@@ -1,5 +1,6 @@
 ---
 import MainLayout from '../../layouts/MainLayout.astro';
+import Hero from '../../components/Hero.astro';
 import { getSiteInfo, getPageData, getVinilosPaginados, getTodosLosVinilos } from '../../lib/wordpress.js';
 
 // Helper para quitar HTML de la descripción
@@ -103,10 +104,45 @@ const TOTAL_VINILOS_GLOBAL = 4218; // Total real de vinilos en la base de datos
 const totalVinilosGlobal = searchQuery ? totalVinilosOriginales : (pageInfo.totalVinilos || pageInfo.total || TOTAL_VINILOS_GLOBAL);
 const totalVinilos = searchQuery ? vinilos.length : totalVinilosGlobal; // Para búsquedas, mostrar los encontrados
 
-const heroTitle = hasError ? null : (pageData?.title || "Vinilos recomendados por VinylStation Radio");
-const heroDescription = hasError ? null : (pageData?.excerpt || "Descubre nuestra selección cuidada de vinilos clásicos, ediciones limitadas y novedades.");
+const heroTitle = hasError ? "Error - Vinilos" : (pageData?.title || "Vinilos recomendados por VinylStation Radio");
+const heroDescription = hasError ? "Error cargando contenido" : (pageData?.excerpt || "Descubre nuestra selección cuidada de vinilos clásicos, ediciones limitadas y novedades.");
 const pageTitle = hasError ? 'Error - Vinilos' : (pageData?.seo?.title || `${heroTitle} - VinylStation`);
 const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.metaDesc || heroDescription);
+
+// Estadísticas para el hero
+const heroStats = [
+  {
+    number: searchQuery ? totalVinilosOriginales.toString() : totalVinilosGlobal.toString(),
+    label: searchQuery ? 'Total Vinilos' : 'Vinilos'
+  },
+  ...(searchQuery ? [{
+    number: totalVinilos.toString(),
+    label: 'Encontrados',
+    highlight: true
+  }] : []),
+  {
+    number: '33⅓',
+    label: 'RPM'
+  },
+  {
+    number: '24h',
+    label: 'Música'
+  }
+];
+
+// Acciones para el hero
+const heroActions = [
+  {
+    text: 'Explorar Programas',
+    href: '/programas',
+    type: 'secondary' as const
+  },
+  {
+    text: 'Ver Vinilos',
+    href: '#vinilos',
+    type: 'primary' as const
+  }
+];
 
 // Helpers para paginación visible (máximo 3 botones)
 let paginasVisibles = [];
@@ -159,42 +195,16 @@ const buildSearchUrl = (pageNum, search = searchQuery) => {
       </div>
     ) : (
       <>
-        {/* HERO */}
-        <div class="container hero-container">
-          <header class="page-header">
-            {true && (
-              <div class="site-icon-container">
-                <img src="/images/logos/logo vinylstation.png" alt="VinylStation Logo" class="site-icon" />
-              </div>
-            )}
-            <h1>{heroTitle}</h1>
-            <p class="page-description">{heroDescription}</p>
-            <div class="vinyl-stats">
-              <div class="stat-card">
-                <span class="stat-number">{searchQuery ? totalVinilosOriginales : totalVinilosGlobal}</span>
-                <span class="stat-label">{searchQuery ? 'Total Vinilos' : 'Vinilos'}</span>
-              </div>
-              {searchQuery && (
-                <div class="stat-card highlight">
-                  <span class="stat-number">{totalVinilos}</span>
-                  <span class="stat-label">Encontrados</span>
-                </div>
-              )}
-              <div class="stat-card">
-                <span class="stat-number">33⅓</span>
-                <span class="stat-label">RPM</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-number">24h</span>
-                <span class="stat-label">Música</span>
-              </div>
-            </div>
-            <div class="hero-actions">
-              <a href="/programas" class="btn secondary-btn">Explorar Programas</a>
-              <a href="#vinilos" class="btn primary-btn">Ver Vinilos</a>
-            </div>
-          </header>
-        </div>
+        {/* HERO UNIFICADO */}
+        <Hero 
+          title={heroTitle}
+          description={heroDescription}
+          showPlayer={true}
+          showStats={true}
+          stats={heroStats}
+          showActions={true}
+          actions={heroActions}
+        />
 
         {/* VINILOS */}
         <section id="vinilos" class="vinyl-section">
@@ -316,9 +326,8 @@ const buildSearchUrl = (pageNum, search = searchQuery) => {
   </div>
 </MainLayout>
 
-
 <style>
-  /* Contenedor principal unificado - IGUAL QUE HOME */
+  /* Contenedor principal unificado */
   .main-content {
     background: linear-gradient(
       135deg,
@@ -346,14 +355,16 @@ const buildSearchUrl = (pageNum, search = searchQuery) => {
     align-items: center;
   }
   
-  /* === ESTILOS PARA ERROR === */
+  /* ===== ESTILOS PARA ERROR ===== */
   .error-container {
     text-align: center;
     width: 100%;
     padding: 2rem;
     background: #1a1a1a;
     border-radius: 15px;
-    border: 2px solid #ff3333;
+    border: 2px solid var(--title-color);
+    margin: 4rem auto;
+    max-width: 600px;
   }
   
   .error-icon {
@@ -400,170 +411,51 @@ const buildSearchUrl = (pageNum, search = searchQuery) => {
     margin-bottom: 0.5rem;
   }
   
-  /* === ESTILOS NORMALES === */
-  .page-header {
-    text-align: center;
-    width: 100%;
-  }
-  
-  .site-icon-container {
+  .error-actions {
     display: flex;
-    justify-content: center;
-    margin-bottom: 2rem;
-  }
-  
-  .site-icon {
-    height: 120px;
-    width: auto;
-    animation: pulse 3s infinite ease-in-out;
-  }
-  
-  @keyframes pulse {
-    0% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255, 51, 51, 0.5)); }
-    50% { transform: scale(1.05); filter: drop-shadow(0 0 8px rgba(255, 51, 51, 0.8)); }
-    100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255, 51, 51, 0.5)); }
-  }
-  
-  h1 {
-    font-size: 4rem;
-    margin: 0 0 1.5rem;
-    color: var(--title-color);
-    position: relative;
-    display: inline-block;
-    font-weight: 800;
-  }
-  
-  h1::after {
-    content: '';
-    position: absolute;
-    bottom: -15px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100px;
-    height: 4px;
-    background: linear-gradient(90deg, 
-      transparent, 
-      var(--title-color),
-      transparent);
-    border-radius: 2px;
-  }
-  
-  .page-description {
-    max-width: 800px;
-    margin: 2rem auto 1rem;
-    color: #777;
-    font-size: 1.3rem;
-    line-height: 1.6;
-  }
-
-  /* Stats específicos de vinilos */
-  .vinyl-stats {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-    margin: 2rem auto 0 auto;
-    flex-wrap: wrap;
-  }
-  
-  .stat-card {
-    background: linear-gradient(135deg, rgba(255,51,51,0.10), rgba(255,51,51,0.05));
-    border: 2px solid rgba(255, 51, 51, 0.2);
-    border-radius: 15px;
-    padding: 1.5rem 2rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    min-width: 120px;
-    transition: all 0.3s ease;
-  }
-  
-  .stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
-    border-color: var(--title-color);
-  }
-  
-  .stat-card.highlight {
-    background: linear-gradient(135deg, rgba(255,51,51,0.20), rgba(255,51,51,0.10));
-    border-color: var(--title-color);
-    animation: pulseHighlight 2s ease-in-out infinite;
-  }
-  
-  @keyframes pulseHighlight {
-    0%, 100% { 
-      transform: scale(1);
-      box-shadow: 0 4px 15px rgba(255, 51, 51, 0.2);
-    }
-    50% { 
-      transform: scale(1.05);
-      box-shadow: 0 6px 20px rgba(255, 51, 51, 0.4);
-    }
-  }
-  
-  .stat-number {
-    font-size: 2.1rem;
-    font-weight: 800;
-    color: var(--title-color);
-    line-height: 1;
-  }
-  
-  .stat-label {
-    font-size: 0.9rem;
-    color: #666;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .hero-actions {
-    display: flex;
-    gap: 1.5rem;
+    gap: 1rem;
     justify-content: center;
     flex-wrap: wrap;
-    margin-top: 3rem;
   }
-
+  
   .btn {
     display: inline-block;
     padding: 1rem 2rem;
-    border-radius: 50px;
+    border-radius: 8px;
     text-decoration: none;
-    font-weight: 700;
+    font-weight: 600;
     font-size: 1.1rem;
     transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-    min-width: 180px;
-    text-align: center;
-    border: none;
+    border: 2px solid;
     cursor: pointer;
+    text-align: center;
+    min-width: 180px;
   }
-
+  
   .primary-btn {
-    background: var(--color-primary, #ff3333);
-    color: #ffffff;
-    border: 2px solid var(--color-primary, #ff3333);
+    background: var(--title-color);
+    color: var(--color-bg);
+    border-color: var(--title-color);
   }
-
+  
   .primary-btn:hover {
-    background: var(--color-secondary, #bb2424);
-    border-color: var(--color-secondary, #bb2424);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
+    background: #a8935e;
+    border-color: #a8935e;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(197, 173, 123, 0.3);
   }
-
+  
   .secondary-btn {
     background: transparent;
-    color: var(--color-primary, #ff3333);
-    border: 2px solid var(--color-primary, #ff3333);
+    color: var(--title-color);
+    border-color: var(--title-color);
   }
-
+  
   .secondary-btn:hover {
-    background: var(--color-primary, #ff3333);
-    color: #ffffff;
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
+    background: var(--title-color);
+    color: var(--color-bg);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(197, 173, 123, 0.3);
   }
 
 /* ===== SECCIÓN VINILOS ===== */
@@ -617,7 +509,7 @@ const buildSearchUrl = (pageNum, search = searchQuery) => {
   display: flex;
   align-items: center;
   background: var(--color-card-bg);
-  border: 2px solid rgba(255, 51, 51, 0.2);
+  border: 2px solid rgba(197, 173, 123, 0.2);
   border-radius: 25px;
   overflow: hidden;
   transition: all 0.3s ease;
@@ -626,7 +518,7 @@ const buildSearchUrl = (pageNum, search = searchQuery) => {
 
 .search-input-group:focus-within {
   border-color: var(--title-color);
-  box-shadow: 0 0 0 3px rgba(255, 51, 51, 0.1);
+  box-shadow: 0 0 0 3px rgba(197, 173, 123, 0.1);
 }
 
 .search-input {
@@ -657,12 +549,12 @@ const buildSearchUrl = (pageNum, search = searchQuery) => {
 }
 
 .search-button:hover {
-  background: #ff6b6b;
+  background: #a8935e;
   transform: scale(1.05);
 }
 
 .clear-search {
-  background: rgba(255, 51, 51, 0.2);
+  background: rgba(197, 173, 123, 0.2);
   border: none;
   padding: 0.8rem;
   color: var(--title-color);
@@ -672,11 +564,11 @@ const buildSearchUrl = (pageNum, search = searchQuery) => {
   align-items: center;
   justify-content: center;
   text-decoration: none;
-  border-left: 1px solid rgba(255, 51, 51, 0.2);
+  border-left: 1px solid rgba(197, 173, 123, 0.2);
 }
 
 .clear-search:hover {
-  background: rgba(255, 51, 51, 0.3);
+  background: rgba(197, 173, 123, 0.3);
   color: #fff;
 }
 
@@ -730,7 +622,7 @@ const buildSearchUrl = (pageNum, search = searchQuery) => {
   display: flex;
   flex-direction: column;
   position: relative;
-  border: 1px solid rgba(255, 51, 51, 0.1);
+  border: 1px solid rgba(197, 173, 123, 0.1);
   animation: cardSlideIn 0.6s ease-out both;
 }
 
@@ -772,7 +664,7 @@ const buildSearchUrl = (pageNum, search = searchQuery) => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(45deg, transparent 30%, rgba(255, 51, 51, 0.05) 50%, transparent 70%);
+  background: linear-gradient(45deg, transparent 30%, rgba(197, 173, 123, 0.05) 50%, transparent 70%);
   opacity: 0;
   transition: opacity 0.3s ease;
   pointer-events: none;
@@ -781,8 +673,8 @@ const buildSearchUrl = (pageNum, search = searchQuery) => {
 
 .vinyl-card:hover {
   transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25), 0 0 15px rgba(255, 51, 51, 0.2);
-  border-color: rgba(255, 51, 51, 0.3);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25), 0 0 15px rgba(197, 173, 123, 0.2);
+  border-color: rgba(197, 173, 123, 0.3);
 }
 
 .vinyl-card:hover::before {
@@ -817,7 +709,7 @@ const buildSearchUrl = (pageNum, search = searchQuery) => {
   opacity: 1;
 }
 .vinyl-link {
-  background: linear-gradient(135deg, var(--title-color) 0%, #ff6b6b 100%);
+  background: linear-gradient(135deg, var(--title-color) 0%, #a8935e 100%);
   color: white;
   padding: 0.8rem 1.5rem;
   border-radius: 25px;
@@ -825,7 +717,7 @@ const buildSearchUrl = (pageNum, search = searchQuery) => {
   font-weight: 600;
   transform: translateY(10px);
   transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(255, 51, 51, 0.4);
+  box-shadow: 0 4px 15px rgba(197, 173, 123, 0.4);
 }
 .vinyl-card:hover .vinyl-link {
   transform: translateY(0);
@@ -836,13 +728,13 @@ const buildSearchUrl = (pageNum, search = searchQuery) => {
   right: 1rem;
 }
 .price-badge {
-  background: linear-gradient(135deg, var(--title-color) 0%, #ff6b6b 100%);
+  background: linear-gradient(135deg, var(--title-color) 0%, #a8935e 100%);
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 20px;
   font-size: 0.9rem;
   font-weight: 700;
-  box-shadow: 0 2px 10px rgba(255, 51, 51, 0.3);
+  box-shadow: 0 2px 10px rgba(197, 173, 123, 0.3);
 }
 .vinyl-info {
   padding: 1rem;
@@ -862,7 +754,7 @@ const buildSearchUrl = (pageNum, search = searchQuery) => {
 }
 
 .vinyl-card:hover .vinyl-title-card {
-  color: #ff6b6b;
+  color: #a8935e;
 }
 .no-vinyl {
   text-align: center;
@@ -920,7 +812,7 @@ const buildSearchUrl = (pageNum, search = searchQuery) => {
   text-decoration: none;
   font-size: 1.1rem;
   transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(255, 51, 51, 0.1);
+  box-shadow: 0 2px 8px rgba(197, 173, 123, 0.1);
   cursor: pointer;
 }
 
@@ -929,7 +821,7 @@ const buildSearchUrl = (pageNum, search = searchQuery) => {
   color: #fff;
   border-color: var(--title-color);
   transform: translateY(-2px);
-  box-shadow: 0 4px 15px rgba(255, 51, 51, 0.3);
+  box-shadow: 0 4px 15px rgba(197, 173, 123, 0.3);
 }
 
 .pagination-link.current {
@@ -949,27 +841,7 @@ const buildSearchUrl = (pageNum, search = searchQuery) => {
   pointer-events: none;
 }
 
-/* ===== ANIMACIONES ENTRADA ===== */
-.page-header,
-.stat-card,
-.vinyl-card {
-  animation: fadeInUp 0.8s ease-out;
-}
-.stat-card:nth-child(1) { animation-delay: 0.1s; }
-.stat-card:nth-child(2) { animation-delay: 0.2s; }
-.stat-card:nth-child(3) { animation-delay: 0.3s; }
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Responsive - igual que home */
+/* Responsive */
   @media (max-width: 768px) {
     .main-content {
       min-height: auto;
@@ -986,31 +858,6 @@ const buildSearchUrl = (pageNum, search = searchQuery) => {
     
     .vinyl-section .container {
       padding: 2rem 1rem 4rem;
-    }
-
-    .site-icon {
-      height: 80px;
-    }
-    
-    h1 {
-      font-size: 2.5rem;
-    }
-    
-    .page-description {
-      font-size: 1.1rem;
-      margin: 1.5rem auto 1rem;
-    }
-
-    .hero-actions {
-      flex-direction: column;
-      align-items: center;
-      gap: 1rem;
-    }
-
-    .btn {
-      width: 200px;
-      padding: 0.9rem 1.5rem;
-      font-size: 1rem;
     }
 
     .error-title {
@@ -1042,14 +889,6 @@ const buildSearchUrl = (pageNum, search = searchQuery) => {
   }
   
   @media (max-width: 480px) {
-    h1 {
-      font-size: 2rem;
-    }
-    
-    .page-description {
-      font-size: 1rem;
-    }
-    
     .error-title {
       font-size: 1.5rem;
     }
@@ -1112,4 +951,3 @@ html {
     }
   });
 </script>
-
