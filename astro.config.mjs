@@ -1,11 +1,13 @@
 import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
 import tailwind from '@astrojs/tailwind';
+import cloudflare from '@astrojs/cloudflare';
 
 // https://astro.build/config
 export default defineConfig({
   site: 'https://vinylstation.com',
   output: 'hybrid', // Permite páginas dinámicas y estáticas
+  adapter: cloudflare(),
   integrations: [
     react(),
     tailwind(),
