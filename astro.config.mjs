@@ -5,7 +5,7 @@ import tailwind from '@astrojs/tailwind';
 
 // https://astro.build/config
 export default defineConfig({
-  site: 'https://vinylstation.com',
+  // site: 'https://vinylstation.com', // Comentado para usar URL actual de Cloudflare
   // output: 'hybrid', // Comentado para usar modo estático temporalmente
   // adapter: cloudflare(), // Comentado temporalmente
   integrations: [
