@@ -1,14 +1,50 @@
 ---
-// Renderizar del lado del servidor para paginación dinámica
-export const prerender = false;
-
+// getStaticPaths() requerido para rutas dinámicas en modo estático
 import MainLayout from '../../../layouts/MainLayout.astro';
 import { getSiteInfo, getPageData, getVinilosPaginados } from '../../../lib/wordpress.js';
 
-// PAGINACIÓN DINÁMICA para desarrollo (más rápida)
-const url = new URL(Astro.request.url);
-const pathParts = url.pathname.split('/').filter(Boolean);
-const pageNumber = parseInt(pathParts[pathParts.length - 1]) || 1;
+export async function getStaticPaths() {
+  console.log('🔧 Generando rutas estáticas para páginas de vinilos...');
+  
+  const itemsPerPage = 32;
+  
+  try {
+    // Obtener información de la primera página para calcular el total
+    const firstPageData = await getVinilosPaginados({ page: 1, itemsPerPage });
+    const totalVinilos = firstPageData?.pageInfo?.total || firstPageData?.pageInfo?.totalVinilos || 0;
+    
+    if (totalVinilos === 0) {
+      console.warn('⚠️ No se encontraron vinilos, generando solo página 1');
+      return [{ params: { page: '1' } }];
+    }
+    
+    const totalPages = Math.ceil(totalVinilos / itemsPerPage);
+    console.log(`📊 Total vinilos: ${totalVinilos}, Páginas a generar: ${totalPages}`);
+    
+    // Generar rutas para todas las páginas
+    const paths = [];
+    for (let page = 1; page <= totalPages; page++) {
+      paths.push({ params: { page: page.toString() } });
+    }
+    
+    console.log(`✅ Generadas ${paths.length} rutas estáticas: /vinilos/page/1 hasta /vinilos/page/${totalPages}`);
+    return paths;
+    
+  } catch (error) {
+    console.error('❌ Error generando rutas estáticas:', error.message);
+    // Fallback: generar al menos las primeras 50 páginas
+    const fallbackPages = 50;
+    const paths = [];
+    for (let page = 1; page <= fallbackPages; page++) {
+      paths.push({ params: { page: page.toString() } });
+    }
+    console.log(`🔄 Fallback: Generadas ${fallbackPages} páginas por defecto`);
+    return paths;
+  }
+}
+
+// Obtener el número de página desde los parámetros de Astro (NO desde la URL)
+const currentPage = Math.max(1, parseInt(Astro.params.page) || 1);
 
 // Helper para quitar HTML de la descripción
 const stripHtml = (html) =>
@@ -16,7 +52,6 @@ const stripHtml = (html) =>
 
 // Configuración
 const itemsPerPage = 32;
-const currentPage = Math.max(1, pageNumber);
 
 // Inicializa variables
 let hasError = false;
@@ -29,9 +64,9 @@ try {
   siteInfo = await getSiteInfo();
   pageData = await getPageData('vinilos');
   
-  console.log(`🔍 Cargando página ${currentPage} de vinilos...`);
+  console.log(`🔍 Cargando página ${currentPage} de vinilos (modo estático)...`);
   
-  // Obtener vinilos paginados dinámicamente
+  // Obtener vinilos paginados
   vinilosData = await getVinilosPaginados({ 
     page: currentPage, 
     itemsPerPage 
@@ -55,7 +90,7 @@ try {
 const vinilos = hasError ? [] : (vinilosData?.vinilos || []);
 const pageInfo = vinilosData?.pageInfo || {};
 const totalPages = pageInfo.totalPages || 1;
-const totalVinilos = pageInfo.total || vinilos.length;
+const totalVinilos = pageInfo.total || pageInfo.totalVinilos || vinilos.length;
 
 const heroTitle = hasError ? null : (pageData?.title || "Vinilos recomendados por VinylStation Radio");
 const heroDescription = hasError ? null : (pageData?.excerpt || "Descubre nuestra selección cuidada de vinilos clásicos, ediciones limitadas y novedades.");
