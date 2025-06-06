@@ -1,19 +1,23 @@
 ---
+// Renderizar del lado del servidor para validaciones dinámicas
+export const prerender = false;
+
 // src/pages/vinilos/[slug].astro
 import MainLayout from "../../layouts/MainLayout.astro";
-import { getSiteInfo, getViniloBySlug, getVinilos } from "../../lib/wordpress";
+import { getSiteInfo, getViniloBySlug } from "../../lib/wordpress.js";
 
-export async function getStaticPaths() {
-  const { vinilos } = await getVinilos({ limit: 20000 }); // Obtener TODOS los vinilos
-  console.log(`🎵 Generando rutas estáticas para ${vinilos.length} vinilos`);
-  return vinilos.map((v) => ({ params: { slug: v.slug }, props: { vinilo: v } }));
-}
+// Ya no necesitamos getStaticPaths, será dinámico
 
 const { slug } = Astro.params;
-const { vinilo } = Astro.props;
+
+// 🔧 VALIDACIÓN: Si el slug es un número, redirigir a la paginación
+if (slug && /^\d+$/.test(slug)) {
+  console.log(`🔄 Slug numérico detectado: ${slug}, redirigiendo a /vinilos/page/${slug}/`);
+  return Astro.redirect(`/vinilos/page/${slug}/`, 301);
+}
 
 const siteInfo = await getSiteInfo();
-const data = vinilo || (await getViniloBySlug(slug));
+const data = await getViniloBySlug(slug);
 if (!data) {
   return Astro.redirect("/404");
 }

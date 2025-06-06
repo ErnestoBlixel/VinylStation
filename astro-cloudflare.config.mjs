@@ -18,6 +18,9 @@ export default defineConfig({
     format: 'file',
     assets: '_assets',
   },
+  // OPTIMIZACIÓN PARA CLOUDFLARE
+  adapter: process.env.NODE_ENV === 'production' ? '@astrojs/cloudflare' : undefined,
+  
   // Variables de entorno públicas - RESTAURADAS QUE FUNCIONABAN
   vite: {
     define: {
