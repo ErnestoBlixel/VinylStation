@@ -1,12 +1,19 @@
 ---
 // Renderizar del lado del servidor para validaciones dinámicas
-export const prerender = false;
+// export const prerender = false; // Comentado temporalmente
 
 // src/pages/vinilos/[slug].astro
 import MainLayout from "../../layouts/MainLayout.astro";
 import { getSiteInfo, getViniloBySlug } from "../../lib/wordpress.js";
 
-// Ya no necesitamos getStaticPaths, será dinámico
+// TEMPORAL: En modo estático, usamos getStaticPaths
+export async function getStaticPaths() {
+  // Solo generar algunas páginas de ejemplo por ahora
+  return [
+    { params: { slug: 'apostrophe' }},
+    { params: { slug: 'dark-side-moon' }},
+  ];
+}
 
 const { slug } = Astro.params;
 
