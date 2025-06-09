@@ -196,12 +196,7 @@ const nextUrl = currentPage < totalPages ? `/vinilos/page/${currentPage + 1}/` :
                 Mostrando {vinilos.length} vinilos de la página {currentPage}. 
                 Total de {totalVinilos} vinilos en {totalPages} páginas.
               </p>
-              {totalVinilos > (100 * 32) && (
-                <div class="limited-notice">
-                  ⚠️ <strong>Mostrando primeras 100 páginas</strong> (3200 vinilos). 
-                  Usa la búsqueda para encontrar más vinilos o explora categorías específicas.
-                </div>
-              )}
+
             </div>
             
             {vinilos.length > 0 ? (
@@ -567,21 +562,7 @@ const nextUrl = currentPage < totalPages ? `/vinilos/page/${currentPage + 1}/` :
     100% { transform: translateY(0); opacity: 1; }
   }
 
-  .limited-notice {
-    background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 193, 7, 0.05));
-    border: 2px solid rgba(255, 193, 7, 0.3);
-    border-radius: 10px;
-    padding: 1rem 1.5rem;
-    margin-top: 1rem;
-    color: #ffc107;
-    font-size: 1.1rem;
-    text-align: center;
-    animation: pulse 2s infinite;
-  }
 
-  .limited-notice strong {
-    color: #fff;
-  }
 
   .vinyl-grid {
     display: grid;
