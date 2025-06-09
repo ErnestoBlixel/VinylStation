@@ -389,6 +389,7 @@ export async function getVinilos({ limit = 200, page = null, itemsPerPage = 20 }
             vsPrecio
             vsArtista
             vsAlbum
+            vsCategoria
           }
         }
       }
@@ -428,6 +429,7 @@ export async function getVinilos({ limit = 200, page = null, itemsPerPage = 20 }
           vsPrecio: v.camposVinilo?.vsPrecio || '',
           vsArtista: v.camposVinilo?.vsArtista || '',
           vsAlbum: v.camposVinilo?.vsAlbum || '',
+          vsCategoria: v.camposVinilo?.vsCategoria || '',
         },
         seo: {
           title: `${v.title || 'Vinilo'} | VinylStation`,
@@ -483,6 +485,7 @@ export async function getTodosLosVinilos() {
             vsPrecio
             vsArtista
             vsAlbum
+            vsCategoria
           }
         }
       }
@@ -517,11 +520,11 @@ export async function getTodosLosVinilos() {
       hasNextPage = pageInfo?.hasNextPage || false;
       cursor = pageInfo?.endCursor;
       
-      // Límite de seguridad
-      if (pageCount > 100) {
-        console.warn('⚠️ Alcanzado límite de seguridad de 100 páginas');
-        break;
-      }
+      // Límite de seguridad removido para cargar todos los vinilos
+      // if (pageCount > 100) {
+      //   console.warn('⚠️ Alcanzado límite de seguridad de 100 páginas');
+      //   break;
+      // }
     }
     
     console.log(`✅ Total de vinilos cargados: ${allVinilos.length}`);
@@ -541,6 +544,7 @@ export async function getTodosLosVinilos() {
           vsPrecio: v.camposVinilo?.vsPrecio || '',
           vsArtista: v.camposVinilo?.vsArtista || '',
           vsAlbum: v.camposVinilo?.vsAlbum || '',
+          vsCategoria: v.camposVinilo?.vsCategoria || '',
         },
         seo: {
           title: `${v.title || 'Vinilo'} | VinylStation`,
@@ -593,6 +597,7 @@ export async function getVinilosPaginados({ page = 1, itemsPerPage = 20 } = {}) 
             vsPrecio
             vsArtista
             vsAlbum
+            vsCategoria
           }
         }
       }
@@ -693,6 +698,7 @@ export async function getVinilosPaginados({ page = 1, itemsPerPage = 20 } = {}) 
           vsPrecio: v.camposVinilo?.vsPrecio || '',
           vsArtista: v.camposVinilo?.vsArtista || '',
           vsAlbum: v.camposVinilo?.vsAlbum || '',
+          vsCategoria: v.camposVinilo?.vsCategoria || '',
         },
         seo: {
           title: `${v.title || 'Vinilo'} | VinylStation`,
@@ -768,6 +774,7 @@ async function getVinilosPaginadosConCursorCorregido({ page = 1, itemsPerPage = 
             vsPrecio
             vsArtista
             vsAlbum
+            vsCategoria
           }
         }
       }
@@ -1024,6 +1031,7 @@ function processVinilosPage(pageNodes, allNodes, page, itemsPerPage, pageInfo) {
         vsPrecio: v.camposVinilo?.vsPrecio || '',
         vsArtista: v.camposVinilo?.vsArtista || '',
         vsAlbum: v.camposVinilo?.vsAlbum || '',
+        vsCategoria: v.camposVinilo?.vsCategoria || '',
       },
       seo: {
         title: `${v.title || 'Vinilo'} | VinylStation`,
@@ -1221,6 +1229,7 @@ export async function getViniloBySlug(slug) {
           vsPrecio
           vsArtista
           vsAlbum
+          vsCategoria
         }
         seo {
           title
@@ -1268,6 +1277,7 @@ export async function getViniloBySlug(slug) {
         vsPrecio: vinilo.camposVinilo?.vsPrecio || '',
         vsArtista: vinilo.camposVinilo?.vsArtista || '',
         vsAlbum: vinilo.camposVinilo?.vsAlbum || '',
+        vsCategoria: vinilo.camposVinilo?.vsCategoria || '',
       },
       seo:
         vinilo.seo?.title ? vinilo.seo : {
@@ -2107,11 +2117,11 @@ export async function getTodosLasNoticias() {
       hasNextPage = pageInfo?.hasNextPage || false;
       cursor = pageInfo?.endCursor;
       
-      // Límite de seguridad
-      if (pageCount > 100) {
-        console.warn('⚠️ Alcanzado límite de seguridad de 100 páginas');
-        break;
-      }
+      // Límite de seguridad removido para cargar todas las noticias
+      // if (pageCount > 100) {
+      //   console.warn('⚠️ Alcanzado límite de seguridad de 100 páginas');
+      //   break;
+      // }
     }
     
     console.log(`✅ Total de noticias cargadas: ${allNoticias.length}`);

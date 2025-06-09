@@ -37,6 +37,10 @@ export async function getStaticPaths({ paginate }) {
 // Obtener datos de la página actual
 const { page } = Astro.props;
 
+// Obtener parámetro de categoría de la URL
+const url = new URL(Astro.request.url);
+const categoriaSeleccionada = url.searchParams.get('categoria') || 'todos';
+
 // Helper para quitar HTML de la descripción
 const stripHtml = (html) =>
   html?.replace?.(/<[^>]*>/g, '').trim() || '';
@@ -58,9 +62,25 @@ try {
 }
 
 // Datos de paginación de Astro
-const vinilos = page.data;
+let vinilos = page.data;
 const currentPage = page.currentPage;
 const totalPages = page.lastPage;
+
+// Filtrar por categoría si se seleccionó una
+if (categoriaSeleccionada && categoriaSeleccionada !== 'todos') {
+  vinilos = vinilos.filter(vinilo => {
+    const categoria = vinilo.camposVinilo?.vsCategoria?.toLowerCase().trim();
+    return categoria === categoriaSeleccionada.toLowerCase();
+  });
+}
+
+// Categorías disponibles
+const categorias = [
+  { value: 'todos', label: 'Todos' },
+  { value: 'rock', label: 'Rock' },
+  { value: 'metal', label: 'Metal' },
+  { value: 'jazz', label: 'Jazz' }
+];
 
 const heroTitle = hasError ? null : (pageData?.title || "Vinilos recomendados por VinylStation Radio");
 const heroDescription = hasError ? null : (pageData?.excerpt || "Descubre nuestra selección cuidada de vinilos clásicos, ediciones limitadas y novedades.");
@@ -82,9 +102,16 @@ if (totalPages <= 5) {
   paginasVisibles = paginasVisibles.filter(p => p >= 1 && p <= totalPages);
 }
 
-// URLs de paginación
-const prevUrl = page.url.prev;
-const nextUrl = page.url.next;
+// URLs de paginación con categoría
+const buildPageUrl = (pageNum) => {
+  const base = pageNum === 1 ? '/vinilos/page/1/' : `/vinilos/page/${pageNum}/`;
+  return categoriaSeleccionada && categoriaSeleccionada !== 'todos' 
+    ? `${base}?categoria=${categoriaSeleccionada}`
+    : base;
+};
+
+const prevUrl = currentPage > 1 ? buildPageUrl(currentPage - 1) : null;
+const nextUrl = currentPage < totalPages ? buildPageUrl(currentPage + 1) : null;
 ---
 <MainLayout title={pageTitle} description={pageDescription}>
   <div class="main-content">
@@ -159,9 +186,30 @@ const nextUrl = page.url.next;
                 </div>
               </div>
               <p>
-                Mostrando {vinilos.length} vinilos de la página {currentPage}. 
-                Total de {page.total} vinilos en {totalPages} páginas.
+                {categoriaSeleccionada && categoriaSeleccionada !== 'todos' ? (
+                  <>
+                    Mostrando {vinilos.length} vinilos de <strong>{categoriaSeleccionada.toUpperCase()}</strong> en la página {currentPage}.
+                    {vinilos.length === 0 && ' No se encontraron vinilos en esta categoría.'}
+                  </>
+                ) : (
+                  <>Mostrando {vinilos.length} vinilos de la página {currentPage}. Total de {page.total} vinilos en {totalPages} páginas.</>
+                )}
               </p>
+              
+              <!-- Filtro de Categorías -->
+              <div class="category-filter">
+                <h3>Filtrar por categoría:</h3>
+                <div class="filter-buttons">
+                  {categorias.map((cat) => (
+                    <a 
+                      href={cat.value === 'todos' ? `/vinilos/page/${currentPage}/` : `/vinilos/page/${currentPage}/?categoria=${cat.value}`}
+                      class={`filter-btn ${categoriaSeleccionada === cat.value ? 'active' : ''}`}
+                    >
+                      {cat.label}
+                    </a>
+                  ))}
+                </div>
+              </div>
             </div>
             
             {vinilos.length > 0 ? (
@@ -211,7 +259,7 @@ const nextUrl = page.url.next;
                         {p === currentPage ? (
                           <span class="pagination-link current">{p}</span>
                         ) : (
-                          <a href={p === 1 ? '/vinilos/page/1/' : `/vinilos/page/${p}/`} class="pagination-link">{p}</a>
+                          <a href={buildPageUrl(p)} class="pagination-link">{p}</a>
                         )}
                       </li>
                     ))}
@@ -527,6 +575,66 @@ const nextUrl = page.url.next;
     100% { transform: translateY(0); opacity: 1; }
   }
 
+  /* === FILTRO DE CATEGORÍAS === */
+  .category-filter {
+    margin-top: 2.5rem;
+    padding: 2rem;
+    background: rgba(255, 51, 51, 0.05);
+    border-radius: 20px;
+    border: 1px solid rgba(255, 51, 51, 0.1);
+    animation: fadeInUp 0.8s ease-out 0.4s both;
+  }
+
+  .category-filter h3 {
+    font-size: 1.3rem;
+    color: var(--title-color);
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .filter-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
+  .filter-btn {
+    display: inline-block;
+    padding: 0.8rem 1.8rem;
+    border-radius: 25px;
+    background: var(--color-card-bg);
+    color: var(--title-color);
+    border: 2px solid rgba(255, 51, 51, 0.2);
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .filter-btn:hover {
+    background: rgba(255, 51, 51, 0.1);
+    border-color: var(--title-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 51, 51, 0.2);
+  }
+
+  .filter-btn.active {
+    background: var(--title-color);
+    color: #fff;
+    border-color: var(--title-color);
+    box-shadow: 0 4px 20px rgba(255, 51, 51, 0.4);
+  }
+
+  .filter-btn.active:hover {
+    background: #ff6b6b;
+    transform: translateY(-2px);
+  }
+
   .vinyl-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
@@ -752,6 +860,25 @@ const nextUrl = page.url.next;
   @media (max-width: 768px) {
     .main-content {
       min-height: auto;
+    }
+    
+    .category-filter {
+      padding: 1.5rem;
+      margin-top: 2rem;
+    }
+    
+    .category-filter h3 {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+    }
+    
+    .filter-buttons {
+      gap: 0.8rem;
+    }
+    
+    .filter-btn {
+      padding: 0.6rem 1.2rem;
+      font-size: 0.9rem;
     }
     
     .hero-container {

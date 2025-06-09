@@ -244,6 +244,9 @@ const buildSearchUrl = (pageNum, search = searchQuery) => {
                           {vinilo.camposVinilo?.vsArtista && (
                             <p class="vinyl-artist">{vinilo.camposVinilo.vsArtista}</p>
                           )}
+                          {vinilo.camposVinilo?.vsCategoria && (
+                            <p class="vinyl-category">{vinilo.camposVinilo.vsCategoria}</p>
+                          )}
                         </div>
                       </div>
                     );
@@ -737,6 +740,16 @@ const buildSearchUrl = (pageNum, search = searchQuery) => {
     color: #888;
     margin: 0;
     line-height: 1.2;
+  }
+
+  .vinyl-category {
+    font-size: 0.8rem;
+    color: var(--title-color);
+    margin: 0.3rem 0 0 0;
+    line-height: 1.2;
+    text-transform: uppercase;
+    font-weight: 600;
+    opacity: 0.8;
   }
 
   .vinyl-card:hover .vinyl-title-card {

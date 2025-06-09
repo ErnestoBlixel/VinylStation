@@ -108,6 +108,12 @@ const pageDescription =
                     <span>{data.camposVinilo.vsPrecio}</span>
                   </div>
                 )}
+                {data.camposVinilo?.vsCategoria && (
+                  <div class="meta-item">
+                    <strong>Categoría:</strong>
+                    <span>{data.camposVinilo.vsCategoria}</span>
+                  </div>
+                )}
                 {data.date && (
                   <div class="meta-item">
                     <strong>Fecha de publicación:</strong>
