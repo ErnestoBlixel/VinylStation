@@ -608,7 +608,7 @@ export async function getVinilosPaginados({ page = 1, itemsPerPage = 20 } = {}) 
     let cursor = null;
     let hasMore = true;
     let batchCount = 0;
-    const BATCH_SIZE = 50; // Tamaño óptimo por lote
+    const BATCH_SIZE = 100; // Tamaño óptimo por lote
     
     // CARGAR ELEMENTOS HASTA TENER SUFICIENTES PARA LA PÁGINA SOLICITADA
     while (hasMore && allNodes.length < elementsNeeded && batchCount < 200) {
@@ -786,7 +786,7 @@ async function getVinilosPaginadosConCursorCorregido({ page = 1, itemsPerPage = 
     
     while (hasMore && allNodes.length < elementsNeeded && batchCount < 50) {
       batchCount++;
-      const batchSize = Math.min(50, elementsNeeded - allNodes.length + 10);
+      const batchSize = Math.min(100, elementsNeeded - allNodes.length + 10);
       
       const variables = { 
         first: batchSize,
