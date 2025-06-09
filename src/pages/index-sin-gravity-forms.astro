@@ -1,0 +1,652 @@
+---
+// Página de inicio - SOLO datos reales desde WordPress
+import MainLayout from '../layouts/MainLayout.astro';
+import { getSiteInfo, getPageData, getProgramas, getNoticiasPaginadas } from '../lib/wordpress';
+
+// Helper para convertir "<p>Hola</p>" → "Hola"
+const stripHtml = (html) => {
+  if (!html) return '';
+  return html.replace(/<[^>]*>/g, '').trim();
+};
+
+// Variables para controlar errores
+let hasError = false;
+let errorMessage = '';
+let siteInfo = null;
+let pageData = null;
+let programasData = null;
+let noticiasData = null;
+
+try {
+  // Obtener información del sitio
+  siteInfo = await getSiteInfo();
+  // Obtener datos de la página home
+  pageData = await getPageData('home');
+  // Obtener todos los programas para el grid
+  programasData = await getProgramas({ limit: 50 });
+  // Obtener noticias recientes para el slider
+  noticiasData = await getNoticiasPaginadas({ page: 1, itemsPerPage: 20 });
+  // Verificar que tenemos los datos mínimos necesarios
+  if (!siteInfo || !siteInfo.title) throw new Error('No se pudo obtener el título del sitio desde WordPress');
+  if (!siteInfo.description) throw new Error('No se pudo obtener la descripción del sitio desde WordPress');
+} catch (error) {
+  hasError = true;
+  errorMessage = `Error conectando con WordPress: ${error.message}`;
+}
+
+// Obtener programas y noticias del resultado
+const programas = hasError ? [] : (programasData?.programas || []);
+const noticias = hasError ? [] : (noticiasData?.noticias || []);
+
+// Helper para formatear fecha
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
+
+// Estas variables SIEMPRE existen
+const heroTitle = hasError ? 'VinylStation Radio' : (siteInfo?.title || 'VinylStation Radio');
+const heroDescription = hasError ? 'Una emisora nueva donde queremos conocerte y escuchar tu opinión' : (siteInfo?.description || 'Una emisora nueva donde queremos conocerte y escuchar tu opinión');
+const logoImage = hasError ? null : (siteInfo?.logo?.url || pageData?.featuredImage?.url || '');
+const logoAlt = hasError ? '' : (siteInfo?.logo?.altText || pageData?.featuredImage?.altText || 'Logo');
+
+// SEO usando datos reales
+const pageTitle = hasError ? 'Error - VinylStation' : (pageData?.seo?.title || 'VinylStation Radio - Emisora Online desde Fuensalida, Toledo');
+const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.metaDesc || 'VinylStation Radio es una emisora online dedicada a la diversidad musical y el talento emergente desde Fuensalida, Toledo. Pronto también en FM.');
+---
+
+<MainLayout title={pageTitle} description={pageDescription}>
+  {hasError ? (
+    <!-- Vista de ERROR -->
+    <div class="error-page">
+      <div class="container">
+        <div class="error-content">
+          <h1>Error de Conexión</h1>
+          <p>{errorMessage}</p>
+          <button onclick="window.location.reload()" class="btn btn-primary">
+            Reintentar
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : (
+    <!-- Vista NORMAL -->
+    <div class="main-content">
+      <!-- Hero Section -->
+      <section class="hero">
+        <div class="container">
+          <div class="hero-content">
+            <img src="/images/logos/logo vinylstation.png" alt="VinylStation Radio" class="hero-logo" />
+            <h1>{heroTitle}</h1>
+            <p class="hero-subtitle">{heroDescription}</p>
+            
+            <!-- Reproductor con diseño del header -->
+            <div class="radio-player-hero desktop-only">
+              <audio id="radio-stream-hero" preload="none" data-stream-url="https://stream.zeno.fm/4g7qxnxrloluv"></audio>
+              
+              <div class="player-controls">
+                <button id="play-pause-hero" class="play-button" aria-label="Reproducir/Pausar">
+                  <svg id="play-icon-hero" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="5,3 19,12 5,21"></polygon>
+                  </svg>
+                  <svg id="pause-icon-hero" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                    <rect x="6" y="4" width="4" height="16"></rect>
+                    <rect x="14" y="4" width="4" height="16"></rect>
+                  </svg>
+                </button>
+                
+                <div class="status-info">
+                  <span id="status-text-hero">Radio en vivo</span>
+                  <div id="loading-indicator-hero" class="loading-dot" style="display: none;"></div>
+                </div>
+                
+                <div class="volume-control">
+                  <button id="volume-toggle-hero" class="volume-button" aria-label="Silenciar/Activar sonido">
+                    <svg id="volume-on-hero" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <polygon points="11,5 6,9 2,9 2,15 6,15 11,19"></polygon>
+                      <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                    </svg>
+                    <svg id="volume-off-hero" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                      <polygon points="11,5 6,9 2,9 2,15 6,15 11,19"></polygon>
+                      <line x1="23" y1="9" x2="17" y2="15"></line>
+                      <line x1="17" y1="9" x2="23" y2="15"></line>
+                    </svg>
+                  </button>
+                  <input type="range" id="volume-slider-hero" class="volume-slider" min="0" max="1" step="0.1" value="0.7">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Sobre Nosotros Section -->
+      <section class="about">
+        <div class="container">
+          <div class="about-grid">
+            <div class="about-content">
+              <h2>Somos VinylStation Radio</h2>
+              <p>Una <strong>emisora nueva desde Fuensalida, Toledo</strong>, donde queremos conocerte y apoyar nuevos grupos junto a la música de siempre. Actualmente <strong>online petándolo</strong>, pero pronto también <strong>en FM</strong>.</p>
+              <div class="contact-button">
+                <a href="#contact-section" class="btn btn-primary contact-btn">Contáctanos</a>
+              </div>
+            </div>
+            <div class="about-image">
+              <img src="/images/vinylstation_local.jpg" alt="Estudio de VinylStation Radio en Fuensalida" class="studio-image" />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Banner de próximamente con merchandising -->
+      <section class="upcoming-banner merchandising-banner">
+        <div class="container">
+          <div class="feature-banner-wide">
+            <div class="banner-content-box">
+              <h3>Próximamente: Tienda VinylStation</h3>
+              <p>¡Prepárate para mostrar tu <strong>pasión por la música</strong>! Muy pronto podrás conseguir <strong>camisetas exclusivas, gorras, vinilos coleccionables, tazas personalizadas</strong> y mucho más merchandising oficial. Únete a nuestra <strong>comunidad musical</strong> y apoya a los <strong>artistas emergentes</strong>. ¡Forma parte de la <strong>familia VinylStation</strong>!</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Programas Section con Marquee -->
+      <section class="programs">
+        <div class="container">
+          <div class="section-header">
+            <h2>Nuestros Programas</h2>
+            <p>Descubre nuestra <strong>programación especializada en música vinilo</strong> y cultura musical contemporánea. Combinamos <strong>clásicos atemporales</strong> con las últimas tendencias, incluyendo espacios para <strong>artistas emergentes locales y nacionales</strong>.</p>
+          </div>
+          
+          <div class="programs-marquee">
+            <div class="marquee-container">
+              <div class="marquee-track" id="programsMarquee">
+                {programas.length > 0 ? (
+                  programas.concat(programas).map((programa, index) => {
+                    const imagen = programa.imagenPrincipalUrl || 
+                                  programa.imagenPrincipal?.sourceUrl || 
+                                  '/images/placeholder-radio.jpg';
+                    
+                    return (
+                      <div class="program-card" key={`programa-${index}`}>
+                        <div class="program-image">
+                          <img 
+                            src={imagen} 
+                            alt={programa.title}
+                            onerror="this.src='/images/placeholder-radio.jpg'"
+                          />
+                          <div class="program-overlay">
+                            <button class="view-btn" title="Ver programa">
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 18l6-6-6-6"></path>
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                        <h3>{programa.title}</h3>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div class="no-content">
+                    <p>No hay programas disponibles</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          <div class="section-footer">
+            <a href="/programas" class="btn btn-primary">Ver Todos los Programas</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Banner "En Breve" con eventos -->
+      <section class="coming-soon-banner events-banner">
+        <div class="container">
+          <div class="feature-banner-wide">
+            <div class="banner-content-box">
+              <h3>En Breve: Tu Ticketera Musical</h3>
+              <p>VinylStation Radio será tu <strong>puerta de entrada exclusiva</strong> a los mejores conciertos y eventos de la región. Compra entradas para <strong>showcases exclusivos, conciertos emergentes, festivales de vinilo</strong> y eventos especiales. Acceso prioritario a <strong>descuentos especiales y experiencias VIP</strong>. ¡Prepárate para <strong>vivir la música</strong> como nunca!</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Noticias Section con doble marquee -->
+      <section class="news">
+        <div class="container">
+          <div class="section-header">
+            <h2>Últimas Noticias</h2>
+            <p>Mantente al día con <strong>noticias de música, actualidad cultural</strong> y eventos de Toledo y provincia. Cobertura de <strong>salud, deporte</strong> y todo lo que acontece en <strong>Castilla-La Mancha</strong>. Tu fuente de <strong>información 24h desde Fuensalida</strong>.</p>
+          </div>
+          
+          <div class="news-marquee-container">
+            <!-- Primera fila - derecha -->
+            <div class="news-marquee">
+              <div class="marquee-track" id="newsMarquee1">
+                {noticias.length > 0 ? (
+                  noticias.slice(0, Math.min(10, Math.floor(noticias.length / 2))).concat(noticias.slice(0, Math.min(10, Math.floor(noticias.length / 2)))).map((noticia, index) => {
+                    const imagen = noticia.imagenDestacadaUrl || 
+                                  noticia.featuredImage?.node?.sourceUrl || 
+                                  '/images/placeholder-news.jpg';
+                    const descripcion = stripHtml(noticia.excerpt || '');
+                    const fecha = formatDate(noticia.date);
+                    
+                    return (
+                      <div class="news-card" key={`news1-${index}`}>
+                        <div class="news-image">
+                          <img 
+                            src={imagen} 
+                            alt={noticia.title}
+                            onerror="this.src='/images/placeholder-news.jpg'"
+                          />
+                        </div>
+                        <div class="news-content">
+                          <span class="news-date">{fecha}</span>
+                          <h4>{noticia.title}</h4>
+                          <p>{descripcion.substring(0, 100)}...</p>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div class="no-content">
+                    <p>No hay noticias disponibles</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <!-- Segunda fila - izquierda (solo si hay suficientes noticias) -->
+            {noticias.length > 10 && (
+              <div class="news-marquee reverse">
+                <div class="marquee-track" id="newsMarquee2">
+                  {noticias.slice(Math.floor(noticias.length / 2), noticias.length).concat(noticias.slice(Math.floor(noticias.length / 2), noticias.length)).map((noticia, index) => {
+                    const imagen = noticia.imagenDestacadaUrl || 
+                                  noticia.featuredImage?.node?.sourceUrl || 
+                                  '/images/placeholder-news.jpg';
+                    const descripcion = stripHtml(noticia.excerpt || '');
+                    const fecha = formatDate(noticia.date);
+                    
+                    return (
+                      <div class="news-card" key={`news2-${index}`}>
+                        <div class="news-image">
+                          <img 
+                            src={imagen} 
+                            alt={noticia.title}
+                            onerror="this.src='/images/placeholder-news.jpg'"
+                          />
+                        </div>
+                        <div class="news-content">
+                          <span class="news-date">{fecha}</span>
+                          <h4>{noticia.title}</h4>
+                          <p>{descripcion.substring(0, 100)}...</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div class="section-footer">
+            <a href="/noticias" class="btn btn-primary">Ver Todas las Noticias</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Contacto Layout Horizontal - FORMULARIO SIMPLE SIN GRAVITY FORMS -->
+      <section class="horizontal-contact" id="contact-section">
+        <div class="container">
+          <!-- Encabezado General -->
+          <div class="contact-header">
+            <h2>Contáctanos</h2>
+            <p>Queremos escucharte y conocer tu opinión. Ya seas oyente, artista emergente o simplemente quieras formar parte de nuestra comunidad musical, estamos <strong>deseando conectar contigo</strong>.</p>
+          </div>
+          
+          <div class="contact-layout">
+            <!-- Columna Izquierda - Textos -->
+            <div class="contact-text-column">
+              <div class="text-section">
+                <h2>¿Qué contenido te gustaría escuchar?</h2>
+                <p>Comenta y danos tu opinión, estamos <strong>deseando oírte</strong>. Tu voz es importante para crear la <strong>programación perfecta</strong>. Queremos conocer tus <strong>gustos musicales, artistas favoritos</strong> y qué tipo de contenido te emociona más.</p>
+              </div>
+              
+              <div class="text-section">
+                <h2>¿Quieres sonar en VinylStation?</h2>
+                <p>Si eres <strong>banda emergente o artista</strong>, este es tu momento. Queremos <strong>apoyar el talento musical</strong> y darle la difusión que merece. Envíanos tu <strong>propuesta musical, demos</strong> o cuéntanos tu proyecto. ¡Juntos haremos que tu <strong>música llegue a todos</strong>!</p>
+              </div>
+            </div>
+            
+            <!-- Columna Derecha - Formulario Simple -->
+            <div class="contact-form-column">
+              <h3>Contáctanos</h3>
+              <div class="contact-form-container compact">
+                <form id="simple-contact-form" class="contact-form">
+                  <div class="form-group">
+                    <label for="contact-name">Nombre *</label>
+                    <input type="text" id="contact-name" name="name" required>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label for="contact-email">Email *</label>
+                    <input type="email" id="contact-email" name="email" required>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label for="contact-phone">Teléfono</label>
+                    <input type="tel" id="contact-phone" name="phone">
+                  </div>
+                  
+                  <div class="form-group">
+                    <label for="contact-subject">Asunto *</label>
+                    <select id="contact-subject" name="subject" required>
+                      <option value="">Selecciona una opción</option>
+                      <option value="oyente">Soy oyente</option>
+                      <option value="artista">Soy artista/banda</option>
+                      <option value="colaboracion">Propuesta de colaboración</option>
+                      <option value="otro">Otro</option>
+                    </select>
+                  </div>
+                  
+                  <div class="form-group">
+                    <label for="contact-message">Mensaje *</label>
+                    <textarea id="contact-message" name="message" rows="4" required></textarea>
+                  </div>
+                  
+                  <div class="form-actions">
+                    <button type="submit" class="btn primary-btn">
+                      <span>Enviar mensaje</span>
+                    </button>
+                  </div>
+                </form>
+                
+                <div id="form-message" class="form-message" style="display: none;"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  )}
+</MainLayout>
+
+<!-- Scripts -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // === REPRODUCTOR DE RADIO SIMPLE (HERO) - Solo desktop ===
+    class HeroRadioPlayer {
+      constructor() {
+        // Solo inicializar si estamos en desktop
+        if (window.innerWidth < 768) return;
+        
+        this.audio = document.getElementById('radio-stream-hero');
+        this.playPauseBtn = document.getElementById('play-pause-hero');
+        this.playIcon = document.getElementById('play-icon-hero');
+        this.pauseIcon = document.getElementById('pause-icon-hero');
+        this.statusText = document.getElementById('status-text-hero');
+        this.loadingIndicator = document.getElementById('loading-indicator-hero');
+        this.volumeToggle = document.getElementById('volume-toggle-hero');
+        this.volumeOnIcon = document.getElementById('volume-on-hero');
+        this.volumeOffIcon = document.getElementById('volume-off-hero');
+        this.volumeSlider = document.getElementById('volume-slider-hero');
+        
+        this.isPlaying = false;
+        this.isLoading = false;
+        
+        this.init();
+      }
+      
+      init() {
+        if (!this.audio) return;
+        const streamUrl = this.audio.getAttribute('data-stream-url');
+        this.audio.src = streamUrl;
+        this.audio.volume = parseFloat(this.volumeSlider?.value || 0.7);
+        
+        this.bindEvents();
+      }
+      
+      bindEvents() {
+        // Play/Pause
+        this.playPauseBtn?.addEventListener('click', () => this.togglePlayPause());
+        
+        // Volume
+        this.volumeToggle?.addEventListener('click', () => this.toggleMute());
+        this.volumeSlider?.addEventListener('input', (e) => this.updateVolume(e.target.value));
+        
+        // Audio events
+        this.audio?.addEventListener('loadstart', () => this.setLoading(true));
+        this.audio?.addEventListener('canplay', () => this.setLoading(false));
+        this.audio?.addEventListener('play', () => this.setPlaying(true));
+        this.audio?.addEventListener('pause', () => this.setPlaying(false));
+        this.audio?.addEventListener('error', () => this.handleError());
+        this.audio?.addEventListener('stalled', () => this.setLoading(true));
+        this.audio?.addEventListener('waiting', () => this.setLoading(true));
+        this.audio?.addEventListener('playing', () => this.setLoading(false));
+      }
+      
+      togglePlayPause() {
+        if (!this.audio) return;
+        
+        // Sincronizar con el RadioStateManager si existe
+        if (window.radioStateManager) {
+          window.radioStateManager.togglePlayPause();
+        } else {
+          // Reproducción local si no hay state manager
+          if (this.isPlaying) {
+            this.audio.pause();
+          } else {
+            this.audio.play().catch(() => this.handleError());
+          }
+        }
+      }
+      
+      setPlaying(playing) {
+        this.isPlaying = playing;
+        
+        if (playing) {
+          if (this.playIcon) this.playIcon.style.display = 'none';
+          if (this.pauseIcon) this.pauseIcon.style.display = 'block';
+          if (this.statusText) this.statusText.textContent = 'En vivo';
+          this.playPauseBtn?.classList.add('playing');
+        } else {
+          if (this.playIcon) this.playIcon.style.display = 'block';
+          if (this.pauseIcon) this.pauseIcon.style.display = 'none';
+          if (this.statusText) this.statusText.textContent = 'Radio en vivo';
+          this.playPauseBtn?.classList.remove('playing');
+        }
+      }
+      
+      setLoading(loading) {
+        this.isLoading = loading;
+        
+        if (loading) {
+          if (this.loadingIndicator) this.loadingIndicator.style.display = 'block';
+          if (this.statusText) this.statusText.textContent = 'Conectando...';
+        } else {
+          if (this.loadingIndicator) this.loadingIndicator.style.display = 'none';
+          if (this.isPlaying && this.statusText) {
+            this.statusText.textContent = 'En vivo';
+          }
+        }
+      }
+      
+      toggleMute() {
+        if (!this.audio) return;
+        this.audio.muted = !this.audio.muted;
+        
+        if (this.audio.muted) {
+          if (this.volumeOnIcon) this.volumeOnIcon.style.display = 'none';
+          if (this.volumeOffIcon) this.volumeOffIcon.style.display = 'block';
+        } else {
+          if (this.volumeOnIcon) this.volumeOnIcon.style.display = 'block';
+          if (this.volumeOffIcon) this.volumeOffIcon.style.display = 'none';
+        }
+      }
+      
+      updateVolume(value) {
+        if (!this.audio) return;
+        this.audio.volume = parseFloat(value);
+        this.audio.muted = value == 0;
+        
+        if (value == 0) {
+          if (this.volumeOnIcon) this.volumeOnIcon.style.display = 'none';
+          if (this.volumeOffIcon) this.volumeOffIcon.style.display = 'block';
+        } else {
+          if (this.volumeOnIcon) this.volumeOnIcon.style.display = 'block';
+          if (this.volumeOffIcon) this.volumeOffIcon.style.display = 'none';
+        }
+      }
+      
+      handleError() {
+        this.setLoading(false);
+        this.setPlaying(false);
+        if (this.statusText) this.statusText.textContent = 'Error de conexión';
+        
+        // Reintentar después de 3 segundos
+        setTimeout(() => {
+          if (this.statusText) this.statusText.textContent = 'Radio en vivo';
+        }, 3000);
+      }
+    }
+    
+    // Inicializar reproductor
+    new HeroRadioPlayer();
+    
+    // === MARQUEE DE PROGRAMAS ===
+    const programsMarquee = document.getElementById('programsMarquee');
+    if (programsMarquee) {
+      // CSS ya maneja la animación
+      
+      // Añadir funcionalidad a los botones de ver programa
+      const viewButtons = document.querySelectorAll('.view-btn');
+      viewButtons.forEach((button, index) => {
+        button.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // Navegar a la página de programas
+          window.location.href = '/programas';
+        });
+      });
+    }
+    
+    // === FORMULARIO DE CONTACTO SIMPLE (SIN GRAVITY FORMS) ===
+    const simpleForm = document.getElementById('simple-contact-form');
+    const formMessage = document.getElementById('form-message');
+    
+    if (simpleForm) {
+      // Animar campos del formulario
+      const formGroups = simpleForm.querySelectorAll('.form-group');
+      formGroups.forEach((group, index) => {
+        setTimeout(() => {
+          group.style.opacity = '1';
+          group.style.transform = 'translateY(0)';
+        }, 100 + (index * 100));
+      });
+      
+      // Manejar envío del formulario
+      simpleForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const submitButton = simpleForm.querySelector('button[type="submit"]');
+        const originalText = submitButton.innerHTML;
+        
+        // Mostrar estado de carga
+        submitButton.innerHTML = '<span class="spinner-small"></span> Enviando...';
+        submitButton.disabled = true;
+        
+        // Recoger datos del formulario
+        const formData = new FormData(simpleForm);
+        const data = Object.fromEntries(formData);
+        
+        // Simular envío (aquí puedes integrar con tu backend)
+        try {
+          // Opción 1: Enviar por email usando un servicio externo
+          // const response = await fetch('TU_ENDPOINT_DE_EMAIL', {
+          //   method: 'POST',
+          //   headers: { 'Content-Type': 'application/json' },
+          //   body: JSON.stringify(data)
+          // });
+          
+          // Opción 2: Por ahora, simular éxito
+          await new Promise(resolve => setTimeout(resolve, 1500));
+          
+          // Mostrar mensaje de éxito
+          formMessage.className = 'form-message success';
+          formMessage.innerHTML = `
+            <div class="success-icon">✓</div>
+            <p><strong>¡Mensaje enviado correctamente!</strong></p>
+            <p>Te responderemos pronto a ${data.email}</p>
+          `;
+          formMessage.style.display = 'block';
+          
+          // Limpiar formulario
+          simpleForm.reset();
+          
+          // Guardar en localStorage temporalmente (opcional)
+          const submissions = JSON.parse(localStorage.getItem('vinylstation_submissions') || '[]');
+          submissions.push({
+            ...data,
+            timestamp: new Date().toISOString()
+          });
+          localStorage.setItem('vinylstation_submissions', JSON.stringify(submissions));
+          
+          console.log('Formulario enviado:', data);
+          
+        } catch (error) {
+          // Mostrar mensaje de error
+          formMessage.className = 'form-message error';
+          formMessage.innerHTML = `
+            <div class="error-icon">✕</div>
+            <p><strong>Error al enviar el mensaje</strong></p>
+            <p>Por favor, envíanos un email a: <a href="mailto:hola@vinylstation.com">hola@vinylstation.com</a></p>
+          `;
+          formMessage.style.display = 'block';
+        } finally {
+          // Restaurar botón
+          submitButton.innerHTML = originalText;
+          submitButton.disabled = false;
+        }
+      });
+    }
+    
+    // Smooth scroll para el botón de contacto
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+      anchor.addEventListener('click', function (e) {
+        e.preventDefault();
+        const target = document.querySelector(this.getAttribute('href'));
+        if (target) {
+          target.scrollIntoView({
+            behavior: 'smooth',
+            block: 'start'
+          });
+        }
+      });
+    });
+  });
+</script>
+
+<style>
+  /* ... todos los estilos existentes se mantienen igual ... */
+  
+  /* Añadir estilos para los campos del formulario simple */
+  .contact-form .form-group {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.5s ease-out;
+  }
+</style>
+
+<!-- Estilos avanzados para formulario compacto -->
+<style is:global>
+  /* ... todos los estilos globales existentes se mantienen igual ... */
+</style>

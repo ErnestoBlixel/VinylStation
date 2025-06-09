@@ -1,0 +1,11 @@
+# Redirects del sitio antiguo al nuevo
+/wp-admin/* https://cms.vinylstation.es/wp-admin/:splat 301
+/wp-login.php https://cms.vinylstation.es/wp-login.php 301
+
+# Redirects de URLs antiguas a nuevas (ejemplos)
+/category/rock /vinilos/page/1/?categoria=rock 301
+/category/jazz /vinilos/page/1/?categoria=jazz 301
+/category/metal /vinilos/page/1/?categoria=metal 301
+
+# Redirect de index.php a inicio
+/index.php / 301
