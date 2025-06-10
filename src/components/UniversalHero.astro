@@ -1,0 +1,220 @@
+---
+// UniversalHero.astro - Hero limpio para todas las páginas
+import { getSiteInfo } from '../lib/wordpress';
+
+// Props del componente
+export interface Props {
+  title?: string;
+  description?: string;
+  showButton?: boolean;
+  buttonText?: string;
+  customClass?: string;
+}
+
+const { 
+  title: customTitle, 
+  description: customDescription, 
+  showButton = false, 
+  buttonText = "Escuchar en vivo",
+  customClass = ""
+} = Astro.props;
+
+// Obtener información del sitio desde WordPress
+const siteInfo = await getSiteInfo();
+
+// Usar título y descripción personalizados o los del sitio
+const heroTitle = customTitle || siteInfo?.title || 'Vinyl Station Radio';
+const heroDescription = customDescription || siteInfo?.description || "Emisora online dedicada a la diversidad musical, el talento emergente y la cultura del vinilo.";
+---
+
+<section class={`universal-hero ${customClass}`}>
+  <div class="hero-content">
+    <img src="/images/logos/logo vinylstation.png" alt="VinylStation Logo" class="hero-logo" />
+    <h1>{heroTitle}</h1>
+    <p class="hero-description">{heroDescription}</p>
+    
+    {showButton && (
+      <div class="cta-buttons">
+        <button id="universal-listen-btn" class="btn primary-btn">{buttonText}</button>
+      </div>
+    )}
+  </div>
+</section>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Auto-play del reproductor si existe el botón
+    const listenBtn = document.getElementById('universal-listen-btn');
+    if (listenBtn) {
+      listenBtn.addEventListener('click', function() {
+        const audioPlayer = document.getElementById('radio-stream') || 
+                           document.getElementById('radio-stream-hero');
+        if (audioPlayer) audioPlayer.play().catch(() => {});
+      });
+    }
+  });
+</script>
+
+<style>
+/* Variables para consistencia */
+:root {
+  --hero-primary: var(--title-color);
+  --hero-primary-dark: #a8935e;
+  --hero-bg: linear-gradient(135deg, #1a1a1a 0%, #232323 100%);
+  --hero-text: var(--text-color);
+  --hero-subtitle: #888;
+}
+
+.universal-hero {
+  position: relative;
+  padding: 6rem 2rem 4rem;
+  text-align: center;
+  background: var(--hero-bg);
+  overflow: hidden;
+  min-height: 350px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero-content {
+  position: relative;
+  z-index: 2;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Logo del hero */
+.hero-logo {
+  width: 100px;
+  height: 100px;
+  object-fit: contain;
+  margin-bottom: 2rem;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+  transition: all 0.3s ease;
+}
+
+.hero-logo:hover {
+  transform: scale(1.05);
+}
+
+/* Título del hero */
+.universal-hero h1 {
+  font-size: 3.5rem;
+  margin: 0 0 1.5rem;
+  font-weight: 700;
+  color: var(--hero-primary);
+  line-height: 1.2;
+}
+
+/* Descripción del hero */
+.hero-description {
+  font-size: 1.3rem;
+  color: var(--hero-subtitle);
+  margin: 0 0 2rem;
+  line-height: 1.6;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Botones CTA */
+.cta-buttons {
+  margin-top: 2rem;
+}
+
+.primary-btn {
+  background: var(--hero-primary);
+  color: var(--color-bg);
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  box-shadow: 0 4px 15px rgba(197, 173, 123, 0.3);
+}
+
+.primary-btn:hover {
+  background: var(--hero-primary-dark);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(197, 173, 123, 0.4);
+}
+
+/* Variantes del hero */
+.universal-hero.compact {
+  padding: 4rem 2rem 3rem;
+  min-height: 250px;
+}
+
+.universal-hero.compact h1 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+}
+
+.universal-hero.compact .hero-description {
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
+}
+
+.universal-hero.compact .hero-logo {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 1.5rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .universal-hero {
+    padding: 4rem 1rem 3rem;
+    min-height: 300px;
+  }
+  
+  .universal-hero h1 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .hero-description {
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .hero-logo {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .universal-hero {
+    padding: 3rem 1rem 2rem;
+  }
+  
+  .universal-hero h1 {
+    font-size: 2rem;
+    line-height: 1.1;
+  }
+  
+  .hero-description {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .hero-logo {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 1rem;
+  }
+  
+  .primary-btn {
+    padding: 0.8rem 1.5rem;
+    font-size: 1rem;
+  }
+}
+</style>

@@ -1,6 +1,7 @@
 ---
 // getStaticPaths() requerido para rutas dinámicas en modo estático
 import MainLayout from '../../../layouts/MainLayout.astro';
+import UniversalHero from '../../../components/UniversalHero.astro';
 import { getSiteInfo, getPageData, getNoticiasPaginadas } from '../../../lib/wordpress.js';
 
 export async function getStaticPaths() {
@@ -103,9 +104,12 @@ const pageInfo = noticiasData?.pageInfo || {};
 const totalPages = pageInfo.totalPages || 1;
 const totalNoticias = pageInfo.totalNoticias || pageInfo.total || noticias.length;
 
-const heroTitle = hasError ? null : (pageData?.title || "Últimas Noticias");
-const heroDescription = hasError ? null : (pageData?.excerpt || "Mantente al día con las últimas noticias de música, vinilo y cultura musical");
-const pageTitle = hasError ? 'Error - Noticias' : (pageData?.seo?.title || `${heroTitle} - Página ${currentPage} - VinylStation`);
+const heroTitle = hasError ? "Error - Noticias" : `Noticias - Página ${currentPage}`;
+const heroDescription = hasError ? 
+  "Error cargando las noticias desde WordPress" : 
+  `Últimas noticias de música, vinilo y cultura. Página ${currentPage} de ${totalPages} - ${totalNoticias} noticias en total.`;
+
+const pageTitle = hasError ? 'Error - Noticias' : (pageData?.seo?.title || `${heroTitle} - VinylStation`);
 const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.metaDesc || heroDescription);
 
 // Helpers para paginación visible (máximo 5 botones)
@@ -130,10 +134,16 @@ const nextUrl = currentPage < totalPages ? `/noticias/page/${currentPage + 1}/` 
 <MainLayout title={pageTitle} description={pageDescription}>
   <div class="main-content">
     {hasError ? (
-      <div class="container hero-container">
+      <div class="container">
+        <UniversalHero 
+          title="Error - Noticias"
+          description="Error conectando con WordPress. Revisa la conexión e intenta de nuevo."
+          customClass="compact"
+        />
+        
         <div class="error-container">
           <div class="error-icon">📰</div>
-          <h1 class="error-title">Error Cargando Noticias</h1>
+          <h2 class="error-title">Error Cargando Noticias</h2>
           <p class="error-message">{errorMessage}</p>
           <div class="error-details">
             <h3>Posibles soluciones:</h3>
@@ -154,49 +164,32 @@ const nextUrl = currentPage < totalPages ? `/noticias/page/${currentPage + 1}/` 
       </div>
     ) : (
       <>
-        {/* HERO */}
-        <div class="container hero-container">
-          <header class="page-header">
-            <div class="site-icon-container">
-              <img src="/images/logos/logo vinylstation.png" alt="VinylStation Logo" class="site-icon" />
-            </div>
-            <h1>{heroTitle}</h1>
-            <p class="page-description">{heroDescription}</p>
-            <div class="news-stats">
-              <div class="stat-card">
-                <span class="stat-number">{totalNoticias}</span>
-                <span class="stat-label">Noticias</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-number">{currentPage}</span>
-                <span class="stat-label">Página</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-number">{totalPages}</span>
-                <span class="stat-label">Total</span>
-              </div>
-              <div class="stat-card">
-                <span class="stat-number">24h</span>
-                <span class="stat-label">Actualizadas</span>
-              </div>
-            </div>
-            <div class="hero-actions">
-              <a href="/programas" class="btn secondary-btn">Ver Programas</a>
-              <a href="#noticias" class="btn primary-btn">Leer Noticias</a>
-            </div>
-          </header>
-        </div>
+        {/* HERO UNIVERSAL SIN EFECTOS */}
+        <UniversalHero 
+          title={heroTitle}
+          description={heroDescription}
+          customClass="compact"
+        />
 
         {/* NOTICIAS */}
         <section id="noticias" class="news-section">
           <div class="container">
             <div class="section-header">
               <div class="section-title-row">
-                <h2>Noticias - Página {currentPage} de {totalPages}</h2>
+                <h2>Últimas Noticias</h2>
+                <div class="news-stats">
+                  <div class="stat-badge">
+                    <span class="stat-number">{totalNoticias}</span>
+                    <span class="stat-label">Noticias</span>
+                  </div>
+                  <div class="stat-badge">
+                    <span class="stat-number">{currentPage}/{totalPages}</span>
+                    <span class="stat-label">Página</span>
+                  </div>
+                </div>
               </div>
               <p>
-                Mostrando {noticias.length} noticias de la página {currentPage}. 
-                Total de {totalNoticias} noticias en {totalPages} páginas.
+                Mantente al día con las últimas noticias de música, vinilo, cultura y actualidad desde VinylStation Radio.
               </p>
             </div>
             
@@ -291,42 +284,27 @@ const nextUrl = currentPage < totalPages ? `/noticias/page/${currentPage + 1}/` 
 </MainLayout>
 
 <style>
-  /* ESTILOS COMPLETOS */
+  /* ESTILOS LIMPIOS PARA NOTICIAS */
   .main-content {
-    background: linear-gradient(
-      135deg,
-      var(--color-bg) 0%,
-      rgba(0, 0, 0, 0.02) 50%,
-      var(--color-bg) 100%
-    );
+    background: linear-gradient(135deg, var(--color-bg) 0%, rgba(0, 0, 0, 0.02) 100%);
     min-height: 100vh;
-    position: relative;
-    overflow: hidden;
   }
   
   .container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 0 1rem;
-    position: relative;
-    z-index: 1;
-  }
-  
-  .hero-container {
-    padding: 4rem 1rem;
-    min-height: 70vh;
-    display: flex;
-    align-items: center;
   }
   
   /* === ESTILOS PARA ERROR === */
   .error-container {
     text-align: center;
-    width: 100%;
     padding: 2rem;
-    background: #1a1a1a;
+    margin: 2rem auto;
+    background: var(--card-bg);
     border-radius: 15px;
-    border: 2px solid #ff3333;
+    border: 2px solid var(--title-color);
+    max-width: 600px;
   }
   
   .error-icon {
@@ -336,15 +314,15 @@ const nextUrl = currentPage < totalPages ? `/noticias/page/${currentPage + 1}/` 
   
   .error-title {
     color: var(--title-color);
-    font-size: 2.5rem;
+    font-size: 2rem;
     margin-bottom: 1rem;
   }
   
   .error-message {
-    color: #fff;
-    font-size: 1.2rem;
+    color: var(--text-color);
+    font-size: 1rem;
     margin-bottom: 2rem;
-    background: #333;
+    background: rgba(0,0,0,0.3);
     padding: 1rem;
     border-radius: 8px;
     font-family: monospace;
@@ -352,11 +330,10 @@ const nextUrl = currentPage < totalPages ? `/noticias/page/${currentPage + 1}/` 
   
   .error-details {
     text-align: left;
-    max-width: 500px;
-    margin: 0 auto 2rem;
-    background: #2a2a2a;
+    background: rgba(0,0,0,0.2);
     padding: 1.5rem;
     border-radius: 8px;
+    margin-bottom: 2rem;
   }
   
   .error-details h3 {
@@ -365,7 +342,7 @@ const nextUrl = currentPage < totalPages ? `/noticias/page/${currentPage + 1}/` 
   }
   
   .error-details ul {
-    color: #ccc;
+    color: var(--text-color);
     list-style-position: inside;
   }
   
@@ -373,169 +350,20 @@ const nextUrl = currentPage < totalPages ? `/noticias/page/${currentPage + 1}/` 
     margin-bottom: 0.5rem;
   }
   
-  .page-header {
-    text-align: center;
-    width: 100%;
-  }
-  
-  .site-icon-container {
+  .error-actions {
     display: flex;
-    justify-content: center;
-    margin-bottom: 2rem;
-  }
-  
-  .site-icon {
-    height: 120px;
-    width: auto;
-    animation: pulse 3s infinite ease-in-out;
-  }
-  
-  @keyframes pulse {
-    0% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255, 51, 51, 0.5)); }
-    50% { transform: scale(1.05); filter: drop-shadow(0 0 8px rgba(255, 51, 51, 0.8)); }
-    100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255, 51, 51, 0.5)); }
-  }
-  
-  h1 {
-    font-size: 4rem;
-    margin: 0 0 1.5rem;
-    color: var(--title-color);
-    position: relative;
-    display: inline-block;
-    font-weight: 800;
-  }
-  
-  h1::after {
-    content: '';
-    position: absolute;
-    bottom: -15px;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 100px;
-    height: 4px;
-    background: linear-gradient(90deg, 
-      transparent, 
-      var(--title-color),
-      transparent);
-    border-radius: 2px;
-  }
-  
-  .page-description {
-    max-width: 800px;
-    margin: 2rem auto 1rem;
-    color: #777;
-    font-size: 1.3rem;
-    line-height: 1.6;
-  }
-
-  .news-stats {
-    display: flex;
-    justify-content: center;
-    gap: 2rem;
-    margin: 2rem auto 0 auto;
-    flex-wrap: wrap;
-  }
-  
-  .stat-card {
-    background: linear-gradient(135deg, rgba(255,51,51,0.10), rgba(255,51,51,0.05));
-    border: 2px solid rgba(255, 51, 51, 0.2);
-    border-radius: 15px;
-    padding: 1.5rem 2rem;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
-    min-width: 120px;
-    transition: all 0.3s ease;
-  }
-  
-  .stat-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
-    border-color: var(--title-color);
-  }
-  
-  .stat-number {
-    font-size: 2.1rem;
-    font-weight: 800;
-    color: var(--title-color);
-    line-height: 1;
-  }
-  
-  .stat-label {
-    font-size: 0.9rem;
-    color: #666;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-  }
-
-  .hero-actions {
-    display: flex;
-    gap: 1.5rem;
+    gap: 1rem;
     justify-content: center;
     flex-wrap: wrap;
-    margin-top: 3rem;
-  }
-
-  .btn {
-    display: inline-block;
-    padding: 1rem 2rem;
-    border-radius: 50px;
-    text-decoration: none;
-    font-weight: 700;
-    font-size: 1.1rem;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-    min-width: 180px;
-    text-align: center;
-    border: none;
-    cursor: pointer;
-  }
-
-  .primary-btn {
-    background: var(--color-primary, #ff3333);
-    color: #ffffff;
-    border: 2px solid var(--color-primary, #ff3333);
-  }
-
-  .primary-btn:hover {
-    background: var(--color-secondary, #bb2424);
-    border-color: var(--color-secondary, #bb2424);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
-  }
-
-  .secondary-btn {
-    background: transparent;
-    color: var(--color-primary, #ff3333);
-    border: 2px solid var(--color-primary, #ff3333);
-  }
-
-  .secondary-btn:hover {
-    background: var(--color-primary, #ff3333);
-    color: #ffffff;
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
   }
 
   .news-section {
-    padding: 0;
-    background: transparent;
-    position: relative;
-    z-index: 1;
-    margin-top: -2rem;
-  }
-
-  .news-section .container {
-    padding: 4rem 1rem 6rem;
+    padding: 4rem 0;
   }
 
   .section-header {
-    text-align: left;
+    text-align: center;
     margin-bottom: 3rem;
-    position: relative;
   }
 
   .section-title-row {
@@ -548,102 +376,70 @@ const nextUrl = currentPage < totalPages ? `/noticias/page/${currentPage + 1}/` 
   }
 
   .section-header h2 {
-    font-size: 3.2rem;
+    font-size: 3rem;
     margin: 0;
     color: var(--title-color);
-    font-weight: 800;
-    letter-spacing: -0.02em;
-    line-height: 1.1;
-    position: relative;
-    display: inline-block;
-    animation: titleSlideIn 1s ease-out;
+    font-weight: 700;
   }
 
-  @keyframes titleSlideIn {
-    0% { transform: translateX(-30px); opacity: 0; }
-    100% { transform: translateX(0); opacity: 1; }
+  .news-stats {
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .stat-badge {
+    background: var(--card-bg);
+    border: 2px solid var(--title-color);
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 80px;
+  }
+  
+  .stat-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--title-color);
+    line-height: 1;
+  }
+  
+  .stat-label {
+    font-size: 0.8rem;
+    color: var(--text-color);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
 
   .section-header p {
-    font-size: 1.3rem;
-    color: #777;
+    font-size: 1.2rem;
+    color: var(--text-color);
     max-width: 800px;
+    margin: 0 auto;
     line-height: 1.6;
-    margin: 2rem 0 0;
-    animation: textFadeIn 1s ease-out 0.3s both;
-  }
-
-  @keyframes textFadeIn {
-    0% { transform: translateY(20px); opacity: 0; }
-    100% { transform: translateY(0); opacity: 1; }
   }
 
   .news-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
     gap: 2rem;
     margin-top: 2rem;
   }
-  
-  @media (max-width: 1200px) {
-    .news-grid {
-      grid-template-columns: repeat(2, 1fr);
-    }
-  }
-  
-  @media (max-width: 600px) {
-    .news-grid {
-      grid-template-columns: 1fr;
-      gap: 1rem;
-    }
-  }
 
   .news-card {
-    background: var(--color-card-bg);
+    background: var(--card-bg);
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    cursor: pointer;
-    display: flex;
-    flex-direction: column;
-    position: relative;
-    border: 1px solid rgba(255, 51, 51, 0.1);
-    animation: cardSlideIn 0.6s ease-out both;
-  }
-
-  @keyframes cardSlideIn {
-    0% { transform: translateY(30px) scale(0.9); opacity: 0; }
-    100% { transform: translateY(0) scale(1); opacity: 1; }
-  }
-
-  .news-card:nth-child(1) { animation-delay: 0.1s; }
-  .news-card:nth-child(2) { animation-delay: 0.15s; }
-  .news-card:nth-child(3) { animation-delay: 0.2s; }
-  .news-card:nth-child(4) { animation-delay: 0.25s; }
-
-  .news-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(45deg, transparent 30%, rgba(255, 51, 51, 0.05) 50%, transparent 70%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
-    pointer-events: none;
-    z-index: 1;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(197, 173, 123, 0.1);
   }
 
   .news-card:hover {
-    transform: translateY(-8px) scale(1.02);
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25), 0 0 15px rgba(255, 51, 51, 0.2);
-    border-color: rgba(255, 51, 51, 0.3);
-  }
-
-  .news-card:hover::before {
-    opacity: 1;
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(197, 173, 123, 0.3);
   }
 
   .news-image {
@@ -660,7 +456,7 @@ const nextUrl = currentPage < totalPages ? `/noticias/page/${currentPage + 1}/` 
   }
 
   .news-card:hover .news-image img {
-    transform: scale(1.1);
+    transform: scale(1.05);
   }
 
   .news-overlay {
@@ -682,19 +478,17 @@ const nextUrl = currentPage < totalPages ? `/noticias/page/${currentPage + 1}/` 
   }
 
   .news-link {
-    background: linear-gradient(135deg, var(--title-color) 0%, #ff6b6b 100%);
-    color: white;
+    background: var(--title-color);
+    color: var(--color-bg);
     padding: 0.8rem 1.5rem;
-    border-radius: 25px;
+    border-radius: 8px;
     text-decoration: none;
     font-weight: 600;
-    transform: translateY(10px);
     transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(255, 51, 51, 0.4);
   }
 
-  .news-card:hover .news-link {
-    transform: translateY(0);
+  .news-link:hover {
+    background: #a8935e;
   }
 
   .news-categories {
@@ -708,39 +502,30 @@ const nextUrl = currentPage < totalPages ? `/noticias/page/${currentPage + 1}/` 
   }
 
   .category-badge {
-    background: linear-gradient(135deg, var(--title-color) 0%, #ff6b6b 100%);
-    color: white;
+    background: var(--title-color);
+    color: var(--color-bg);
     padding: 0.3rem 0.8rem;
     border-radius: 15px;
     font-size: 0.7rem;
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    box-shadow: 0 2px 8px rgba(255, 51, 51, 0.3);
   }
 
   .news-info {
     padding: 1.5rem;
-    flex: 1;
-    display: flex;
-    flex-direction: column;
   }
 
   .news-title-card {
-    font-size: 1.15rem;
+    font-size: 1.2rem;
     font-weight: 700;
     color: var(--title-color);
     margin: 0 0 0.8rem 0;
     line-height: 1.4;
-    transition: color 0.3s ease;
-  }
-
-  .news-card:hover .news-title-card {
-    color: #ff6b6b;
   }
 
   .news-description {
-    color: #777;
+    color: var(--text-color);
     font-size: 0.9rem;
     line-height: 1.5;
     margin: 0 0 1rem 0;
@@ -748,7 +533,6 @@ const nextUrl = currentPage < totalPages ? `/noticias/page/${currentPage + 1}/` 
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
-    flex: 1;
   }
 
   .news-meta {
@@ -756,9 +540,8 @@ const nextUrl = currentPage < totalPages ? `/noticias/page/${currentPage + 1}/` 
     justify-content: space-between;
     align-items: center;
     padding-top: 1rem;
-    border-top: 1px solid rgba(255, 51, 51, 0.1);
+    border-top: 1px solid rgba(197, 173, 123, 0.1);
     font-size: 0.8rem;
-    margin-top: auto;
   }
 
   .news-date {
@@ -769,7 +552,7 @@ const nextUrl = currentPage < totalPages ? `/noticias/page/${currentPage + 1}/` 
   .no-news {
     text-align: center;
     padding: 4rem 2rem;
-    color: #666;
+    color: var(--text-color);
   }
 
   .no-news-icon {
@@ -786,144 +569,121 @@ const nextUrl = currentPage < totalPages ? `/noticias/page/${currentPage + 1}/` 
   .pagination {
     display: flex;
     justify-content: center;
-    align-items: center;
-    gap: 2rem;
-    margin: 3rem 0 1.5rem 0;
+    margin: 3rem 0;
   }
 
   .pagination ul {
     list-style: none;
     display: flex;
-    gap: 0.6rem;
+    gap: 0.5rem;
     padding: 0;
     margin: 0;
   }
 
-  .pagination li {
-    display: inline-block;
-  }
-
   .pagination-link {
     display: inline-block;
-    padding: 0.5rem 1.1rem;
-    border-radius: 20px;
-    background: var(--color-card-bg);
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    background: var(--card-bg);
     color: var(--title-color);
     border: 2px solid var(--title-color);
     font-weight: 600;
     text-decoration: none;
-    font-size: 1.1rem;
     transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(255, 51, 51, 0.1);
-    cursor: pointer;
   }
 
   .pagination-link:hover:not(.disabled):not(.current) {
     background: var(--title-color);
-    color: #fff;
-    border-color: var(--title-color);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(255, 51, 51, 0.3);
+    color: var(--color-bg);
   }
 
   .pagination-link.current {
     background: var(--title-color);
-    color: #fff;
-    border-color: var(--title-color);
-    cursor: default;
-    pointer-events: none;
+    color: var(--color-bg);
   }
 
   .pagination-link.disabled {
     opacity: 0.4;
     cursor: not-allowed;
-    color: #888;
     border-color: #555;
-    background: #1a1a1a;
-    pointer-events: none;
+    color: #555;
   }
 
+  .btn {
+    display: inline-block;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    border: 2px solid;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .primary-btn {
+    background: var(--title-color);
+    color: var(--color-bg);
+    border-color: var(--title-color);
+  }
+
+  .primary-btn:hover {
+    background: #a8935e;
+    border-color: #a8935e;
+  }
+
+  .secondary-btn {
+    background: transparent;
+    color: var(--title-color);
+    border-color: var(--title-color);
+  }
+
+  .secondary-btn:hover {
+    background: var(--title-color);
+    color: var(--color-bg);
+  }
+
+  /* Responsive */
   @media (max-width: 768px) {
-    .main-content {
-      min-height: auto;
-    }
-    
-    .hero-container {
-      padding: 2rem 1rem;
-      min-height: 60vh;
-    }
-    
-    .news-section {
-      margin-top: -1rem;
-    }
-    
-    .news-section .container {
-      padding: 2rem 1rem 4rem;
-    }
-
-    .site-icon {
-      height: 80px;
-    }
-    
-    h1 {
-      font-size: 2.5rem;
-    }
-    
-    .page-description {
-      font-size: 1.1rem;
-      margin: 1.5rem auto 1rem;
-    }
-
-    .hero-actions {
+    .section-title-row {
       flex-direction: column;
       align-items: center;
       gap: 1rem;
     }
-
-    .btn {
-      width: 200px;
-      padding: 0.9rem 1.5rem;
-      font-size: 1rem;
-    }
-
-    .error-title {
-      font-size: 2rem;
-    }
-    
-    .error-message {
-      font-size: 1rem;
-    }
     
     .section-header h2 {
-      font-size: 2.5rem;
-    }
-    
-    .section-header p {
-      font-size: 1.1rem;
-    }
-    
-    .section-title-row {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 1.5rem;
-    }
-  }
-  
-  @media (max-width: 480px) {
-    h1 {
       font-size: 2rem;
     }
     
-    .page-description {
-      font-size: 1rem;
+    .news-grid {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
     }
     
-    .error-title {
-      font-size: 1.5rem;
+    .news-stats {
+      flex-direction: row;
+      justify-content: center;
+    }
+    
+    .error-actions {
+      flex-direction: column;
+      align-items: center;
     }
   }
 
-  html {
-    scroll-behavior: smooth;
+  @media (max-width: 480px) {
+    .section-header h2 {
+      font-size: 1.8rem;
+    }
+    
+    .news-grid {
+      gap: 1rem;
+    }
+    
+    .pagination ul {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
   }
 </style>

@@ -182,8 +182,7 @@ import VinylParticles from '../components/VinylParticles.astro'; // Vinilos flot
     }
   }
   
-  /* Fondo animado con partículas - DESHABILITADO */
-  /*
+  /* Fondo animado con partículas */
   body::before {
     content: '';
     position: fixed;
@@ -198,7 +197,6 @@ import VinylParticles from '../components/VinylParticles.astro'; // Vinilos flot
       radial-gradient(circle at 40% 40%, rgba(197, 173, 123, 0.05) 0%, transparent 50%);
     animation: backgroundFloat 20s ease-in-out infinite;
   }
-  */
 
   main {
     flex: 1; /* Asegura que el main ocupe el espacio disponible para que el footer quede abajo */
@@ -384,8 +382,7 @@ import VinylParticles from '../components/VinylParticles.astro'; // Vinilos flot
 
   /* Botón de cambio de tema global (ahora se maneja en el Header) */
   
-  /* Animación del fondo - DESHABILITADA */
-  /*
+  /* Animación del fondo */
   @keyframes backgroundFloat {
     0%, 100% {
       transform: translate(0, 0) rotate(0deg);
@@ -404,5 +401,4 @@ import VinylParticles from '../components/VinylParticles.astro'; // Vinilos flot
       radial-gradient(circle at 80% 20%, rgba(197, 173, 123, 0.08) 0%, transparent 50%),
       radial-gradient(circle at 40% 40%, rgba(5, 2, 31, 0.03) 0%, transparent 50%);
   }
-  */
 </style>

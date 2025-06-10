@@ -1,5 +1,5 @@
 ---
-// HomeHero.astro
+// HomeHero.astro - Version sin efectos giratorios
 import { getSiteInfo } from '../lib/wordpress';
 const siteInfo = await getSiteInfo();
 const title = siteInfo?.title || 'Vinyl Station Radio';
@@ -9,8 +9,6 @@ const description =
 ---
 
 <section class="home-hero">
-  <div id="particles-js" class="particles-container"></div>
-
   <div class="hero-content">
     <img src="/images/logos/logo vinylstation.png" alt="VinylStation Logo" class="hero-main-logo" />
     <h1>{title}</h1>
@@ -21,46 +19,9 @@ const description =
   </div>
 </section>
 
-<!-- Particles.js -->
-<script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js" is:inline></script>
-<script is:inline>
+<script>
   document.addEventListener('DOMContentLoaded', function() {
-    particlesJS('particles-js', {
-      particles: {
-        number: { value: 32, density: { enable: true, value_area: 600 } },
-        color: { value: "#ffffff" }, // Blancas
-        shape: {
-          type: "circle",
-        },
-        opacity: {
-          value: 0.17,
-          random: true,
-        },
-        size: {
-          value: 26,
-          random: { enable: true, minimumValue: 12 }
-        },
-        line_linked: { enable: false }, // No líneas
-        move: {
-          enable: true,
-          speed: 1.4,
-          direction: "none",
-          random: true,
-          straight: false,
-          out_mode: "out",
-          bounce: false
-        }
-      },
-      interactivity: {
-        detect_on: "canvas",
-        events: {
-          onhover: { enable: true, mode: "repulse" },
-          onclick: { enable: false }
-        }
-      },
-      retina_detect: true
-    });
-    // Extra: play automático
+    // Auto-play del reproductor
     document.getElementById('listen-live-btn').addEventListener('click', function() {
       const audioPlayer = document.getElementById('radio-stream');
       if (audioPlayer) audioPlayer.play().catch(() => {});
@@ -81,17 +42,13 @@ const description =
   align-items: center;
   justify-content: center;
 }
-.particles-container {
-  position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
-  z-index: 1; /* Debajo del hero-content */
-  pointer-events: none;
-}
+
 .hero-content {
   position: relative;
   z-index: 2;
 }
-/* Logo principal del hero con animación */
+
+/* Logo principal del hero SIN animaciones */
 .hero-main-logo {
   width: 80px;
   height: 80px;
@@ -99,21 +56,10 @@ const description =
   margin-bottom: 1.5rem;
   filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
   transition: all 0.3s ease;
-  animation: logoGlow 3s ease-in-out infinite alternate;
 }
 
 .hero-main-logo:hover {
   transform: scale(1.05);
-}
-
-/* Animación sutil de resplandor */
-@keyframes logoGlow {
-  0% {
-    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 10px rgba(255, 255, 255, 0.1));
-  }
-  100% {
-    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
-  }
 }
 
 /* Tamaños responsivos */
@@ -124,3 +70,76 @@ const description =
     margin-bottom: 2rem;
   }
 }
+
+/* Estilos para el título y descripción */
+.home-hero h1 {
+  font-size: 4rem;
+  margin: 0 0 1rem;
+  font-weight: 700;
+  color: var(--title-color);
+}
+
+.home-hero p {
+  font-size: 1.5rem;
+  color: #888;
+  margin: 0 0 3rem;
+  line-height: 1.6;
+}
+
+/* Botón CTA */
+.cta-buttons {
+  margin-top: 2rem;
+}
+
+.primary-btn {
+  background: var(--title-color);
+  color: var(--color-bg);
+  padding: 1rem 2rem;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1.1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.primary-btn:hover {
+  background: #a8935e;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(197, 173, 123, 0.4);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .home-hero {
+    padding: 5rem 1rem 4rem;
+  }
+  
+  .home-hero h1 {
+    font-size: 2.5rem;
+  }
+  
+  .home-hero p {
+    font-size: 1.2rem;
+    margin: 0 0 2rem;
+  }
+  
+  .hero-main-logo {
+    width: 60px;
+    height: 60px;
+    margin-bottom: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-hero h1 {
+    font-size: 2rem;
+  }
+  
+  .home-hero p {
+    font-size: 1rem;
+  }
+}
+</style>
