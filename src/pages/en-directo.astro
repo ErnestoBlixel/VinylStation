@@ -47,6 +47,9 @@ const pageDescription = hasError ? 'Escucha VinylStation Radio en directo' : `Es
                 <div class="now-playing">
                   <h3 id="track-title">VinylStation Radio</h3>
                   <p id="track-artist">En directo desde Fuensalida</p>
+                  <div class="song-progress">
+                    <span id="song-duration">• En Vivo</span>
+                  </div>
                 </div>
                 
                 <div class="player-controls">
@@ -192,7 +195,7 @@ const pageDescription = hasError ? 'Escucha VinylStation Radio en directo' : `Es
 
 <script>
   document.addEventListener('DOMContentLoaded', function() {
-    // === REPRODUCTOR PRINCIPAL DE RADIO ===
+    // === REPRODUCTOR PRINCIPAL DE RADIO CON ZENO API ===
     class MainRadioPlayer {
       constructor() {
         this.audio = document.getElementById('main-radio-stream');
@@ -210,11 +213,18 @@ const pageDescription = hasError ? 'Escucha VinylStation Radio en directo' : `Es
         this.albumArt = document.getElementById('album-artwork');
         this.vinylAnimation = document.querySelector('.vinyl-animation');
         this.progressFill = document.querySelector('.progress-fill');
+        this.songDuration = document.getElementById('song-duration');
         
         this.isPlaying = false;
         this.isLoading = false;
         this.retryCount = 0;
         this.maxRetries = 3;
+        
+        // Configuración de Zeno API
+        this.zenoApiUrl = 'https://api.zeno.fm/mounts/metadata/subscribe/4g7qxnxrloluv';
+        this.metadataUpdateInterval = null;
+        this.lastTrackId = null;
+        this.songHistory = [];
         
         this.init();
       }
@@ -230,9 +240,11 @@ const pageDescription = hasError ? 'Escucha VinylStation Radio en directo' : `Es
         this.bindEvents();
         this.startProgressAnimation();
         
-        // Intentar obtener información de la canción actual
-        this.fetchNowPlaying();
-        setInterval(() => this.fetchNowPlaying(), 30000); // Cada 30 segundos
+        // Iniciar sistema de metadata de Zeno
+        this.startMetadataFetching();
+        
+        // Intentar obtener artwork desde APIs externas
+        this.initArtworkSystem();
       }
       
       bindEvents() {
@@ -401,20 +413,372 @@ const pageDescription = hasError ? 'Escucha VinylStation Radio en directo' : `Es
         }, 200);
       }
       
-      async fetchNowPlaying() {
+      // === MÉTODOS DE ZENO API ===
+      
+      startMetadataFetching() {
+        this.fetchZenoMetadata();
+        this.metadataUpdateInterval = setInterval(() => {
+          this.fetchZenoMetadata();
+        }, 10000); // Cada 10 segundos
+      }
+      
+      async fetchZenoMetadata() {
         try {
-          // Aquí podrías conectar con una API para obtener información actual
-          // Por ahora mantenemos información estática
-          if (this.trackTitle) this.trackTitle.textContent = 'VinylStation Radio';
-          if (this.trackArtist) this.trackArtist.textContent = 'En directo desde Fuensalida';
+          const response = await fetch(this.zenoApiUrl, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Cache-Control': 'no-cache'
+            }
+          });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          const data = await response.json();
+          this.processZenoMetadata(data);
+          
         } catch (error) {
-          console.log('No se pudo obtener información de la canción actual');
+          console.warn('Error obteniendo metadata de Zeno:', error);
+          this.setFallbackMetadata();
+        }
+      }
+      
+      processZenoMetadata(data) {
+        if (!data || !data.streamTitle) {
+          this.setFallbackMetadata();
+          return;
+        }
+        
+        const streamTitle = data.streamTitle;
+        const trackId = data.streamTitle + '_' + Date.now();
+        
+        // Evitar actualizaciones duplicadas
+        if (this.lastTrackId === streamTitle) return;
+        this.lastTrackId = streamTitle;
+        
+        // Parsear título - intentar separar artista y canción
+        const { artist, title } = this.parseStreamTitle(streamTitle);
+        
+        // Actualizar UI
+        this.updateNowPlayingInfo(artist, title, streamTitle);
+        
+        // Añadir a historial
+        this.addToHistory(artist, title, streamTitle);
+        
+        // Buscar artwork
+        this.fetchArtwork(artist, title);
+        
+        console.log('Metadata actualizada:', { artist, title, raw: streamTitle });
+      }
+      
+      parseStreamTitle(streamTitle) {
+        if (!streamTitle) {
+          return { artist: 'VinylStation Radio', title: 'En directo desde Fuensalida' };
+        }
+        
+        // Patrones comunes de separación
+        const separators = [' - ', ' – ', ' — ', ' | ', ' · ', ': '];
+        
+        for (const separator of separators) {
+          if (streamTitle.includes(separator)) {
+            const parts = streamTitle.split(separator);
+            if (parts.length >= 2) {
+              return {
+                artist: parts[0].trim(),
+                title: parts.slice(1).join(separator).trim()
+              };
+            }
+          }
+        }
+        
+        // Si no se puede separar, usar todo como título
+        return {
+          artist: 'VinylStation Radio',
+          title: streamTitle.trim()
+        };
+      }
+      
+      updateNowPlayingInfo(artist, title, rawTitle) {
+        if (this.trackTitle) {
+          this.trackTitle.textContent = title || 'Sin información';
+          this.trackTitle.title = rawTitle; // Tooltip con texto completo
+        }
+        
+        if (this.trackArtist) {
+          this.trackArtist.textContent = artist || 'Artista desconocido';
+        }
+        
+        if (this.songDuration) {
+          this.songDuration.textContent = '• En Vivo';
+        }
+        
+        // Animar cambio de canción
+        this.animateTrackChange();
+        
+        // Mostrar notificación de cambio (opcional)
+        this.showTrackChangeNotification(artist, title);
+      }
+      
+      animateTrackChange() {
+        [this.trackTitle, this.trackArtist].forEach(element => {
+          if (element) {
+            element.style.opacity = '0.5';
+            element.style.transform = 'translateY(-5px)';
+            
+            setTimeout(() => {
+              element.style.opacity = '1';
+              element.style.transform = 'translateY(0)';
+            }, 200);
+          }
+        });
+      }
+      
+      showTrackChangeNotification(artist, title) {
+        // Solo mostrar si no es la información por defecto
+        if (artist === 'VinylStation Radio') return;
+        
+        // Crear notificación temporal
+        const notification = document.createElement('div');
+        notification.className = 'track-change-notification';
+        notification.innerHTML = `
+          <div class="notification-content">
+            <span class="notification-title">Ahora suena</span>
+            <span class="notification-track">${title}</span>
+            <span class="notification-artist">por ${artist}</span>
+          </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Animar entrada
+        setTimeout(() => notification.classList.add('show'), 100);
+        
+        // Animar salida y eliminar
+        setTimeout(() => {
+          notification.classList.remove('show');
+          setTimeout(() => {
+            if (notification.parentNode) {
+              notification.parentNode.removeChild(notification);
+            }
+          }, 300);
+        }, 4000);
+      }
+      
+      addToHistory(artist, title, rawTitle) {
+        const historyItem = {
+          artist,
+          title,
+          rawTitle,
+          timestamp: new Date(),
+          id: Date.now() + Math.random()
+        };
+        
+        this.songHistory.unshift(historyItem);
+        
+        // Mantener solo las últimas 10 canciones
+        if (this.songHistory.length > 10) {
+          this.songHistory = this.songHistory.slice(0, 10);
+        }
+        
+        // Emitir evento para posibles listeners externos
+        window.dispatchEvent(new CustomEvent('trackChanged', {
+          detail: historyItem
+        }));
+      }
+      
+      setFallbackMetadata() {
+        this.updateNowPlayingInfo(
+          'VinylStation Radio', 
+          'Transmitiendo en directo desde Fuensalida', 
+          'VinylStation Radio - En Vivo'
+        );
+      }
+      
+      // === SISTEMA DE ARTWORK ===
+      
+      initArtworkSystem() {
+        // Configurar imagen por defecto
+        this.defaultArtwork = '/images/logos/logo vinylstation.png';
+        this.currentArtwork = this.defaultArtwork;
+      }
+      
+      async fetchArtwork(artist, title) {
+        if (!artist || !title || artist === 'VinylStation Radio') {
+          this.setDefaultArtwork();
+          return;
+        }
+        
+        try {
+          // Intentar Deezer API primero
+          const deezerArtwork = await this.fetchDeezerArtwork(artist, title);
+          if (deezerArtwork) {
+            this.updateArtwork(deezerArtwork);
+            return;
+          }
+          
+          // Fallback a Last.fm si Deezer falla
+          const lastfmArtwork = await this.fetchLastFmArtwork(artist, title);
+          if (lastfmArtwork) {
+            this.updateArtwork(lastfmArtwork);
+            return;
+          }
+          
+          // Si nada funciona, usar imagen por defecto
+          this.setDefaultArtwork();
+          
+        } catch (error) {
+          console.warn('Error obteniendo artwork:', error);
+          this.setDefaultArtwork();
+        }
+      }
+      
+      async fetchDeezerArtwork(artist, title) {
+        try {
+          const searchQuery = encodeURIComponent(`${artist} ${title}`);
+          const url = `https://api.deezer.com/search?q=${searchQuery}&limit=1&output=jsonp&callback=deezerCallback`;
+          
+          return new Promise((resolve) => {
+            // Crear callback global temporal
+            window.deezerCallback = (data) => {
+              if (data && data.data && data.data.length > 0) {
+                const track = data.data[0];
+                const artwork = track.album?.cover_medium || track.album?.cover_big;
+                resolve(artwork);
+              } else {
+                resolve(null);
+              }
+              delete window.deezerCallback;
+            };
+            
+            // Crear script tag para JSONP
+            const script = document.createElement('script');
+            script.src = url;
+            script.onerror = () => resolve(null);
+            document.head.appendChild(script);
+            
+            // Limpiar script después
+            setTimeout(() => {
+              if (script.parentNode) {
+                script.parentNode.removeChild(script);
+              }
+              if (window.deezerCallback) {
+                delete window.deezerCallback;
+                resolve(null);
+              }
+            }, 5000);
+          });
+        } catch (error) {
+          return null;
+        }
+      }
+      
+      async fetchLastFmArtwork(artist, title) {
+        try {
+          // API Key pública de Last.fm (limitada pero funcional)
+          const apiKey = 'b25b959554ed76058ac220b7b2e0a026';
+          const url = `https://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=${apiKey}&artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(title)}&format=json`;
+          
+          const response = await fetch(url);
+          const data = await response.json();
+          
+          if (data.track && data.track.album && data.track.album.image) {
+            const images = data.track.album.image;
+            const largeImage = images.find(img => img.size === 'large') || images[images.length - 1];
+            return largeImage['#text'];
+          }
+          
+          return null;
+        } catch (error) {
+          return null;
+        }
+      }
+      
+      updateArtwork(artworkUrl) {
+        if (!artworkUrl || artworkUrl === this.currentArtwork) return;
+        
+        this.currentArtwork = artworkUrl;
+        
+        if (this.albumArt) {
+          // Precargar imagen
+          const img = new Image();
+          img.onload = () => {
+            // Animar cambio de imagen
+            this.albumArt.style.opacity = '0.7';
+            this.albumArt.style.transform = 'scale(0.95)';
+            
+            setTimeout(() => {
+              this.albumArt.src = artworkUrl;
+              this.albumArt.style.opacity = '1';
+              this.albumArt.style.transform = 'scale(1)';
+            }, 300);
+          };
+          img.onerror = () => this.setDefaultArtwork();
+          img.src = artworkUrl;
+        }
+      }
+      
+      setDefaultArtwork() {
+        if (this.albumArt && this.albumArt.src !== this.defaultArtwork) {
+          this.albumArt.style.opacity = '0.7';
+          setTimeout(() => {
+            this.albumArt.src = this.defaultArtwork;
+            this.albumArt.style.opacity = '1';
+          }, 300);
+        }
+        this.currentArtwork = this.defaultArtwork;
+      }
+      
+      // === MÉTODO PARA LIMPIAR RECURSOS ===
+      
+      destroy() {
+        if (this.metadataUpdateInterval) {
+          clearInterval(this.metadataUpdateInterval);
+        }
+        
+        // Limpiar callbacks de Deezer si existen
+        if (window.deezerCallback) {
+          delete window.deezerCallback;
         }
       }
     }
     
     // Inicializar el reproductor principal
-    new MainRadioPlayer();
+    const radioPlayer = new MainRadioPlayer();
+    
+    // Limpiar recursos al cerrar la página
+    window.addEventListener('beforeunload', () => {
+      radioPlayer.destroy();
+    });
+    
+    // Debug: Escuchar cambios de tracks (solo en desarrollo)
+    window.addEventListener('trackChanged', (event) => {
+      const trackInfo = event.detail;
+      console.log('Nueva canción:', {
+        artista: trackInfo.artist,
+        titulo: trackInfo.title,
+        timestamp: trackInfo.timestamp.toLocaleTimeString('es-ES')
+      });
+    });
+    
+    // Debug: Comando global para ver historial
+    window.getRadioHistory = () => {
+      return radioPlayer.songHistory.map(song => ({
+        artista: song.artist,
+        titulo: song.title,
+        hora: song.timestamp.toLocaleTimeString('es-ES')
+      }));
+    };
+    
+    // Debug: Comando global para obtener metadata actual
+    window.getCurrentTrack = () => {
+      return {
+        artista: radioPlayer.trackArtist?.textContent || 'N/A',
+        titulo: radioPlayer.trackTitle?.textContent || 'N/A',
+        imagen: radioPlayer.currentArtwork || 'N/A'
+      };
+    };
     
     // === EFECTOS VISUALES ===
     
@@ -443,7 +807,7 @@ const pageDescription = hasError ? 'Escucha VinylStation Radio en directo' : `Es
         setTimeout(() => {
           liveIndicator.style.transform = 'scale(1)';
         }, 200);
-      }, 2000);
+      }, 5000);
     }
   });
 </script>
@@ -645,12 +1009,29 @@ const pageDescription = hasError ? 'Escucha VinylStation Radio en directo' : `Es
     margin: 0 0 0.5rem;
     color: var(--live-primary);
     font-weight: 700;
+    transition: all 0.3s ease;
+    min-height: 1.8rem;
+    line-height: 1.2;
   }
   
   .now-playing p {
     font-size: 1rem;
     margin: 0;
     color: #888;
+    transition: all 0.3s ease;
+    min-height: 1.2rem;
+  }
+  
+  .song-progress {
+    margin-top: 0.5rem;
+  }
+  
+  .song-progress span {
+    font-size: 0.85rem;
+    color: var(--live-accent);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
   }
   
   .player-controls {
@@ -983,6 +1364,70 @@ const pageDescription = hasError ? 'Escucha VinylStation Radio en directo' : `Es
     50% {
       transform: translateY(-50px) scale(1.5);
       opacity: 0.3;
+    }
+  }
+  
+  /* ===== NOTIFICACIÓN DE CAMBIO DE CANCIÓN ===== */
+  .track-change-notification {
+    position: fixed;
+    top: 2rem;
+    right: 2rem;
+    background: linear-gradient(135deg, var(--live-card-bg) 0%, rgba(197, 173, 123, 0.1) 100%);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--live-border);
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    max-width: 300px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    transform: translateX(120%);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1000;
+  }
+  
+  .track-change-notification.show {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  
+  .notification-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+  
+  .notification-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--live-accent);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .notification-track {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--live-primary);
+    line-height: 1.2;
+  }
+  
+  .notification-artist {
+    font-size: 0.9rem;
+    color: #888;
+    font-style: italic;
+  }
+  
+  @media (max-width: 768px) {
+    .track-change-notification {
+      top: 1rem;
+      right: 1rem;
+      left: 1rem;
+      max-width: none;
+      transform: translateY(-120%);
+    }
+    
+    .track-change-notification.show {
+      transform: translateY(0);
     }
   }
   
