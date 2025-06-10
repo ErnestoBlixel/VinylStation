@@ -25,3 +25,25 @@ lerna-debug.log*
 # Temporary files
 *.tmp
 *.temp
+
+# Diagnostic and fix scripts
+fix-*.bat
+diagnostico-*.js
+check-*.js
+verificar-*.js
+FIX_*.md
+SOLUCION_*.md
+DIAGNOSTICO_*.md
+limpiar-*.bat
+test-*.js
+
+# Backup files
+*.backup
+*.backup-*
+*.bak
+
+# Temporary images
+*_temp.jpg
+*_temp.png
+*-temp.jpg
+*-temp.png
