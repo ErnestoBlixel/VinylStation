@@ -94,6 +94,59 @@ const pageDescription = hasError ? 'Escucha VinylStation Radio en directo' : `Es
       </div>
     </section>
 
+    <!-- Programación Semanal Widget -->
+    <section class="weekly-schedule">
+      <div class="container">
+        <div class="section-header">
+          <h2>Programación Semanal</h2>
+          <p>Descubre qué programas están <strong>sonando ahora</strong> y qué viene después en <strong>VinylStation Radio</strong>.</p>
+        </div>
+        
+        <div class="schedule-container">
+          <div class="schedule-wrapper">
+            <div class="loading-overlay">
+              <div class="loading-spinner"></div>
+              <p class="loading-text">Cargando programación...</p>
+            </div>
+            <iframe 
+              class="schedule-iframe"
+              src="https://4g7qxnxrloluv.pl.zeno.fm/embed/weekly-program"
+              loading="lazy"
+              title="Programación Semanal VinylStation Radio">
+            </iframe>
+          </div>
+          
+          <div class="schedule-fallback">
+            <div class="fallback-content">
+              <div class="fallback-icon">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2"></rect>
+                  <rect x="7" y="7" width="3" height="9"></rect>
+                  <rect x="14" y="7" width="3" height="5"></rect>
+                </svg>
+              </div>
+              <h3>Programación VinylStation Radio</h3>
+              <div class="fallback-schedule">
+                <div class="schedule-item">
+                  <span class="schedule-time">📻 Lunes a Viernes</span>
+                  <span class="schedule-desc">Programación musical variada</span>
+                </div>
+                <div class="schedule-item">
+                  <span class="schedule-time">🎵 Fines de semana</span>
+                  <span class="schedule-desc">Especiales de vinilo y música emergente</span>
+                </div>
+                <div class="schedule-item">
+                  <span class="schedule-time">📱 24/7</span>
+                  <span class="schedule-desc">La mejor música desde Fuensalida, Toledo</span>
+                </div>
+              </div>
+              <a href="/programas" class="fallback-button">Ver Todos los Programas</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- Información adicional -->
     <section class="live-info">
       <div class="container">
@@ -747,6 +800,647 @@ const pageDescription = hasError ? 'Escucha VinylStation Radio en directo' : `Es
     // Inicializar el reproductor principal
     const radioPlayer = new MainRadioPlayer();
     
+    // === SISTEMA MEJORADO DE METADATA Y CARÁTULAS ===
+    class EnhancedMetadataSystem {
+      constructor(radioPlayer) {
+        this.radioPlayer = radioPlayer;
+        
+        // URLs de APIs múltiples para mayor confiabilidad
+        this.apis = {
+          zeno: 'https://api.zeno.fm/mounts/metadata/subscribe/4g7qxnxrloluv',
+          zenoAlternative: 'https://public.radio-co.com/stations/sb8d5179e9/status',
+          icecast: 'https://stream.zeno.fm/4g7qxnxrloluv.xspf'
+        };
+        
+        this.currentTrack = null;
+        this.retryCount = 0;
+        this.maxRetries = 3;
+        this.updateInterval = null;
+        
+        this.init();
+      }
+      
+      init() {
+        console.log('🎵 Inicializando sistema mejorado de metadata...');
+        this.startMetadataUpdates();
+        this.setupErrorHandling();
+      }
+      
+      startMetadataUpdates() {
+        // Intentar obtener metadata inmediatamente
+        this.fetchMetadata();
+        
+        // Configurar actualizaciones cada 8 segundos
+        this.updateInterval = setInterval(() => {
+          this.fetchMetadata();
+        }, 8000);
+      }
+      
+      async fetchMetadata() {
+        try {
+          console.log('🔄 Obteniendo metadata mejorada...');
+          
+          // Intentar múltiples fuentes en paralelo
+          const metadataPromises = [
+            this.fetchZenoMetadata(),
+            this.fetchIcecastMetadata(),
+            this.fetchShoutcastMetadata()
+          ];
+          
+          const results = await Promise.allSettled(metadataPromises);
+          
+          // Usar el primer resultado exitoso
+          for (const result of results) {
+            if (result.status === 'fulfilled' && result.value) {
+              await this.processMetadata(result.value);
+              this.retryCount = 0;
+              return;
+            }
+          }
+          
+          this.handleMetadataFailure();
+          
+        } catch (error) {
+          console.warn('❌ Error general obteniendo metadata:', error);
+          this.handleMetadataFailure();
+        }
+      }
+      
+      async fetchZenoMetadata() {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
+          
+          const response = await fetch(this.apis.zeno, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Cache-Control': 'no-cache'
+            },
+            signal: controller.signal
+          });
+          
+          clearTimeout(timeoutId);
+          
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          
+          const data = await response.json();
+          console.log('✅ Zeno metadata obtenida:', data);
+          
+          if (data.streamTitle || data.title) {
+            return {
+              title: data.streamTitle || data.title,
+              artist: data.artist || 'Artista Desconocido',
+              listeners: data.listeners || null,
+              source: 'Zeno FM'
+            };
+          }
+          
+          return null;
+        } catch (error) {
+          console.warn('⚠️ Error en Zeno API:', error);
+          return null;
+        }
+      }
+      
+      async fetchIcecastMetadata() {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
+          
+          const response = await fetch(`https://stream.zeno.fm/4g7qxnxrloluv`, {
+            method: 'HEAD',
+            signal: controller.signal
+          });
+          
+          clearTimeout(timeoutId);
+          
+          const streamTitle = response.headers.get('icy-title') || 
+                             response.headers.get('ice-title') ||
+                             response.headers.get('x-audiocast-name');
+          
+          if (streamTitle) {
+            console.log('✅ Icecast metadata obtenida:', streamTitle);
+            return {
+              title: streamTitle,
+              source: 'Icecast'
+            };
+          }
+          
+          return null;
+        } catch (error) {
+          console.warn('⚠️ Error en Icecast:', error);
+          return null;
+        }
+      }
+      
+      async fetchShoutcastMetadata() {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 5000);
+          
+          const proxyUrl = 'https://api.allorigins.win/raw?url=';
+          const streamUrl = encodeURIComponent('https://stream.zeno.fm/4g7qxnxrloluv/status-json.xsl');
+          
+          const response = await fetch(proxyUrl + streamUrl, {
+            signal: controller.signal
+          });
+          
+          clearTimeout(timeoutId);
+          
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          
+          const data = await response.json();
+          console.log('✅ Shoutcast metadata obtenida:', data);
+          
+          if (data.icestats && data.icestats.source) {
+            const source = data.icestats.source;
+            if (source.title) {
+              return {
+                title: source.title,
+                artist: source.artist || 'Artista Desconocido',
+                listeners: source.listeners || 0,
+                source: 'Shoutcast'
+              };
+            }
+          }
+          
+          return null;
+        } catch (error) {
+          console.warn('⚠️ Error en Shoutcast:', error);
+          return null;
+        }
+      }
+      
+      async processMetadata(metadata) {
+        if (!metadata || !metadata.title) return;
+        
+        // Evitar actualizaciones duplicadas
+        if (this.currentTrack && this.currentTrack.title === metadata.title) {
+          return;
+        }
+        
+        console.log('🎵 Procesando nueva metadata:', metadata);
+        
+        // Parsear título y artista
+        const parsed = this.parseTrackInfo(metadata.title, metadata.artist);
+        
+        // Crear objeto de track completo
+        const trackInfo = {
+          ...parsed,
+          originalTitle: metadata.title,
+          listeners: metadata.listeners || null,
+          source: metadata.source || 'Desconocido',
+          timestamp: new Date()
+        };
+        
+        this.currentTrack = trackInfo;
+        
+        // Actualizar UI inmediatamente
+        this.updatePlayerUI(trackInfo);
+        
+        // Buscar carátula en background
+        this.fetchArtworkAsync(trackInfo.artist, trackInfo.title);
+        
+        // Emitir evento
+        window.dispatchEvent(new CustomEvent('enhancedMetadataUpdated', {
+          detail: trackInfo
+        }));
+      }
+      
+      parseTrackInfo(title, artist = null) {
+        if (!title) {
+          return {
+            artist: 'VinylStation Radio',
+            title: 'Transmitiendo en directo desde Fuensalida'
+          };
+        }
+        
+        // Si ya tenemos artista separado, usarlo
+        if (artist && artist !== 'Artista Desconocido') {
+          return {
+            artist: this.cleanString(artist),
+            title: this.cleanString(title)
+          };
+        }
+        
+        // Patrones mejorados de separación
+        const separators = [
+          { pattern: ' - ', priority: 1 },
+          { pattern: ' – ', priority: 1 },
+          { pattern: ' — ', priority: 1 },
+          { pattern: ' | ', priority: 2 },
+          { pattern: ' · ', priority: 3 },
+          { pattern: ': ', priority: 4 },
+          { pattern: ' / ', priority: 5 }
+        ];
+        
+        // Intentar separar con cada patrón
+        for (const sep of separators) {
+          if (title.includes(sep.pattern)) {
+            const parts = title.split(sep.pattern);
+            if (parts.length >= 2 && parts[0].trim() && parts[1].trim()) {
+              return {
+                artist: this.cleanString(parts[0]),
+                title: this.cleanString(parts.slice(1).join(sep.pattern))
+              };
+            }
+          }
+        }
+        
+        // Intentar detectar formato \"Artista\" - Título
+        const quotedArtistMatch = title.match(/^[\"']([^\"']+)[\"']\s*[-–—]\s*(.+)$/);
+        if (quotedArtistMatch) {
+          return {
+            artist: this.cleanString(quotedArtistMatch[1]),
+            title: this.cleanString(quotedArtistMatch[2])
+          };
+        }
+        
+        // Si no se puede separar, usar todo como título
+        return {
+          artist: 'VinylStation Radio',
+          title: this.cleanString(title)
+        };
+      }
+      
+      cleanString(str) {
+        if (!str) return '';
+        
+        return str
+          .trim()
+          .replace(/\s+/g, ' ')
+          .replace(/[\"']/g, '')
+          .replace(/\([^)]*\)/g, '')
+          .replace(/\[[^\]]*\]/g, '')
+          .replace(/\s*[-–—]\s*$/g, '')
+          .trim();
+      }
+      
+      updatePlayerUI(trackInfo) {
+        try {
+          // Actualizar título
+          const titleElement = document.getElementById('track-title');
+          if (titleElement) {
+            titleElement.textContent = trackInfo.title;
+            titleElement.title = `${trackInfo.artist} - ${trackInfo.title}`;
+          }
+          
+          // Actualizar artista
+          const artistElement = document.getElementById('track-artist');
+          if (artistElement) {
+            artistElement.textContent = trackInfo.artist;
+          }
+          
+          // Actualizar información adicional
+          const durationElement = document.getElementById('song-duration');
+          if (durationElement) {
+            const listenerText = trackInfo.listeners ? 
+              `• En Vivo (${trackInfo.listeners} oyentes)` : 
+              '• En Vivo';
+            durationElement.textContent = listenerText;
+          }
+          
+          // Añadir animación de cambio
+          this.animateTrackChange(titleElement, artistElement);
+          
+          // Mostrar notificación si no es la canción por defecto
+          if (trackInfo.artist !== 'VinylStation Radio') {
+            this.showEnhancedNotification(trackInfo);
+          }
+          
+          console.log('✅ UI actualizada:', trackInfo);
+          
+        } catch (error) {
+          console.error('❌ Error actualizando UI:', error);
+        }
+      }
+      
+      animateTrackChange(...elements) {
+        elements.forEach(element => {
+          if (element) {
+            element.style.transition = 'all 0.3s ease';
+            element.style.opacity = '0.6';
+            element.style.transform = 'translateY(-3px)';
+            
+            setTimeout(() => {
+              element.style.opacity = '1';
+              element.style.transform = 'translateY(0)';
+            }, 150);
+          }
+        });
+      }
+      
+      showEnhancedNotification(trackInfo) {
+        // Remover notificación anterior si existe
+        const existing = document.querySelector('.enhanced-track-notification');
+        if (existing) {
+          existing.remove();
+        }
+        
+        // Crear nueva notificación
+        const notification = document.createElement('div');
+        notification.className = 'enhanced-track-notification';
+        notification.innerHTML = `
+          <div class="notification-header">
+            <span class="notification-icon">🎵</span>
+            <span class="notification-label">Ahora Suena</span>
+            <span class="notification-source">${trackInfo.source}</span>
+          </div>
+          <div class="notification-track-info">
+            <div class="notification-title">${trackInfo.title}</div>
+            <div class="notification-artist">por ${trackInfo.artist}</div>
+            ${trackInfo.listeners ? `<div class="notification-listeners">${trackInfo.listeners} oyentes</div>` : ''}
+          </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Animar entrada
+        requestAnimationFrame(() => {
+          notification.classList.add('show');
+        });
+        
+        // Remover después de 5 segundos
+        setTimeout(() => {
+          notification.classList.remove('show');
+          setTimeout(() => {
+            if (notification.parentNode) {
+              notification.remove();
+            }
+          }, 300);
+        }, 5000);
+      }
+      
+      async fetchArtworkAsync(artist, title) {
+        if (!artist || !title || artist === 'VinylStation Radio') {
+          this.setDefaultArtwork();
+          return;
+        }
+        
+        console.log(`🖼️ Buscando carátula para: ${artist} - ${title}`);
+        
+        try {
+          // Intentar múltiples APIs en secuencia
+          const artworkUrl = 
+            await this.fetchItunesArtwork(artist, title) ||
+            await this.fetchDeezerArtwork(artist, title) ||
+            await this.fetchLastFmArtwork(artist, title);
+          
+          if (artworkUrl) {
+            console.log('✅ Carátula encontrada:', artworkUrl);
+            this.updateArtwork(artworkUrl);
+          } else {
+            console.log('❌ No se encontró carátula, usando imagen por defecto');
+            this.setDefaultArtwork();
+          }
+          
+        } catch (error) {
+          console.warn('❌ Error buscando carátula:', error);
+          this.setDefaultArtwork();
+        }
+      }
+      
+      async fetchItunesArtwork(artist, title) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3000);
+          
+          const query = encodeURIComponent(`${artist} ${title}`);
+          const url = `https://itunes.apple.com/search?term=${query}&media=music&entity=song&limit=1`;
+          
+          const response = await fetch(url, {
+            signal: controller.signal
+          });
+          
+          clearTimeout(timeoutId);
+          
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          
+          const data = await response.json();
+          
+          if (data.results && data.results.length > 0) {
+            const result = data.results[0];
+            if (result.artworkUrl100) {
+              // Convertir a imagen de mayor resolución
+              return result.artworkUrl100.replace('100x100', '600x600');
+            }
+          }
+          
+          return null;
+        } catch (error) {
+          console.warn('⚠️ Error en iTunes API:', error);
+          return null;
+        }
+      }
+      
+      async fetchDeezerArtwork(artist, title) {
+        try {
+          const query = encodeURIComponent(`${artist} ${title}`);
+          
+          // Usar JSONP para evitar CORS
+          return new Promise((resolve) => {
+            const callbackName = 'deezerCallback' + Date.now();
+            const timeoutId = setTimeout(() => {
+              cleanup();
+              resolve(null);
+            }, 3000);
+            
+            function cleanup() {
+              clearTimeout(timeoutId);
+              if (window[callbackName]) delete window[callbackName];
+              if (script.parentNode) script.parentNode.removeChild(script);
+            }
+            
+            window[callbackName] = (data) => {
+              cleanup();
+              if (data && data.data && data.data.length > 0) {
+                const track = data.data[0];
+                if (track.album && track.album.cover_medium) {
+                  resolve(track.album.cover_medium);
+                } else {
+                  resolve(null);
+                }
+              } else {
+                resolve(null);
+              }
+            };
+            
+            const script = document.createElement('script');
+            script.src = `https://api.deezer.com/search?q=${query}&limit=1&output=jsonp&callback=${callbackName}`;
+            script.onerror = () => {
+              cleanup();
+              resolve(null);
+            };
+            
+            document.head.appendChild(script);
+          });
+          
+        } catch (error) {
+          console.warn('⚠️ Error en Deezer API:', error);
+          return null;
+        }
+      }
+      
+      async fetchLastFmArtwork(artist, title) {
+        try {
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3000);
+          
+          const apiKey = 'b25b959554ed76058ac220b7b2e0a026';
+          const url = `https://ws.audioscrobbler.com/2.0/?method=track.getInfo&api_key=${apiKey}&artist=${encodeURIComponent(artist)}&track=${encodeURIComponent(title)}&format=json`;
+          
+          const response = await fetch(url, {
+            signal: controller.signal
+          });
+          
+          clearTimeout(timeoutId);
+          
+          if (!response.ok) throw new Error(`HTTP ${response.status}`);
+          
+          const data = await response.json();
+          
+          if (data.track && data.track.album && data.track.album.image) {
+            const images = data.track.album.image;
+            const largeImage = images.find(img => img.size === 'large' || img.size === 'extralarge') || 
+                              images[images.length - 1];
+            
+            if (largeImage && largeImage['#text']) {
+              return largeImage['#text'];
+            }
+          }
+          
+          return null;
+        } catch (error) {
+          console.warn('⚠️ Error en Last.fm API:', error);
+          return null;
+        }
+      }
+      
+      updateArtwork(artworkUrl) {
+        const albumArt = document.getElementById('album-artwork');
+        if (!albumArt || !artworkUrl) return;
+        
+        // Precargar imagen para evitar parpadeos
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        
+        img.onload = () => {
+          // Animar cambio de imagen
+          albumArt.style.transition = 'all 0.4s ease';
+          albumArt.style.opacity = '0.7';
+          albumArt.style.transform = 'scale(0.95)';
+          
+          setTimeout(() => {
+            albumArt.src = artworkUrl;
+            albumArt.style.opacity = '1';
+            albumArt.style.transform = 'scale(1)';
+            
+            // Añadir efecto de brillo
+            albumArt.style.boxShadow = '0 0 20px rgba(197, 173, 123, 0.5)';
+            setTimeout(() => {
+              albumArt.style.boxShadow = '';
+            }, 1000);
+          }, 200);
+        };
+        
+        img.onerror = () => {
+          console.warn('❌ Error cargando imagen, usando por defecto');
+          this.setDefaultArtwork();
+        };
+        
+        img.src = artworkUrl;
+      }
+      
+      setDefaultArtwork() {
+        const albumArt = document.getElementById('album-artwork');
+        if (!albumArt) return;
+        
+        const defaultSrc = '/images/logos/logo vinylstation.png';
+        
+        if (albumArt.src !== defaultSrc) {
+          albumArt.style.transition = 'all 0.3s ease';
+          albumArt.style.opacity = '0.8';
+          
+          setTimeout(() => {
+            albumArt.src = defaultSrc;
+            albumArt.style.opacity = '1';
+          }, 150);
+        }
+      }
+      
+      handleMetadataFailure() {
+        this.retryCount++;
+        
+        if (this.retryCount <= this.maxRetries) {
+          console.log(`⏳ Reintento ${this.retryCount}/${this.maxRetries} en 5 segundos...`);
+          setTimeout(() => {
+            this.fetchMetadata();
+          }, 5000);
+        } else {
+          console.log('❌ Máximo de reintentos alcanzado, usando metadata por defecto');
+          this.setFallbackMetadata();
+          this.retryCount = 0;
+        }
+      }
+      
+      setFallbackMetadata() {
+        const fallbackTrack = {
+          artist: 'VinylStation Radio',
+          title: 'Transmitiendo en directo desde Fuensalida',
+          originalTitle: 'VinylStation Radio - En Vivo',
+          source: 'Local',
+          timestamp: new Date()
+        };
+        
+        this.updatePlayerUI(fallbackTrack);
+        this.setDefaultArtwork();
+      }
+      
+      setupErrorHandling() {
+        // Manejar errores de red
+        window.addEventListener('offline', () => {
+          console.log('📡 Conexión perdida, pausando actualizaciones de metadata');
+          if (this.updateInterval) {
+            clearInterval(this.updateInterval);
+          }
+        });
+        
+        window.addEventListener('online', () => {
+          console.log('📡 Conexión restaurada, reanudando actualizaciones de metadata');
+          this.startMetadataUpdates();
+        });
+      }
+      
+      // Métodos públicos
+      getCurrentTrack() {
+        return this.currentTrack;
+      }
+      
+      forceUpdate() {
+        console.log('🔄 Forzando actualización de metadata...');
+        this.retryCount = 0;
+        this.fetchMetadata();
+      }
+      
+      destroy() {
+        if (this.updateInterval) {
+          clearInterval(this.updateInterval);
+        }
+        console.log('🛑 Sistema de metadata destruido');
+      }
+    }
+    
+    // Inicializar sistema mejorado
+    const enhancedMetadata = new EnhancedMetadataSystem(radioPlayer);
+    
+    // Funciones globales para debugging
+    window.vinylStationMetadata = {
+      getCurrentTrack: () => enhancedMetadata.getCurrentTrack(),
+      forceUpdate: () => enhancedMetadata.forceUpdate(),
+      destroy: () => enhancedMetadata.destroy()
+    };
+    
     // Limpiar recursos al cerrar la página
     window.addEventListener('beforeunload', () => {
       radioPlayer.destroy();
@@ -799,6 +1493,161 @@ const pageDescription = hasError ? 'Escucha VinylStation Radio en directo' : `Es
     
     createSoundWaves();
     
+    // === MANEJO DEL WIDGET DE PROGRAMACIÓN MEJORADO ===
+    function initScheduleWidget() {
+      const iframe = document.querySelector('.schedule-iframe');
+      const loadingOverlay = document.querySelector('.loading-overlay');
+      const fallback = document.querySelector('.schedule-fallback');
+      const wrapper = document.querySelector('.schedule-wrapper');
+      
+      if (!iframe) return;
+      
+      console.log('Inicializando widget de programación...');
+      
+      // Mostrar loading inicialmente
+      if (loadingOverlay) {
+        loadingOverlay.style.display = 'flex';
+        loadingOverlay.style.opacity = '1';
+      }
+      
+      if (fallback) {
+        fallback.style.display = 'none';
+      }
+      
+      // Timeout más largo para detectar si el iframe no carga
+      const loadTimeout = setTimeout(() => {
+        console.warn('Widget de programación no pudo cargar en 12 segundos, mostrando fallback');
+        hideLoadingShowFallback();
+      }, 12000); // 12 segundos timeout
+      
+      // Función para ocultar loading y mostrar fallback
+      function hideLoadingShowFallback() {
+        if (loadingOverlay) {
+          loadingOverlay.style.opacity = '0';
+          setTimeout(() => {
+            loadingOverlay.style.display = 'none';
+          }, 300);
+        }
+        
+        if (fallback) {
+          fallback.style.display = 'block';
+          setTimeout(() => {
+            fallback.style.opacity = '1';
+          }, 100);
+        }
+        
+        if (wrapper) {
+          wrapper.classList.add('widget-error');
+        }
+      }
+      
+      // Función para ocultar loading y mostrar iframe
+      function hideLoadingShowIframe() {
+        if (loadingOverlay) {
+          loadingOverlay.style.opacity = '0';
+          setTimeout(() => {
+            loadingOverlay.style.display = 'none';
+          }, 300);
+        }
+        
+        if (iframe) {
+          iframe.style.opacity = '0';
+          iframe.style.display = 'block';
+          setTimeout(() => {
+            iframe.style.opacity = '1';
+          }, 100);
+        }
+        
+        if (wrapper) {
+          wrapper.classList.add('widget-loaded');
+        }
+      }
+      
+      // Evento cuando el iframe carga exitosamente
+      iframe.onload = () => {
+        console.log('Widget de programación: evento onload disparado');
+        clearTimeout(loadTimeout);
+        
+        // Verificar si el contenido cargó correctamente
+        setTimeout(() => {
+          try {
+            // Intentar acceder al contenido del iframe
+            const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+            if (iframeDoc && iframeDoc.body && iframeDoc.body.innerHTML.trim()) {
+              console.log('Widget de programación cargado exitosamente con contenido');
+              hideLoadingShowIframe();
+            } else {
+              console.warn('Widget cargó pero sin contenido visible');
+              hideLoadingShowFallback();
+            }
+          } catch (e) {
+            // Error de CORS es normal para iframes externos
+            console.log('Widget de programación cargado (CORS normal - esto es esperado)');
+            hideLoadingShowIframe();
+          }
+        }, 1500); // Dar más tiempo para que el contenido interno del iframe cargue
+      };
+      
+      // Evento si el iframe falla al cargar
+      iframe.onerror = () => {
+        console.error('Error cargando widget de programación');
+        clearTimeout(loadTimeout);
+        hideLoadingShowFallback();
+      };
+      
+      // Timeout adicional para contenido interno del iframe
+      setTimeout(() => {
+        if (loadingOverlay && loadingOverlay.style.display !== 'none') {
+          console.log('Timeout secundario - assumiendo que el widget cargó correctamente');
+          clearTimeout(loadTimeout);
+          hideLoadingShowIframe();
+        }
+      }, 8000); // 8 segundos - tiempo razonable para que cargue el contenido
+      
+      // Botón de reintentar en el fallback
+      const retryButton = document.createElement('button');
+      retryButton.className = 'retry-button';
+      retryButton.textContent = 'Reintentar carga';
+      retryButton.style.display = 'none';
+      
+      retryButton.addEventListener('click', () => {
+        console.log('Reintentando carga del widget...');
+        if (fallback) fallback.style.display = 'none';
+        if (loadingOverlay) {
+          loadingOverlay.style.display = 'flex';
+          loadingOverlay.style.opacity = '1';
+        }
+        if (wrapper) {
+          wrapper.classList.remove('widget-error', 'widget-loaded');
+        }
+        
+        // Recargar iframe
+        const currentSrc = iframe.src;
+        iframe.src = '';
+        setTimeout(() => {
+          iframe.src = currentSrc;
+        }, 500);
+        
+        // Reiniciar timeout
+        setTimeout(() => {
+          if (loadingOverlay && loadingOverlay.style.display !== 'none') {
+            hideLoadingShowFallback();
+          }
+        }, 12000);
+      });
+      
+      if (fallback) {
+        fallback.appendChild(retryButton);
+      }
+    }
+    
+    // Inicializar widget de programación con manejo de errores
+    try {
+      initScheduleWidget();
+    } catch (error) {
+      console.error('Error inicializando widget de programación:', error);
+    }
+    
     // Efecto de brillo en el indicador de "EN VIVO"
     const liveIndicator = document.querySelector('.live-status-indicator');
     if (liveIndicator) {
@@ -822,6 +1671,9 @@ const pageDescription = hasError ? 'Escucha VinylStation Radio en directo' : `Es
     --live-card-bg: var(--color-card-bg);
     --live-text: var(--color-text);
     --live-border: rgba(197, 173, 123, 0.1);
+    --schedule-bg: rgba(197, 173, 123, 0.02);
+    --schedule-card: var(--live-card-bg);
+    --schedule-border: var(--live-border);
   }
   
   /* ===== BASE ===== */
@@ -1196,10 +2048,231 @@ const pageDescription = hasError ? 'Escucha VinylStation Radio en directo' : `Es
     100% { transform: rotate(360deg); }
   }
   
+  /* ===== PROGRAMACIÓN SEMANAL WIDGET ===== */
+  .weekly-schedule {
+    padding: 6rem 0;
+    background: var(--schedule-bg);
+    position: relative;
+  }
+  
+  .section-header {
+    text-align: center;
+    max-width: 800px;
+    margin: 0 auto 4rem;
+  }
+  
+  .section-header h2 {
+    font-size: 2.5rem;
+    margin: 0 0 1rem;
+    color: var(--live-primary);
+    font-weight: 700;
+  }
+  
+  .section-header p {
+    font-size: 1.2rem;
+    color: #888;
+    line-height: 1.6;
+    margin: 0;
+  }
+  
+  .schedule-container {
+    max-width: 900px;
+    margin: 0 auto;
+    background: var(--schedule-card);
+    border: 1px solid var(--schedule-border);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .schedule-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--live-primary) 0%, var(--live-accent) 100%);
+  }
+  
+  .schedule-wrapper {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #1a1a1a;
+    min-height: 450px;
+  }
+  
+  .schedule-iframe {
+    width: 100%;
+    height: 450px;
+    border: none;
+    display: none;
+    border-radius: 12px;
+    transition: opacity 0.3s ease;
+  }
+  
+  .loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    z-index: 2;
+    border-radius: 12px;
+    transition: opacity 0.3s ease;
+  }
+  
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(197, 173, 123, 0.2);
+    border-top-color: var(--live-primary);
+    border-radius: 50%;
+    animation: widgetSpin 1s linear infinite;
+  }
+  
+  @keyframes widgetSpin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  
+  .loading-text {
+    color: #888;
+    font-size: 1.1rem;
+    margin: 0;
+    font-weight: 500;
+  }
+  
+  .schedule-fallback {
+    display: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    padding: 2rem;
+    text-align: center;
+    background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
+    border-radius: 12px;
+    min-height: 400px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .fallback-content {
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  
+  .fallback-icon {
+    width: 80px;
+    height: 80px;
+    background: linear-gradient(135deg, var(--live-primary) 0%, var(--live-primary-dark) 100%);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 2rem;
+    color: white;
+  }
+  
+  .fallback-content h3 {
+    font-size: 1.8rem;
+    margin: 0 0 2rem;
+    color: var(--live-primary);
+    font-weight: 700;
+  }
+  
+  .fallback-schedule {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin: 0 0 2rem;
+  }
+  
+  .schedule-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    padding: 1rem;
+    background: rgba(197, 173, 123, 0.1);
+    border-radius: 8px;
+    border: 1px solid var(--schedule-border);
+  }
+  
+  .schedule-time {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--live-primary);
+  }
+  
+  .schedule-desc {
+    font-size: 0.9rem;
+    color: #888;
+  }
+  
+  .fallback-button {
+    display: inline-block;
+    background: linear-gradient(135deg, var(--live-primary) 0%, var(--live-primary-dark) 100%);
+    color: white;
+    padding: 0.8rem 2rem;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(197, 173, 123, 0.3);
+  }
+  
+  .fallback-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(197, 173, 123, 0.4);
+    color: white;
+  }
+  
+  .retry-button {
+    background: var(--live-accent);
+    color: white;
+    border: none;
+    padding: 0.6rem 1.5rem;
+    border-radius: 25px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+  }
+  
+  .retry-button:hover {
+    background: #ff5555;
+    transform: scale(1.05);
+  }
+  
+  /* Estados del widget */
+  .widget-loaded .schedule-iframe {
+    display: block;
+    opacity: 1;
+  }
+  
+  .widget-error .schedule-fallback {
+    display: flex !important;
+    opacity: 1 !important;
+  }
+  
+  .widget-error .retry-button {
+    display: inline-block;
+  }
+  
   /* ===== INFORMACIÓN ADICIONAL ===== */
   .live-info {
     padding: 6rem 0;
-    background: rgba(197, 173, 123, 0.02);
+    background: rgba(197, 173, 123, 0.01);
   }
   
   .info-grid {
@@ -1488,6 +2561,55 @@ const pageDescription = hasError ? 'Escucha VinylStation Radio en directo' : `Es
       height: 50px;
     }
     
+    /* Widget de programación responsive */
+    .weekly-schedule {
+      padding: 4rem 0;
+    }
+    
+    .section-header {
+      margin-bottom: 3rem;
+    }
+    
+    .section-header h2 {
+      font-size: 2rem;
+    }
+    
+    .section-header p {
+      font-size: 1rem;
+    }
+    
+    .schedule-container {
+      padding: 1.5rem;
+      margin: 0 1rem;
+    }
+    
+    .schedule-iframe {
+      height: 400px;
+    }
+    
+    .schedule-wrapper {
+      min-height: 400px;
+    }
+    
+    .fallback-content {
+      padding: 1rem;
+    }
+    
+    .fallback-icon {
+      width: 60px;
+      height: 60px;
+      margin-bottom: 1.5rem;
+    }
+    
+    .fallback-content h3 {
+      font-size: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .schedule-item {
+      padding: 0.8rem;
+    }
+    
     .info-grid {
       grid-template-columns: 1fr;
       gap: 1.5rem;
@@ -1525,12 +2647,241 @@ const pageDescription = hasError ? 'Escucha VinylStation Radio en directo' : `Es
       font-size: 1.2rem;
     }
     
+    /* Widget de programación mobile */
+    .schedule-container {
+      padding: 1rem;
+      margin: 0 0.5rem;
+    }
+    
+    .schedule-iframe {
+      height: 350px;
+    }
+    
+    .schedule-wrapper {
+      min-height: 350px;
+    }
+    
+    .section-header h2 {
+      font-size: 1.8rem;
+    }
+    
+    .fallback-icon {
+      width: 50px;
+      height: 50px;
+    }
+    
+    .fallback-content h3 {
+      font-size: 1.3rem;
+    }
+    
+    .schedule-item {
+      text-align: center;
+      padding: 0.6rem;
+    }
+    
+    .schedule-time {
+      font-size: 0.9rem;
+    }
+    
+    .schedule-desc {
+      font-size: 0.8rem;
+    }
+    
     .links-grid {
       grid-template-columns: 1fr;
     }
     
     .volume-slider {
       width: 60px;
+    }
+  }
+  
+  /* ===== EFECTOS ADICIONALES PARA EL WIDGET ===== */
+  .schedule-container::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+    animation: containerShine 4s ease-in-out infinite;
+  }
+  
+  @keyframes containerShine {
+    0% { left: -100%; }
+    100% { left: 100%; }
+  }
+  
+  .loading-spinner::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    background: var(--live-primary);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0.8;
+    animation: innerPulse 1.5s ease-in-out infinite alternate;
+  }
+  
+  @keyframes innerPulse {
+    0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0.8; }
+    100% { transform: translate(-50%, -50%) scale(1); opacity: 0.3; }
+  }
+  
+  .fallback-icon::before {
+    content: '';
+    position: absolute;
+    top: -5px;
+    left: -5px;
+    right: -5px;
+    bottom: -5px;
+    border: 2px solid var(--live-primary);
+    border-radius: 50%;
+    opacity: 0.3;
+    animation: iconPulse 2s ease-in-out infinite;
+  }
+  
+  @keyframes iconPulse {
+    0%, 100% { transform: scale(1); opacity: 0.3; }
+    50% { transform: scale(1.1); opacity: 0.1; }
+  }
+  
+  /* ===== NOTIFICACIONES MEJORADAS DE METADATA ===== */
+  .enhanced-track-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, var(--live-card-bg) 0%, rgba(197, 173, 123, 0.1) 100%);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--live-border);
+    border-radius: 16px;
+    padding: 16px 20px;
+    max-width: 350px;
+    min-width: 300px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    transform: translateX(120%);
+    opacity: 0;
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 1001;
+    font-family: inherit;
+  }
+  
+  .enhanced-track-notification.show {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  
+  .notification-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    font-size: 0.85rem;
+  }
+  
+  .notification-icon {
+    font-size: 1.2rem;
+  }
+  
+  .notification-label {
+    font-weight: 600;
+    color: var(--live-accent);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex: 1;
+  }
+  
+  .notification-source {
+    background: rgba(197, 173, 123, 0.2);
+    color: var(--live-primary);
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  
+  .notification-track-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .notification-title {
+    font-weight: 700;
+    font-size: 1.1rem;
+    color: var(--live-primary);
+    line-height: 1.3;
+    margin-bottom: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .notification-artist {
+    color: #888;
+    font-size: 0.95rem;
+    font-style: italic;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  
+  .notification-listeners {
+    color: var(--live-accent);
+    font-size: 0.8rem;
+    font-weight: 500;
+    margin-top: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  
+  .notification-listeners::before {
+    content: '👥';
+    font-size: 0.9rem;
+  }
+  
+  /* Mejorar visualización del reproductor */
+  #track-title {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+  
+  #track-artist {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    max-width: 100%;
+  }
+  
+  .album-art img {
+    object-fit: cover;
+    transition: all 0.4s ease;
+  }
+  
+  .album-art img:hover {
+    transform: scale(1.05);
+  }
+  
+  /* Responsive para notificaciones */
+  @media (max-width: 768px) {
+    .enhanced-track-notification {
+      top: 10px;
+      right: 10px;
+      left: 10px;
+      max-width: none;
+      min-width: auto;
+      transform: translateY(-120%);
+    }
+    
+    .enhanced-track-notification.show {
+      transform: translateY(0);
     }
   }
 </style>
