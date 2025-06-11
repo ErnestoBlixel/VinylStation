@@ -80,10 +80,10 @@ const pageDescription =
               <h1>{data.title}</h1>
             </header>
 
-            {data.excerpt && (
+            {data.content && (
               <div class="vinilo-description">
                 <h4>Descripción</h4>
-                <div class="content" set:html={data.excerpt}></div>
+                <div class="content" set:html={data.content}></div>
               </div>
             )}
 
@@ -105,7 +105,7 @@ const pageDescription =
                 {data.camposVinilo?.vsPrecio && (
                   <div class="meta-item">
                     <strong>Precio:</strong>
-                    <span>{data.camposVinilo.vsPrecio}</span>
+                    <span>{data.camposVinilo.vsPrecio}€</span>
                   </div>
                 )}
                 {data.camposVinilo?.vsCategoria && (
@@ -124,7 +124,22 @@ const pageDescription =
             </div>
 
             <div class="vinilo-actions">
-              <a href="/vinilos" class="btn primary-btn">
+              {data.camposVinilo?.vsEnlaceAmazon ? (
+                <a 
+                  href={data.camposVinilo.vsEnlaceAmazon} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  class="btn amazon-btn"
+                  title={`Comprar ${data.title} en Amazon`}
+                >
+                  🛒 Comprar en Amazon - {data.camposVinilo?.vsPrecio ? `${data.camposVinilo.vsPrecio}€` : 'Ver precio'}
+                </a>
+              ) : (
+                <span class="btn disabled-btn" title="Este vinilo no está disponible en Amazon">
+                  🚫 No disponible en Amazon
+                </span>
+              )}
+              <a href="/vinilos" class="btn secondary-btn">
                 ← Volver a todos los vinilos
               </a>
             </div>
@@ -444,19 +459,50 @@ const pageDescription =
     text-align: center;
     border: none;
     cursor: pointer;
+    margin: 0.5rem;
   }
 
-  .primary-btn {
-    background: var(--color-primary, #ff3333);
-    color: #ffffff;
-    border: 2px solid var(--color-primary, #ff3333);
+  .amazon-btn {
+    background: linear-gradient(135deg, #ff9900 0%, #ff7700 100%);
+    color: white;
+    border: 2px solid #ff9900;
+    font-size: 1rem;
+    font-weight: 600;
+    min-width: 280px;
+    box-shadow: 0 4px 15px rgba(255, 153, 0, 0.3);
   }
 
-  .primary-btn:hover {
-    background: var(--color-secondary, #bb2424);
-    border-color: var(--color-secondary, #bb2424);
+  .amazon-btn:hover {
+    background: linear-gradient(135deg, #ff7700 0%, #ff5500 100%);
+    border-color: #ff7700;
     transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
+    box-shadow: 0 8px 25px rgba(255, 153, 0, 0.4);
+    color: white;
+  }
+
+  .disabled-btn {
+    background: #666;
+    color: #999;
+    border: 2px solid #666;
+    cursor: not-allowed;
+  }
+
+  .disabled-btn:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .secondary-btn {
+    background: transparent;
+    color: var(--color-text);
+    border: 2px solid var(--color-text-secondary);
+  }
+
+  .secondary-btn:hover {
+    background: var(--color-text-secondary);
+    color: var(--color-bg);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
   }
 
   /* === CONTENIDO COMPLETO === */
