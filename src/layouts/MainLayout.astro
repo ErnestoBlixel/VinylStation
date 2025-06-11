@@ -12,7 +12,6 @@ const { title, description } = Astro.props;
 // Importar componentes originales
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
-import RadioPlayer from '../components/RadioPlayer.astro'; // Asegúrate que este componente exista y funcione como esperas
 import VinylParticles from '../components/VinylParticles.astro'; // Vinilos flotantes animados
 ---
 
@@ -64,9 +63,7 @@ import VinylParticles from '../components/VinylParticles.astro'; // Vinilos flot
 </head>
 <body>
   {/* Header con reproductor de radio */}
-  <Header>
-    <RadioPlayer />
-  </Header>
+  <Header />
 
   {/* Animación de vinilos flotantes - Posicionado entre header y footer */}
   <VinylParticles />

@@ -390,7 +390,7 @@ export async function getVinilos({ limit = 200, page = null, itemsPerPage = 20 }
             vsArtista
             vsAlbum
             vsCategoria
-            vsEnlaceAmazon
+            vsLinkAmazon
           }
         }
       }
@@ -431,7 +431,7 @@ export async function getVinilos({ limit = 200, page = null, itemsPerPage = 20 }
           vsArtista: v.camposVinilo?.vsArtista || '',
           vsAlbum: v.camposVinilo?.vsAlbum || '',
           vsCategoria: v.camposVinilo?.vsCategoria || '',
-            vsEnlaceAmazon: v.camposVinilo?.vsEnlaceAmazon || '',
+            vsLinkAmazon: v.camposVinilo?.vsLinkAmazon || '',
         },
         seo: {
           title: `${v.title || 'Vinilo'} | VinylStation`,
@@ -488,7 +488,7 @@ export async function getTodosLosVinilos() {
             vsArtista
             vsAlbum
             vsCategoria
-            vsEnlaceAmazon
+            vsLinkAmazon
           }
         }
       }
@@ -548,7 +548,7 @@ export async function getTodosLosVinilos() {
           vsArtista: v.camposVinilo?.vsArtista || '',
           vsAlbum: v.camposVinilo?.vsAlbum || '',
           vsCategoria: v.camposVinilo?.vsCategoria || '',
-          vsEnlaceAmazon: v.camposVinilo?.vsEnlaceAmazon || '',
+          vsLinkAmazon: v.camposVinilo?.vsLinkAmazon || '',
         },
         seo: {
           title: `${v.title || 'Vinilo'} | VinylStation`,
@@ -602,7 +602,7 @@ export async function getVinilosPaginados({ page = 1, itemsPerPage = 20 } = {}) 
             vsArtista
             vsAlbum
             vsCategoria
-            vsEnlaceAmazon
+            vsLinkAmazon
           }
         }
       }
@@ -704,7 +704,7 @@ export async function getVinilosPaginados({ page = 1, itemsPerPage = 20 } = {}) 
           vsArtista: v.camposVinilo?.vsArtista || '',
           vsAlbum: v.camposVinilo?.vsAlbum || '',
           vsCategoria: v.camposVinilo?.vsCategoria || '',
-          vsEnlaceAmazon: v.camposVinilo?.vsEnlaceAmazon || '',
+          vsLinkAmazon: v.camposVinilo?.vsLinkAmazon || '',
         },
         seo: {
           title: `${v.title || 'Vinilo'} | VinylStation`,
@@ -1236,7 +1236,7 @@ export async function getViniloBySlug(slug) {
           vsArtista
           vsAlbum
           vsCategoria
-          vsEnlaceAmazon
+          vsLinkAmazon
         }
         seo {
           title
@@ -1285,7 +1285,7 @@ export async function getViniloBySlug(slug) {
         vsArtista: vinilo.camposVinilo?.vsArtista || '',
         vsAlbum: vinilo.camposVinilo?.vsAlbum || '',
         vsCategoria: vinilo.camposVinilo?.vsCategoria || '',
-        vsEnlaceAmazon: vinilo.camposVinilo?.vsEnlaceAmazon || '',
+        vsLinkAmazon: vinilo.camposVinilo?.vsLinkAmazon || '',
       },
       seo:
         vinilo.seo?.title ? vinilo.seo : {

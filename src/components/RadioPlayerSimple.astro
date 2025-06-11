@@ -1,0 +1,526 @@
+---
+// RadioPlayer Simple y Robusto - Sin APIs externas problemáticas
+import { getEmisora } from '../lib/wordpress';
+
+const STREAM_URL = 'https://stream.zeno.fm/4g7qxnxrloluv';
+const emisora = await getEmisora();
+const RADIO_TITLE = emisora?.title || 'Vinyl Station Radio';
+---
+
+<div class="simple-radio-player">
+  <div class="radio-info">
+    <div class="radio-album-art">
+      <div class="vinyl-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <circle cx="12" cy="12" r="3"></circle>
+        </svg>
+      </div>
+    </div>
+    <div class="radio-details">
+      <div class="station-name">{RADIO_TITLE}</div>
+      <div class="track-info">
+        <span class="track-title" id="track-title">Transmisión en vivo</span>
+        <span class="track-artist" id="track-artist">Música en vinilo 24/7</span>
+      </div>
+      <div class="live-indicator">
+        <span class="live-dot" id="live-dot"></span>
+        <span class="live-text">EN VIVO</span>
+      </div>
+    </div>
+  </div>
+  
+  <div class="radio-controls">
+    <button id="play-pause-btn" class="play-button" aria-label="Reproducir">
+      <svg class="play-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+      </svg>
+      <svg class="pause-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="6" y="4" width="4" height="16"></rect>
+        <rect x="14" y="4" width="4" height="16"></rect>
+      </svg>
+    </button>
+    
+    <div class="volume-control">
+      <button id="mute-btn" class="volume-button" aria-label="Silenciar">
+        <svg class="volume-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+        </svg>
+        <svg class="mute-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+          <line x1="23" y1="9" x2="17" y2="15"></line>
+          <line x1="17" y1="9" x2="23" y2="15"></line>
+        </svg>
+      </button>
+      <input type="range" id="volume-slider" min="0" max="100" value="70" class="volume-slider" aria-label="Volumen">
+    </div>
+  </div>
+</div>
+
+<script is:inline>
+document.addEventListener('DOMContentLoaded', function() {
+  console.log('🎵 Inicializando reproductor simple...');
+  
+  // Elementos del DOM
+  const playButton = document.getElementById('play-pause-btn');
+  const muteButton = document.getElementById('mute-btn');
+  const volumeSlider = document.getElementById('volume-slider');
+  const liveDot = document.getElementById('live-dot');
+  const trackTitle = document.getElementById('track-title');
+  const trackArtist = document.getElementById('track-artist');
+  
+  // Variables de estado
+  let audio = null;
+  let isPlaying = false;
+  let isMuted = false;
+  let currentVolume = 0.7;
+  
+  // URL del stream
+  const streamURL = 'https://stream.zeno.fm/4g7qxnxrloluv';
+  
+  // Inicializar audio
+  function initializeAudio() {
+    if (audio) {
+      audio.pause();
+      audio = null;
+    }
+    
+    audio = new Audio(streamURL);
+    audio.preload = 'none';
+    audio.volume = currentVolume;
+    
+    // Event listeners del audio
+    audio.addEventListener('play', () => {
+      console.log('▶️ Reproducción iniciada');
+      isPlaying = true;
+      updateUI();
+    });
+    
+    audio.addEventListener('pause', () => {
+      console.log('⏸️ Reproducción pausada');
+      isPlaying = false;
+      updateUI();
+    });
+    
+    audio.addEventListener('error', (e) => {
+      console.error('❌ Error de audio:', e);
+      isPlaying = false;
+      updateUI();
+      showError('Error al conectar con la radio');
+    });
+    
+    audio.addEventListener('loadstart', () => {
+      console.log('🔄 Conectando...');
+      updateTrackInfo('Conectando...', 'Por favor espera');
+    });
+    
+    audio.addEventListener('canplay', () => {
+      console.log('✅ Listo para reproducir');
+      updateTrackInfo('Transmisión en vivo', 'Música en vinilo 24/7');
+    });
+  }
+  
+  // Actualizar interfaz de usuario
+  function updateUI() {
+    // Botón play/pause
+    if (isPlaying) {
+      playButton.classList.add('playing');
+      playButton.setAttribute('aria-label', 'Pausar');
+      liveDot.classList.add('active');
+    } else {
+      playButton.classList.remove('playing');
+      playButton.setAttribute('aria-label', 'Reproducir');
+      liveDot.classList.remove('active');
+    }
+    
+    // Botón mute
+    if (isMuted) {
+      muteButton.classList.add('muted');
+      muteButton.setAttribute('aria-label', 'Activar sonido');
+    } else {
+      muteButton.classList.remove('muted');
+      muteButton.setAttribute('aria-label', 'Silenciar');
+    }
+    
+    // Slider de volumen
+    volumeSlider.value = isMuted ? 0 : Math.round(currentVolume * 100);
+  }
+  
+  // Actualizar información de la pista
+  function updateTrackInfo(title, artist) {
+    if (trackTitle) trackTitle.textContent = title;
+    if (trackArtist) trackArtist.textContent = artist;
+  }
+  
+  // Mostrar error
+  function showError(message) {
+    updateTrackInfo('Error de conexión', message);
+    setTimeout(() => {
+      updateTrackInfo('Transmisión en vivo', 'Música en vinilo 24/7');
+    }, 3000);
+  }
+  
+  // Event listeners
+  playButton.addEventListener('click', async () => {
+    try {
+      if (!audio) {
+        initializeAudio();
+      }
+      
+      if (!isPlaying) {
+        await audio.play();
+      } else {
+        audio.pause();
+      }
+    } catch (error) {
+      console.error('Error al reproducir:', error);
+      showError('Error al iniciar reproducción');
+    }
+  });
+  
+  muteButton.addEventListener('click', () => {
+    if (audio) {
+      isMuted = !isMuted;
+      audio.volume = isMuted ? 0 : currentVolume;
+      updateUI();
+    }
+  });
+  
+  volumeSlider.addEventListener('input', (e) => {
+    const newVolume = e.target.value / 100;
+    currentVolume = newVolume;
+    
+    if (audio) {
+      audio.volume = newVolume;
+      isMuted = newVolume === 0;
+      updateUI();
+    }
+  });
+  
+  // Inicialización
+  updateUI();
+  console.log('✅ Reproductor simple inicializado');
+});
+</script>
+
+<style>
+.simple-radio-player {
+  display: flex;
+  align-items: center;
+  background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+  border-radius: 12px;
+  padding: 16px;
+  color: #fff;
+  width: 100%;
+  max-width: 400px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(197, 173, 123, 0.2);
+  position: relative;
+  overflow: hidden;
+}
+
+.simple-radio-player::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #c5ad7b, #ff6b6b, #c5ad7b);
+  opacity: 0.8;
+}
+
+.radio-info {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  margin-right: 16px;
+}
+
+.radio-album-art {
+  width: 50px;
+  height: 50px;
+  background: rgba(197, 173, 123, 0.1);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.vinyl-icon {
+  color: #c5ad7b;
+  opacity: 0.8;
+}
+
+.radio-details {
+  flex: 1;
+  min-width: 0;
+}
+
+.station-name {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #c5ad7b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.track-info {
+  margin-bottom: 6px;
+}
+
+.track-title {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.track-artist {
+  display: block;
+  font-size: 0.75rem;
+  color: #aaa;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.live-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #666;
+  transition: all 0.3s ease;
+}
+
+.live-dot.active {
+  background: #ff6b6b;
+  box-shadow: 0 0 8px rgba(255, 107, 107, 0.6);
+  animation: pulse 2s infinite;
+}
+
+.live-text {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+@keyframes pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.7);
+  }
+  70% {
+    box-shadow: 0 0 0 8px rgba(255, 107, 107, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 107, 107, 0);
+  }
+}
+
+.radio-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.play-button {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: linear-gradient(135deg, #c5ad7b, #b8a06e);
+  color: #1a1a1a;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  position: relative;
+  box-shadow: 0 2px 8px rgba(197, 173, 123, 0.3);
+}
+
+.play-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(197, 173, 123, 0.4);
+}
+
+.play-button:active {
+  transform: scale(0.95);
+}
+
+.play-button .play-icon,
+.play-button .pause-icon {
+  position: absolute;
+  transition: all 0.2s ease;
+}
+
+.play-button .pause-icon {
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+.play-button.playing .play-icon {
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+.play-button.playing .pause-icon {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.volume-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.volume-button {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.volume-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.volume-button .volume-icon,
+.volume-button .mute-icon {
+  position: absolute;
+  transition: all 0.2s ease;
+}
+
+.volume-button .mute-icon {
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+.volume-button.muted .volume-icon {
+  opacity: 0;
+  transform: scale(0.8);
+}
+
+.volume-button.muted .mute-icon {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.volume-slider {
+  -webkit-appearance: none;
+  width: 60px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.2);
+  outline: none;
+  cursor: pointer;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #c5ad7b;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #c5ad7b;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 2px 8px rgba(197, 173, 123, 0.4);
+}
+
+.volume-slider::-moz-range-thumb:hover {
+  transform: scale(1.2);
+  box-shadow: 0 2px 8px rgba(197, 173, 123, 0.4);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+  .simple-radio-player {
+    padding: 12px;
+    max-width: 100%;
+  }
+  
+  .radio-album-art {
+    width: 40px;
+    height: 40px;
+    margin-right: 10px;
+  }
+  
+  .vinyl-icon svg {
+    width: 24px;
+    height: 24px;
+  }
+  
+  .station-name {
+    font-size: 0.7rem;
+  }
+  
+  .track-title {
+    font-size: 0.8rem;
+  }
+  
+  .track-artist {
+    font-size: 0.7rem;
+  }
+  
+  .volume-slider {
+    width: 50px;
+  }
+}
+
+@media (max-width: 400px) {
+  .simple-radio-player {
+    flex-direction: column;
+    gap: 12px;
+    text-align: center;
+  }
+  
+  .radio-info {
+    margin-right: 0;
+    margin-bottom: 0;
+  }
+  
+  .volume-slider {
+    width: 80px;
+  }
+}
+</style>

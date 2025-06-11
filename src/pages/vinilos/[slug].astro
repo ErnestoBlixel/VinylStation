@@ -114,35 +114,53 @@ const pageDescription =
                     <span>{data.camposVinilo.vsCategoria}</span>
                   </div>
                 )}
-                {data.date && (
-                  <div class="meta-item">
-                    <strong>Fecha de publicación:</strong>
-                    <span>{new Date(data.date).toLocaleDateString('es-ES')}</span>
-                  </div>
-                )}
+
               </div>
             </div>
 
             <div class="vinilo-actions">
-              {data.camposVinilo?.vsEnlaceAmazon ? (
-                <a 
-                  href={data.camposVinilo.vsEnlaceAmazon} 
-                  target="_blank" 
-                  rel="noopener noreferrer" 
-                  class="btn amazon-btn"
-                  title={`Comprar ${data.title} en Amazon`}
-                >
-                  🛒 Comprar en Amazon - {data.camposVinilo?.vsPrecio ? `${data.camposVinilo.vsPrecio}€` : 'Ver precio'}
+              <div class="action-buttons">
+                {data.camposVinilo?.vsLinkAmazon ? (
+                  <a 
+                    href={data.camposVinilo.vsLinkAmazon} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    class="btn amazon-btn"
+                    title={`Comprar ${data.title} en Amazon`}
+                  >
+                    🛒 Comprar en Amazon - {data.camposVinilo?.vsPrecio ? `${data.camposVinilo.vsPrecio}€` : 'Ver precio'}
+                  </a>
+                ) : (
+                  <span class="btn disabled-btn" title="Este vinilo no está disponible en Amazon">
+                    🚫 No disponible en Amazon
+                  </span>
+                )}
+                <a href="/vinilos" class="btn secondary-btn">
+                  ← Volver a todos los vinilos
                 </a>
-              ) : (
-                <span class="btn disabled-btn" title="Este vinilo no está disponible en Amazon">
-                  🚫 No disponible en Amazon
-                </span>
-              )}
-              <a href="/vinilos" class="btn secondary-btn">
-                ← Volver a todos los vinilos
-              </a>
+              </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Información de Afiliación Amazon -->
+    <section class="amazon-affiliate-info">
+      <div class="container">
+        <div class="affiliate-card">
+          <div class="affiliate-icon">🤝</div>
+          <div class="affiliate-content">
+            <h3>Apoya a VinylStation Radio</h3>
+            <p>
+              Somos afiliados de Amazon. Cuando compras a través de nuestros enlaces, 
+              recibes el mismo precio pero nosotros obtenemos una pequeña comisión que 
+              nos ayuda a mantener la emisora funcionando y a seguir compartiendo 
+              la mejor música en vinilo contigo.
+            </p>
+            <p class="affiliate-thanks">
+              ¡Gracias por apoyar a nuestra comunidad musical! 🎵
+            </p>
           </div>
         </div>
       </div>
@@ -253,17 +271,17 @@ const pageDescription =
   
   .vinilo-layout {
     display: grid;
-    grid-template-columns: 1fr 1.5fr;
+    grid-template-columns: 1fr 1fr;
     gap: 4rem;
     align-items: stretch;
-    height: 600px;
+    min-height: 700px;
   }
   
   @media (max-width: 968px) {
     .vinilo-layout {
       grid-template-columns: 1fr;
       gap: 2rem;
-      height: auto;
+      min-height: auto;
     }
     
     .vinilo-image-section {
@@ -281,12 +299,15 @@ const pageDescription =
     position: sticky;
     top: 2rem;
     animation: fadeInUp 0.8s ease-out;
-    height: 600px;
+    height: 100%;
+    display: flex;
+    align-items: stretch;
   }
   
   .vinilo-image-section .main-image {
     position: relative;
-    aspect-ratio: 1/1;
+    width: 100%;
+    height: 100%;
     border-radius: 20px;
     overflow: hidden;
     box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
@@ -333,7 +354,7 @@ const pageDescription =
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    height: 600px;
+    height: 100%;
     overflow-y: auto;
     scrollbar-width: none; /* Firefox */
     -ms-overflow-style: none; /* Internet Explorer 10+ */
@@ -438,37 +459,41 @@ const pageDescription =
     font-weight: 500;
   }
 
-  /* === BOTÓN "VOLVER" === */
+  /* === BOTONES === */
   .vinilo-actions {
-    text-align: center;
     padding-top: 2rem;
     border-top: 1px solid var(--color-text-secondary);
+  }
+  
+  .action-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
   }
 
   .btn {
     display: inline-block;
-    padding: 1rem 2rem;
+    padding: 1rem 1.5rem;
     border-radius: 50px;
     text-decoration: none;
     font-weight: 700;
-    font-size: 1.1rem;
+    font-size: 1rem;
     transition: all 0.3s ease;
     position: relative;
     overflow: hidden;
-    min-width: 220px;
+    flex: 1;
     text-align: center;
     border: none;
     cursor: pointer;
-    margin: 0.5rem;
+    min-width: 200px;
   }
 
   .amazon-btn {
     background: linear-gradient(135deg, #ff9900 0%, #ff7700 100%);
     color: white;
     border: 2px solid #ff9900;
-    font-size: 1rem;
+    font-size: 0.95rem;
     font-weight: 600;
-    min-width: 280px;
     box-shadow: 0 4px 15px rgba(255, 153, 0, 0.3);
   }
 
@@ -647,6 +672,15 @@ const pageDescription =
       height: auto;
     }
     
+    .action-buttons {
+      flex-direction: column;
+    }
+    
+    .btn {
+      min-width: auto;
+      margin: 0.25rem 0;
+    }
+    
     .content-body {
       padding: 2rem;
       margin: 0 1rem;
@@ -667,6 +701,11 @@ const pageDescription =
       height: auto;
     }
     
+    .amazon-btn {
+      font-size: 0.9rem;
+      padding: 0.8rem 1.2rem;
+    }
+    
     .content-body {
       padding: 1.5rem;
     }
@@ -677,6 +716,106 @@ const pageDescription =
   }
   
   /* === SMOOTH SCROLL === */
+  /* === SECCIÓN AFILIACIÓN AMAZON === */
+  .amazon-affiliate-info {
+    background: linear-gradient(135deg, rgba(255, 153, 0, 0.05) 0%, rgba(255, 119, 0, 0.02) 100%);
+    padding: 3rem 0;
+    border-top: 1px solid rgba(255, 153, 0, 0.1);
+    position: relative;
+    z-index: 1;
+  }
+  
+  .affiliate-card {
+    background: var(--color-card-bg);
+    border: 2px solid rgba(255, 153, 0, 0.2);
+    border-radius: 20px;
+    padding: 2.5rem;
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    animation: fadeInUp 0.8s ease-out 0.6s both;
+  }
+  
+  .affiliate-card:hover {
+    border-color: rgba(255, 153, 0, 0.4);
+    box-shadow: 0 12px 30px rgba(255, 153, 0, 0.1);
+    transform: translateY(-2px);
+  }
+  
+  .affiliate-icon {
+    font-size: 3rem;
+    background: linear-gradient(135deg, #ff9900 0%, #ff7700 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    flex-shrink: 0;
+  }
+  
+  .affiliate-content {
+    flex: 1;
+  }
+  
+  .affiliate-content h3 {
+    color: var(--title-color);
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    font-weight: 700;
+  }
+  
+  .affiliate-content p {
+    color: var(--color-text);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+  }
+  
+  .affiliate-thanks {
+    color: #ff9900;
+    font-weight: 600;
+    font-size: 1.2rem;
+    margin-bottom: 0;
+  }
+  
+  @media (max-width: 768px) {
+    .amazon-affiliate-info {
+      padding: 2rem 0;
+    }
+    
+    .affiliate-card {
+      flex-direction: column;
+      text-align: center;
+      padding: 2rem;
+      gap: 1.5rem;
+    }
+    
+    .affiliate-icon {
+      font-size: 2.5rem;
+    }
+    
+    .affiliate-content h3 {
+      font-size: 1.5rem;
+    }
+    
+    .affiliate-content p {
+      font-size: 1rem;
+    }
+    
+    .affiliate-thanks {
+      font-size: 1.1rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .affiliate-card {
+      padding: 1.5rem;
+      margin: 0 1rem;
+    }
+  }
+
   html {
     scroll-behavior: smooth;
   }
