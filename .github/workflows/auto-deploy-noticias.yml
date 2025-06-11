@@ -67,3 +67,4 @@ jobs:
         run: |
           echo "🎉 Deploy completed successfully!"
           echo "🌐 New content should be live at vinylstation.es"
+          
