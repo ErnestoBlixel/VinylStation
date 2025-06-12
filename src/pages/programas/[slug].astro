@@ -95,9 +95,9 @@ const heroDescription = data.camposPrograma?.vsDescripcion
 
           <div class="programa-info-section">
             <!-- Descripción del programa -->
-            {data.camposPrograma?.vsDescripcion && (
+            {data.content && (
               <div class="programa-description">
-                <div class="content" set:html={data.camposPrograma.vsDescripcion}></div>
+                <div class="content" set:html={data.content}></div>
               </div>
             )}
 

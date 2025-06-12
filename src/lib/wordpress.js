@@ -124,7 +124,7 @@ export async function getProgramas({ limit = 10 } = {}) {
           date
           # excerpt # Eliminado si no está disponible
           content # Para generar excerpt manualmente
-          imagenPrincipalUrl(size: "medium") 
+          imagenPrincipalUrl 
           imagenPrincipal { 
             sourceUrl
             altText
@@ -136,7 +136,8 @@ export async function getProgramas({ limit = 10 } = {}) {
             }
           }
           camposPrograma {
-            vsDescripcion
+            vsFacebook
+            vsInstagram
           }
           seo {
             title
@@ -192,9 +193,8 @@ export async function getProgramas({ limit = 10 } = {}) {
         imagenPrincipal: { sourceUrl: imgUrl, altText: alt }, 
         excerpt: cleanExcerpt, 
         camposPrograma: {
-          vsDescripcion:
-            p.camposPrograma?.vsDescripcion ||
-            cleanExcerpt,
+          vsFacebook: p.camposPrograma?.vsFacebook || '',
+          vsInstagram: p.camposPrograma?.vsInstagram || '',
         },
         seo:
           p.seo?.title ? p.seo : { 
@@ -389,8 +389,14 @@ export async function getVinilos({ limit = 200, page = null, itemsPerPage = 20 }
             vsPrecio
             vsArtista
             vsAlbum
-            vsCategoria
             vsLinkAmazon
+          }
+          categoriasVinilo {
+            nodes {
+              id
+              name
+              slug
+            }
           }
         }
       }
@@ -430,9 +436,9 @@ export async function getVinilos({ limit = 200, page = null, itemsPerPage = 20 }
           vsPrecio: v.camposVinilo?.vsPrecio || '',
           vsArtista: v.camposVinilo?.vsArtista || '',
           vsAlbum: v.camposVinilo?.vsAlbum || '',
-          vsCategoria: v.camposVinilo?.vsCategoria || '',
-            vsLinkAmazon: v.camposVinilo?.vsLinkAmazon || '',
+          vsLinkAmazon: v.camposVinilo?.vsLinkAmazon || '',
         },
+        categoriasVinilo: v.categoriasVinilo || { nodes: [] },
         seo: {
           title: `${v.title || 'Vinilo'} | VinylStation`,
           metaDesc: generatedExcerpt.substring(0,160),
@@ -487,7 +493,6 @@ export async function getTodosLosVinilos() {
             vsPrecio
             vsArtista
             vsAlbum
-            vsCategoria
             vsLinkAmazon
           }
         }
@@ -547,7 +552,6 @@ export async function getTodosLosVinilos() {
           vsPrecio: v.camposVinilo?.vsPrecio || '',
           vsArtista: v.camposVinilo?.vsArtista || '',
           vsAlbum: v.camposVinilo?.vsAlbum || '',
-          vsCategoria: v.camposVinilo?.vsCategoria || '',
           vsLinkAmazon: v.camposVinilo?.vsLinkAmazon || '',
         },
         seo: {
@@ -601,7 +605,6 @@ export async function getVinilosPaginados({ page = 1, itemsPerPage = 20 } = {}) 
             vsPrecio
             vsArtista
             vsAlbum
-            vsCategoria
             vsLinkAmazon
           }
         }
@@ -703,7 +706,6 @@ export async function getVinilosPaginados({ page = 1, itemsPerPage = 20 } = {}) 
           vsPrecio: v.camposVinilo?.vsPrecio || '',
           vsArtista: v.camposVinilo?.vsArtista || '',
           vsAlbum: v.camposVinilo?.vsAlbum || '',
-          vsCategoria: v.camposVinilo?.vsCategoria || '',
           vsLinkAmazon: v.camposVinilo?.vsLinkAmazon || '',
         },
         seo: {
@@ -780,7 +782,6 @@ async function getVinilosPaginadosConCursorCorregido({ page = 1, itemsPerPage = 
             vsPrecio
             vsArtista
             vsAlbum
-            vsCategoria
           }
         }
       }
@@ -1037,8 +1038,7 @@ function processVinilosPage(pageNodes, allNodes, page, itemsPerPage, pageInfo) {
         vsPrecio: v.camposVinilo?.vsPrecio || '',
         vsArtista: v.camposVinilo?.vsArtista || '',
         vsAlbum: v.camposVinilo?.vsAlbum || '',
-        vsCategoria: v.camposVinilo?.vsCategoria || '',
-      },
+        },
       seo: {
         title: `${v.title || 'Vinilo'} | VinylStation`,
         metaDesc: generatedExcerpt.substring(0, 160),
@@ -1235,8 +1235,14 @@ export async function getViniloBySlug(slug) {
           vsPrecio
           vsArtista
           vsAlbum
-          vsCategoria
           vsLinkAmazon
+        }
+        categoriasVinilo {
+          nodes {
+            id
+            name
+            slug
+          }
         }
         seo {
           title
@@ -1284,9 +1290,9 @@ export async function getViniloBySlug(slug) {
         vsPrecio: vinilo.camposVinilo?.vsPrecio || '',
         vsArtista: vinilo.camposVinilo?.vsArtista || '',
         vsAlbum: vinilo.camposVinilo?.vsAlbum || '',
-        vsCategoria: vinilo.camposVinilo?.vsCategoria || '',
         vsLinkAmazon: vinilo.camposVinilo?.vsLinkAmazon || '',
       },
+      categoriasVinilo: vinilo.categoriasVinilo || { nodes: [] },
       seo:
         vinilo.seo?.title ? vinilo.seo : {
           title: `${vinilo.title || 'Vinilo'} | VinylStation`,
@@ -1331,7 +1337,6 @@ export async function getProgramaBySlug(slug) {
           }
         }
         camposPrograma {
-          vsDescripcion
           vsFacebook
           vsInstagram
           vsWhatsapp
@@ -1442,9 +1447,6 @@ export async function getProgramaBySlug(slug) {
       imagenPrincipal: { sourceUrl: imgUrl, altText: alt },
       excerpt: cleanExcerpt,
       camposPrograma: {
-        vsDescripcion:
-          programa.camposPrograma?.vsDescripcion ||
-          cleanExcerpt,
         vsFacebook: programa.camposPrograma?.vsFacebook || '',
         vsInstagram: programa.camposPrograma?.vsInstagram || '',
         vsWhatsapp: programa.camposPrograma?.vsWhatsapp || '',

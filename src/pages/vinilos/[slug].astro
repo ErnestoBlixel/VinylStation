@@ -108,10 +108,10 @@ const pageDescription =
                     <span>{data.camposVinilo.vsPrecio}€</span>
                   </div>
                 )}
-                {data.camposVinilo?.vsCategoria && (
+                {data.categoriasVinilo?.nodes?.length > 0 && (
                   <div class="meta-item">
                     <strong>Categoría:</strong>
-                    <span>{data.camposVinilo.vsCategoria}</span>
+                    <span>{data.categoriasVinilo.nodes.map(cat => cat.name).join(', ')}</span>
                   </div>
                 )}
 
