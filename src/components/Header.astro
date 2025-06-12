@@ -238,25 +238,38 @@ try {
       if (headerPlayerContainer && window.innerWidth >= 768) {
         headerPlayerContainer.innerHTML = `
           <div class="header-radio-player">
-            <div class="header-radio-info">
-              <div class="header-track-info">
-                <span class="header-track-title" id="header-track-title">VinylStation</span>
-                <span class="header-track-artist" id="header-track-artist">Radio en vivo</span>
-              </div>
-            </div>
+            <audio id="header-radio-stream" preload="none" data-stream-url="https://stream.zeno.fm/4g7qxnxrloluv"></audio>
             
-            <div class="header-radio-controls">
-              <button id="header-play-pause" class="header-play-button" aria-label="Reproducir">
-                <svg class="header-play-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            <div class="header-player-controls">
+              <button id="header-play-pause" class="header-play-button" aria-label="Reproducir/Pausar">
+                <svg id="header-play-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="5,3 19,12 5,21"></polygon>
                 </svg>
-                <svg class="header-pause-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: none;">
+                <svg id="header-pause-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
                   <rect x="6" y="4" width="4" height="16"></rect>
                   <rect x="14" y="4" width="4" height="16"></rect>
                 </svg>
               </button>
               
-              <input type="range" id="header-volume-slider" min="0" max="100" value="70" class="header-volume-slider" aria-label="Volumen">
+              <div class="header-status-info">
+                <span id="header-status-text">Radio en vivo</span>
+                <div id="header-loading-indicator" class="header-loading-dot" style="display: none;"></div>
+              </div>
+              
+              <div class="header-volume-control">
+                <button id="header-volume-toggle" class="header-volume-button" aria-label="Silenciar/Activar sonido">
+                  <svg id="header-volume-on" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polygon points="11,5 6,9 2,9 2,15 6,15 11,19"></polygon>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                  </svg>
+                  <svg id="header-volume-off" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                    <polygon points="11,5 6,9 2,9 2,15 6,15 11,19"></polygon>
+                    <line x1="23" y1="9" x2="17" y2="15"></line>
+                    <line x1="17" y1="9" x2="23" y2="15"></line>
+                  </svg>
+                </button>
+                <input type="range" id="header-volume-slider" class="header-volume-slider" min="0" max="1" step="0.1" value="0.7">
+              </div>
             </div>
           </div>
         `;
@@ -269,83 +282,125 @@ try {
     function initializeHeaderPlayer() {
       const playButton = document.getElementById('header-play-pause');
       const volumeSlider = document.getElementById('header-volume-slider');
-      const trackTitle = document.getElementById('header-track-title');
-      const trackArtist = document.getElementById('header-track-artist');
-      const playIcon = document.querySelector('.header-play-icon');
-      const pauseIcon = document.querySelector('.header-pause-icon');
+      const volumeToggle = document.getElementById('header-volume-toggle');
+      const statusText = document.getElementById('header-status-text');
+      const loadingIndicator = document.getElementById('header-loading-indicator');
+      const playIcon = document.getElementById('header-play-icon');
+      const pauseIcon = document.getElementById('header-pause-icon');
+      const volumeOnIcon = document.getElementById('header-volume-on');
+      const volumeOffIcon = document.getElementById('header-volume-off');
+      const audio = document.getElementById('header-radio-stream');
       
-      let audio = null;
       let isPlaying = false;
-      let currentVolume = 0.7;
-      
+      let isLoading = false;
       const streamURL = 'https://stream.zeno.fm/4g7qxnxrloluv';
       
-      function initializeAudio() {
-        if (audio) {
-          audio.pause();
-          audio = null;
-        }
-        
-        audio = new Audio(streamURL);
-        audio.preload = 'none';
-        audio.volume = currentVolume;
-        
-        audio.addEventListener('play', () => {
-          isPlaying = true;
-          updateHeaderUI();
-        });
-        
-        audio.addEventListener('pause', () => {
-          isPlaying = false;
-          updateHeaderUI();
-        });
-        
-        audio.addEventListener('error', () => {
-          isPlaying = false;
-          updateHeaderUI();
-          if (trackTitle) trackTitle.textContent = 'Error de conexión';
-          if (trackArtist) trackArtist.textContent = 'Reintentar';
-        });
-      }
+      if (!audio) return;
       
-      function updateHeaderUI() {
-        if (isPlaying) {
+      // Configurar audio
+      audio.src = streamURL;
+      audio.volume = parseFloat(volumeSlider?.value || 0.7);
+      
+      function setPlaying(playing) {
+        isPlaying = playing;
+        
+        if (playing) {
           if (playIcon) playIcon.style.display = 'none';
           if (pauseIcon) pauseIcon.style.display = 'block';
+          if (statusText) statusText.textContent = 'En vivo';
           playButton?.classList.add('playing');
         } else {
           if (playIcon) playIcon.style.display = 'block';
           if (pauseIcon) pauseIcon.style.display = 'none';
+          if (statusText) statusText.textContent = 'Radio en vivo';
           playButton?.classList.remove('playing');
         }
       }
       
+      function setLoading(loading) {
+        isLoading = loading;
+        
+        if (loading) {
+          if (loadingIndicator) loadingIndicator.style.display = 'block';
+          if (statusText) statusText.textContent = 'Conectando...';
+        } else {
+          if (loadingIndicator) loadingIndicator.style.display = 'none';
+          if (isPlaying && statusText) {
+            statusText.textContent = 'En vivo';
+          } else if (!isPlaying && statusText) {
+            statusText.textContent = 'Radio en vivo';
+          }
+        }
+      }
+      
+      function toggleMute() {
+        if (!audio) return;
+        audio.muted = !audio.muted;
+        
+        if (audio.muted) {
+          if (volumeOnIcon) volumeOnIcon.style.display = 'none';
+          if (volumeOffIcon) volumeOffIcon.style.display = 'block';
+        } else {
+          if (volumeOnIcon) volumeOnIcon.style.display = 'block';
+          if (volumeOffIcon) volumeOffIcon.style.display = 'none';
+        }
+      }
+      
+      function updateVolume(value) {
+        if (!audio) return;
+        audio.volume = parseFloat(value);
+        audio.muted = value == 0;
+        
+        if (value == 0) {
+          if (volumeOnIcon) volumeOnIcon.style.display = 'none';
+          if (volumeOffIcon) volumeOffIcon.style.display = 'block';
+        } else {
+          if (volumeOnIcon) volumeOnIcon.style.display = 'block';
+          if (volumeOffIcon) volumeOffIcon.style.display = 'none';
+        }
+      }
+      
+      function handleError() {
+        setLoading(false);
+        setPlaying(false);
+        if (statusText) statusText.textContent = 'Error de conexión';
+        
+        // Reintentar después de 3 segundos
+        setTimeout(() => {
+          if (statusText) statusText.textContent = 'Radio en vivo';
+        }, 3000);
+      }
+      
+      // Event listeners
       playButton?.addEventListener('click', async () => {
         try {
-          if (!audio) {
-            initializeAudio();
-          }
-          
           if (!isPlaying) {
+            setLoading(true);
             await audio.play();
           } else {
             audio.pause();
           }
         } catch (error) {
           console.error('Error en reproductor del header:', error);
+          handleError();
         }
       });
       
-      volumeSlider?.addEventListener('input', (e) => {
-        const newVolume = e.target.value / 100;
-        currentVolume = newVolume;
-        
-        if (audio) {
-          audio.volume = newVolume;
-        }
-      });
+      volumeToggle?.addEventListener('click', toggleMute);
+      volumeSlider?.addEventListener('input', (e) => updateVolume(e.target.value));
       
-      updateHeaderUI();
+      // Audio events
+      audio.addEventListener('loadstart', () => setLoading(true));
+      audio.addEventListener('canplay', () => setLoading(false));
+      audio.addEventListener('play', () => setPlaying(true));
+      audio.addEventListener('pause', () => setPlaying(false));
+      audio.addEventListener('error', () => handleError());
+      audio.addEventListener('stalled', () => setLoading(true));
+      audio.addEventListener('waiting', () => setLoading(true));
+      audio.addEventListener('playing', () => setLoading(false));
+      
+      // Inicializar UI
+      setPlaying(false);
     }
     
     // Cargar reproductor en desktop
@@ -575,12 +630,18 @@ try {
     margin: 0 auto;
   }
   
+  /* Ancho completo en modo noche */
+  [data-theme="night"] .header-content {
+    max-width: 100%;
+    padding: 0 2rem;
+  }
+  
   .header-left {
     flex: 0 0 auto;
   }
   
   .logo {
-    font-size: 1rem;
+    font-size: 1.2rem;
     font-weight: bold;
   }
   
@@ -594,8 +655,8 @@ try {
   }
   
   .logo-img {
-    width: 35px;
-    height: 35px;
+    width: 45px;
+    height: 45px;
     object-fit: contain;
     transition: all 0.3s ease;
     animation: logoGlow 3s ease-in-out infinite alternate;
@@ -603,22 +664,22 @@ try {
   }
   
   .logo-text {
-    font-size: 1.1rem;
-    font-weight: 600; /* Más fino como solicitaste */
+    font-size: 1.3rem;
+    font-weight: 600;
   }
   
   @media (min-width: 768px) {
     .logo {
-      font-size: 1.6rem;
+      font-size: 1.8rem;
     }
     
     .logo-img {
-      width: 50px;
-      height: 50px;
+      width: 60px;
+      height: 60px;
     }
     
     .logo-text {
-      font-size: 1.3rem;
+      font-size: 1.5rem;
       font-weight: 700;
     }
   }
@@ -772,10 +833,10 @@ try {
   .main-nav a {
     color: var(--title-color);
     text-decoration: none;
-    font-weight: 600;
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+    font-weight: 500;
+    font-size: 0.8rem;
+    text-transform: capitalize;
+    letter-spacing: 0.3px;
     transition: all 0.3s ease;
     position: relative;
   }
@@ -786,7 +847,7 @@ try {
     }
     
     .main-nav a {
-      font-size: 1rem;
+      font-size: 0.9rem;
     }
   }
   
@@ -1055,122 +1116,140 @@ try {
   
   /* === ESTILOS DEL REPRODUCTOR DEL HEADER === */
   .header-radio-player {
-    display: flex;
-    align-items: center;
-    background: linear-gradient(135deg, rgba(26, 26, 26, 0.8) 0%, rgba(42, 42, 42, 0.8) 100%);
+    max-width: 280px;
+    margin: 0;
+    background: linear-gradient(135deg, rgba(197, 173, 123, 0.15) 0%, rgba(197, 173, 123, 0.08) 100%);
     backdrop-filter: blur(10px);
-    border-radius: 8px;
-    padding: 0.5rem 0.8rem;
-    gap: 0.8rem;
-    border: 1px solid rgba(197, 173, 123, 0.2);
-    width: 100%;
-    min-width: 220px;
+    border: 2px solid rgba(197, 173, 123, 0.4);
+    border-radius: 12px;
+    padding: 12px 16px;
+    box-shadow: 0 8px 25px rgba(197, 173, 123, 0.3);
   }
   
-  .header-radio-info {
+  .header-player-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .header-play-button {
+    background: var(--title-color);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: white;
+  }
+  
+  .header-play-button:hover {
+    background: #a8935e;
+    transform: scale(1.05);
+  }
+  
+  .header-play-button.playing {
+    background: #a8935e;
+  }
+  
+  .header-status-info {
     flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
     min-width: 0;
   }
   
-  .header-track-info {
-    display: flex;
-    flex-direction: column;
-    gap: 0.1rem;
-  }
-  
-  .header-track-title {
-    font-size: 0.8rem;
+  #header-status-text {
+    font-size: 12px;
     font-weight: 600;
     color: var(--title-color);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    line-height: 1.1;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   }
   
-  .header-track-artist {
-    font-size: 0.7rem;
-    color: #888;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    line-height: 1.1;
-  }
-  
-  .header-radio-controls {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-  }
-  
-  .header-play-button {
-    width: 28px;
-    height: 28px;
+  .header-loading-dot {
+    width: 5px;
+    height: 5px;
+    background: var(--title-color);
     border-radius: 50%;
-    border: none;
-    background: linear-gradient(135deg, var(--title-color) 0%, #ff6b6b 100%);
-    color: white;
-    cursor: pointer;
+    animation: headerLoadingPulse 1.5s infinite;
+  }
+  
+  @keyframes headerLoadingPulse {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.2); }
+  }
+  
+  .header-volume-control {
     display: flex;
     align-items: center;
-    justify-content: center;
+    gap: 6px;
+  }
+  
+  .header-volume-button {
+    background: none;
+    border: none;
+    color: var(--title-color);
+    cursor: pointer;
+    padding: 3px;
+    border-radius: 4px;
     transition: all 0.2s ease;
-    box-shadow: 0 2px 6px rgba(197, 173, 123, 0.3);
+    opacity: 0.9;
   }
   
-  .header-play-button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 3px 8px rgba(197, 173, 123, 0.4);
-  }
-  
-  .header-play-button.playing {
-    background: linear-gradient(135deg, #ff6b6b 0%, #ff5252 100%);
-    animation: headerPlayingPulse 2s infinite alternate;
-  }
-  
-  @keyframes headerPlayingPulse {
-    0% { box-shadow: 0 2px 6px rgba(255, 107, 107, 0.3); }
-    100% { box-shadow: 0 3px 10px rgba(255, 107, 107, 0.5); }
+  .header-volume-button:hover {
+    opacity: 1;
+    background: rgba(197, 173, 123, 0.2);
+    color: var(--title-color);
   }
   
   .header-volume-slider {
-    -webkit-appearance: none;
-    width: 60px;
-    height: 4px;
+    width: 50px;
+    height: 3px;
+    background: rgba(197, 173, 123, 0.4);
     border-radius: 2px;
-    background: rgba(255, 255, 255, 0.2);
     outline: none;
     cursor: pointer;
+    -webkit-appearance: none;
   }
   
   .header-volume-slider::-webkit-slider-thumb {
     -webkit-appearance: none;
     width: 12px;
     height: 12px;
-    border-radius: 50%;
     background: var(--title-color);
+    border-radius: 50%;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.2s ease;
   }
   
   .header-volume-slider::-webkit-slider-thumb:hover {
     transform: scale(1.1);
-    box-shadow: 0 0 6px rgba(197, 173, 123, 0.5);
   }
   
   .header-volume-slider::-moz-range-thumb {
     width: 12px;
     height: 12px;
-    border-radius: 50%;
     background: var(--title-color);
-    cursor: pointer;
+    border-radius: 50%;
     border: none;
-    transition: all 0.2s ease;
+    cursor: pointer;
   }
   
-  .header-volume-slider::-moz-range-thumb:hover {
-    transform: scale(1.1);
-    box-shadow: 0 0 6px rgba(197, 173, 123, 0.5);
+  /* Ancho completo en modo noche */
+  [data-theme="night"] .radio-container {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  [data-theme="night"] .header-radio-player {
+    max-width: 100%;
   }
   
   /* Responsive para reproductor del header */

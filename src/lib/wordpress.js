@@ -1332,6 +1332,66 @@ export async function getProgramaBySlug(slug) {
         }
         camposPrograma {
           vsDescripcion
+          vsFacebook
+          vsInstagram
+          vsWhatsapp
+          vsTiktok
+          vsYoutube
+          vsSoundcloud
+          vsEquipo {
+            nodes {
+              id
+              title
+              slug
+              featuredImage {
+                node {
+                  sourceUrl
+                  altText
+                }
+              }
+              camposEquipo {
+                vsFacebook
+                vsInstagram
+                vsWhatsapp
+                vsTiktok
+                vsYoutube
+                vsSoundcloud
+                vsPaginaWeb
+              }
+            }
+          }
+          vsPodcasts {
+            nodes {
+              id
+              title
+              slug
+              date
+              featuredImage {
+                node {
+                  sourceUrl
+                  altText
+                }
+              }
+              camposPodcast {
+                vsSoundcloud
+                vsYoutube
+                vsFechaEmision
+              }
+            }
+          }
+          vsPatrocinadores {
+            nodes {
+              id
+              title
+              slug
+              featuredImage {
+                node {
+                  sourceUrl
+                  altText
+                }
+              }
+            }
+          }
         }
         seo {
           title
@@ -1385,6 +1445,15 @@ export async function getProgramaBySlug(slug) {
         vsDescripcion:
           programa.camposPrograma?.vsDescripcion ||
           cleanExcerpt,
+        vsFacebook: programa.camposPrograma?.vsFacebook || '',
+        vsInstagram: programa.camposPrograma?.vsInstagram || '',
+        vsWhatsapp: programa.camposPrograma?.vsWhatsapp || '',
+        vsTiktok: programa.camposPrograma?.vsTiktok || '',
+        vsYoutube: programa.camposPrograma?.vsYoutube || '',
+        vsSoundcloud: programa.camposPrograma?.vsSoundcloud || '',
+        vsEquipo: programa.camposPrograma?.vsEquipo || { nodes: [] },
+        vsPodcasts: programa.camposPrograma?.vsPodcasts || { nodes: [] },
+        vsPatrocinadores: programa.camposPrograma?.vsPatrocinadores || { nodes: [] },
       },
       seo:
         programa.seo?.title ? programa.seo : {

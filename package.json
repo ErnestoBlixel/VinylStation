@@ -8,7 +8,8 @@
     "build": "astro build",
     "build:clean": "rm -rf dist .astro && astro build",
     "preview": "astro preview",
-    "astro": "astro"
+    "astro": "astro",
+    "deploy": "wrangler pages deploy dist/ --project-name vinylstation"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^10.1.0",

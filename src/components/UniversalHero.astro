@@ -496,6 +496,12 @@ const heroDescription = customDescription || (hasError ? 'Emisora online desde F
     margin-bottom: 1rem;
   }
 
+  /* Ancho completo en modo noche */
+  [data-theme="night"] .universal-hero .container {
+    max-width: 100%;
+    padding: 0 2rem;
+  }
+  
   /* Responsive */
   @media (max-width: 768px) {
     .container {
