@@ -6,9 +6,9 @@
 import MainLayout from "../../layouts/MainLayout.astro";
 import { getSiteInfo, getViniloBySlug, getTodosLosVinilos } from "../../lib/wordpress.js";
 
-// Generar páginas estáticas para TODOS los vinilos
+// ESTRATEGIA HÍBRIDA: Generar solo TOP 500 vinilos estáticos
 export async function getStaticPaths() {
-  console.log('🚀 Generando páginas estáticas para TODOS los vinilos...');
+  console.log('🎯 ESTRATEGIA HÍBRIDA: Generando páginas estáticas para TOP 500 vinilos...');
   
   try {
     // Usar la función que ya existe en wordpress.js
@@ -19,21 +19,29 @@ export async function getStaticPaths() {
       return [];
     }
 
-    console.log(`✅ Generando ${todosLosVinilosData.vinilos.length} páginas de vinilos individuales`);
+    console.log(`📊 Total vinilos disponibles: ${todosLosVinilosData.vinilos.length}`);
 
-    // Generar una página estática para cada vinilo
-    const staticPaths = todosLosVinilosData.vinilos.map(vinilo => ({
+    // 🔥 LÍMITE: Solo generar los primeros 500 vinilos (más recientes/populares)
+    const LIMITE_ESTATICOS = 500;
+    const vinilosParaGenerar = todosLosVinilosData.vinilos.slice(0, LIMITE_ESTATICOS);
+    
+    console.log(`✅ Generando ${vinilosParaGenerar.length} páginas ESTÁTICAS (de ${todosLosVinilosData.vinilos.length} totales)`);
+    console.log(`📄 Resto (${todosLosVinilosData.vinilos.length - vinilosParaGenerar.length}) se cargarán DINÁMICAMENTE`);
+
+    // Generar una página estática solo para los TOP vinilos
+    const staticPaths = vinilosParaGenerar.map(vinilo => ({
       params: { slug: vinilo.slug }
     }));
     
-    console.log(`📄 Se generarán ${staticPaths.length} páginas estáticas de vinilos`);
-    console.log(`📄 Ejemplos: ${staticPaths.slice(0, 3).map(p => p.params.slug).join(', ')}...`);
+    console.log(`🚀 BUILD OPTIMIZADO: ${staticPaths.length} páginas estáticas`);
+    console.log(`📀 Ejemplos estáticos: ${staticPaths.slice(0, 3).map(p => p.params.slug).join(', ')}...`);
     
     return staticPaths;
     
   } catch (error) {
     console.error('💥 Error en getStaticPaths de vinilos:', error);
     // Fallback: generar solo los 2 de ejemplo si hay error
+    console.log('🔄 Usando fallback: solo 2 vinilos de ejemplo');
     return [
       { params: { slug: 'apostrophe' }},
       { params: { slug: 'dark-side-moon' }},

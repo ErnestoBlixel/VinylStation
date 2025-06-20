@@ -1,4 +1,10 @@
 import { request, gql } from 'graphql-request';
+import { 
+  getCachedSiteInfo, setCachedSiteInfo,
+  getCachedSiteLogo, setCachedSiteLogo,
+  getCachedMenu, setCachedMenu,
+  getCacheStats
+} from './cache.js';
 
 const WORDPRESS_GRAPHQL_URL =
   import.meta.env.PUBLIC_WORDPRESS_GRAPHQL_URL ||
@@ -16,7 +22,14 @@ function processImageURL(url) {
 }
 
 export async function getSiteLogo() {
-  console.log('🎯 Obteniendo logo del sitio...');
+  // 🚀 Verificar cache primero
+  const cached = getCachedSiteLogo();
+  if (cached) {
+    console.log('⚡ Logo cargado desde cache');
+    return cached;
+  }
+
+  console.log('🎯 Obteniendo logo del sitio (primera vez)...');
   const LOGO = gql`
     query GetCustomLogo {
       customLogo {
@@ -31,26 +44,48 @@ export async function getSiteLogo() {
 
   try {
     const { customLogo } = await request(WORDPRESS_GRAPHQL_URL, LOGO);
+    let result;
+    
     if (customLogo?.node?.sourceUrl) {
-      return {
+      result = {
         url: processImageURL(customLogo.node.sourceUrl),
         altText: customLogo.node.altText || 'VinylStation',
         source: 'customLogo',
       };
+    } else {
+      console.warn('⚠️ customLogo no disponible, usando fallback');
+      result = {
+        url: '/images/logos/vinyl-station-logo.svg',
+        altText: 'VinylStation',
+        source: 'fallback',
+      };
     }
-  } catch {
-    console.warn('⚠️ customLogo no disponible, usando fallback');
+    
+    // 💾 Guardar en cache
+    setCachedSiteLogo(result);
+    return result;
+    
+  } catch (error) {
+    console.warn('⚠️ Error obteniendo customLogo, usando fallback');
+    const fallback = {
+      url: '/images/logos/vinyl-station-logo.svg',
+      altText: 'VinylStation',
+      source: 'fallback',
+    };
+    setCachedSiteLogo(fallback);
+    return fallback;
   }
-
-  return {
-    url: '/images/logos/vinyl-station-logo.svg',
-    altText: 'VinylStation',
-    source: 'fallback',
-  };
 }
 
 export async function getSiteInfo() {
-  console.log('🔄 Obteniendo información del sitio desde WordPress...');
+  // 🚀 Verificar cache primero
+  const cached = getCachedSiteInfo();
+  if (cached) {
+    console.log('⚡ SiteInfo cargado desde cache');
+    return cached;
+  }
+
+  console.log('🔄 Obteniendo información del sitio (primera vez)...');
   const QUERY = gql`
     query GetSiteInfo {
       generalSettings {
@@ -62,13 +97,15 @@ export async function getSiteInfo() {
       }
     }
   `;
+  
   try {
     const { generalSettings } = await request(WORDPRESS_GRAPHQL_URL, QUERY);
 
+    let result;
     if (!generalSettings?.title) {
       console.warn('⚠️ No se obtuvo el título desde generalSettings, usando fallback.');
       const logoFallback = await getSiteLogo();
-      return {
+      result = {
         title: 'VinylStation',
         description: 'Tu emisora de vinilo 24/7',
         url: import.meta.env.SITE || 'https://vinylstation.es',
@@ -76,26 +113,30 @@ export async function getSiteInfo() {
         language: 'es-ES',
         logo: logoFallback,
       };
+    } else {
+      const logo = await getSiteLogo();
+      result = {
+        title: generalSettings.title,
+        description: generalSettings.description,
+        url: generalSettings.url,
+        timezone: generalSettings.timezone,
+        language: generalSettings.language,
+        logo: {
+          url: logo.url,
+          altText: logo.altText,
+          source: logo.source,
+        },
+      };
     }
-
-    const logo = await getSiteLogo();
-
-    return {
-      title: generalSettings.title,
-      description: generalSettings.description,
-      url: generalSettings.url,
-      timezone: generalSettings.timezone,
-      language: generalSettings.language,
-      logo: {
-        url: logo.url,
-        altText: logo.altText,
-        source: logo.source,
-      },
-    };
+    
+    // 💾 Guardar en cache
+    setCachedSiteInfo(result);
+    return result;
+    
   } catch (error) {
     console.error("❌ Error en getSiteInfo:", error.message);
     const logoFallback = await getSiteLogo();
-    return {
+    const fallback = {
       title: 'VinylStation (Error)',
       description: 'Error al cargar la información del sitio.',
       url: import.meta.env.SITE || 'https://vinylstation.es',
@@ -103,6 +144,8 @@ export async function getSiteInfo() {
       language: 'es-ES',
       logo: logoFallback,
     };
+    setCachedSiteInfo(fallback);
+    return fallback;
   }
 }
 
@@ -1494,8 +1537,15 @@ export async function getEmisora() {
 // ===============================
 // MENÚ DE NAVEGACIÓN (EXISTENTE, AJUSTADO)
 // ===============================
-export async function getMenuNavegacion(menuSlug = 'primary') {
-  console.log(`🧭 Obteniendo menú de navegación: ${menuSlug}`);
+export async function getMenuNavegacion(menuSlug = 'Menu') {
+  // 🚀 Verificar cache primero
+  const cached = getCachedMenu();
+  if (cached) {
+    console.log('⚡ Menú cargado desde cache');
+    return cached;
+  }
+
+  console.log(`🧭 Obteniendo menú de navegación (primera vez): ${menuSlug}`);
   
   const QUERY = gql`
     query GetMenu($id: ID!) { 
@@ -1503,7 +1553,7 @@ export async function getMenuNavegacion(menuSlug = 'primary') {
         id
         name
         slug
-        menuItems(first: 20, where: {parentId: null}) { # Solo items de nivel superior y ordenados
+        menuItems(first: 20, where: {parentId: null}) {
           nodes {
             id
             label
@@ -1522,30 +1572,37 @@ export async function getMenuNavegacion(menuSlug = 'primary') {
   try {
     const { menu } = await request(WORDPRESS_GRAPHQL_URL, QUERY, { id: menuSlug });
     
+    let result;
     if (!menu || !menu.menuItems?.nodes || menu.menuItems.nodes.length === 0) { 
       console.warn(`⚠️ No se encontró el menú "${menuSlug}" o no tiene items.`);
-      return { items: getMenuFallback(), name: menuSlug, source: 'fallback' };
+      result = { items: getMenuFallback(), name: menuSlug, source: 'fallback' };
+    } else {
+      const sortedItems = [...menu.menuItems.nodes].sort((a,b) => (a.order || 0) - (b.order || 0));
+      const items = sortedItems.map(item => ({
+          id: item.id,
+          label: item.label,
+          url: item.path || processMenuUrl(item.url), 
+          target: item.target || '_self',
+          title: item.title || item.label, 
+          cssClasses: item.cssClasses || [] 
+        }));
+
+      result = { items, name: menu.name || menuSlug, source: 'wordpress' };
     }
     
-    // Ordenar items aquí si la query no lo hace o para doble seguridad
-    const sortedItems = [...menu.menuItems.nodes].sort((a,b) => (a.order || 0) - (b.order || 0));
-
-    const items = sortedItems.map(item => ({
-        id: item.id,
-        label: item.label,
-        url: item.path || processMenuUrl(item.url), 
-        target: item.target || '_self',
-        title: item.title || item.label, 
-        cssClasses: item.cssClasses || [] 
-      }));
-
-    return { items, name: menu.name || menuSlug, source: 'wordpress' };
+    // 💾 Guardar en cache
+    setCachedMenu(result);
+    console.log(`✅ Menú cargado dinámicamente: ${result.items.length} elementos`);
+    return result;
+    
   } catch (error) {
     console.error(`❌ Error obteniendo menú "${menuSlug}":`, error.message);
     if (error.response?.errors) {
         console.error('GraphQL Errors (getMenuNavegacion):', JSON.stringify(error.response.errors, null, 2));
     }
-    return { items: getMenuFallback(), name: menuSlug, source: 'fallback-error' };
+    const fallback = { items: getMenuFallback(), name: menuSlug, source: 'fallback-error' };
+    setCachedMenu(fallback);
+    return fallback;
   }
 }
 
@@ -2248,6 +2305,15 @@ export async function getTodosLasNoticias() {
   }
 }
 
+// ===============================
+// FUNCIÓN DE STATS PARA DEBUG
+// ===============================
+export function logCacheStats() {
+  const stats = getCacheStats();
+  console.log('📊 Cache Stats:', stats);
+  return stats;
+}
+
 // Exportación por defecto con todas las funciones
 export default {
   getSiteLogo,
@@ -2268,4 +2334,5 @@ export default {
   getVinilosPaginadosOptimizado: getVinilosPaginados,
   getArtistasUnicos,
   getTodosLosVinilos,
+  logCacheStats,
 };
