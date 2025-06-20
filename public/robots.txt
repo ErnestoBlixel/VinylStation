@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://vinylstation.es/sitemap-index.xml
+
+# Bloquear acceso a directorios internos
+Disallow: /_assets/
+Disallow: /api/
+Disallow: /scripts/
+
+# Crawler delays
+Crawl-delay: 1

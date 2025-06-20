@@ -1,7 +1,7 @@
 ---
 // Página En Directo - Reproductor Simple y Programación
 import MainLayout from '../layouts/MainLayout.astro';
-import RadioPlayerSimple from '../components/RadioPlayerSimple.astro';
+import RadioPlayer from '../components/RadioPlayer.astro';
 import { getSiteInfo } from '../lib/wordpress';
 
 // Obtener información del sitio para metadatos
@@ -36,7 +36,7 @@ const pageDescription = hasError ? 'Escucha nuestra transmisión en directo' : '
     <section class="player-section">
       <div class="container">
         <div class="player-wrapper">
-          <RadioPlayerSimple />
+          <RadioPlayer />
         </div>
       </div>
     </section>

@@ -4,18 +4,47 @@
 
 // src/pages/vinilos/[slug].astro
 import MainLayout from "../../layouts/MainLayout.astro";
-import { getSiteInfo, getViniloBySlug } from "../../lib/wordpress.js";
+import { getSiteInfo, getViniloBySlug, getTodosLosVinilos } from "../../lib/wordpress.js";
 
-// TEMPORAL: En modo estático, usamos getStaticPaths
+// Generar páginas estáticas para TODOS los vinilos
 export async function getStaticPaths() {
-  // Solo generar algunas páginas de ejemplo por ahora
-  return [
-    { params: { slug: 'apostrophe' }},
-    { params: { slug: 'dark-side-moon' }},
-  ];
+  console.log('🚀 Generando páginas estáticas para TODOS los vinilos...');
+  
+  try {
+    // Usar la función que ya existe en wordpress.js
+    const todosLosVinilosData = await getTodosLosVinilos();
+    
+    if (!todosLosVinilosData || !todosLosVinilosData.vinilos) {
+      console.error('❌ No se pudieron cargar los vinilos para getStaticPaths');
+      return [];
+    }
+
+    console.log(`✅ Generando ${todosLosVinilosData.vinilos.length} páginas de vinilos individuales`);
+
+    // Generar una página estática para cada vinilo
+    const staticPaths = todosLosVinilosData.vinilos.map(vinilo => ({
+      params: { slug: vinilo.slug }
+    }));
+    
+    console.log(`📄 Se generarán ${staticPaths.length} páginas estáticas de vinilos`);
+    console.log(`📄 Ejemplos: ${staticPaths.slice(0, 3).map(p => p.params.slug).join(', ')}...`);
+    
+    return staticPaths;
+    
+  } catch (error) {
+    console.error('💥 Error en getStaticPaths de vinilos:', error);
+    // Fallback: generar solo los 2 de ejemplo si hay error
+    return [
+      { params: { slug: 'apostrophe' }},
+      { params: { slug: 'dark-side-moon' }},
+    ];
+  }
 }
 
 const { slug } = Astro.params;
+
+// 🔧 DEBUG: Log del slug recibido
+console.log(`🎯 [DEBUG] Procesando vinilo con slug: "${slug}"`);
 
 // 🔧 VALIDACIÓN: Si el slug es un número, redirigir a la paginación
 if (slug && /^\d+$/.test(slug)) {
@@ -24,10 +53,16 @@ if (slug && /^\d+$/.test(slug)) {
 }
 
 const siteInfo = await getSiteInfo();
+console.log(`🔍 [DEBUG] Buscando vinilo "${slug}" en WordPress...`);
 const data = await getViniloBySlug(slug);
+
 if (!data) {
+  console.error(`❌ [DEBUG] No se encontró vinilo "${slug}" en WordPress`);
+  console.error(`❌ [DEBUG] getViniloBySlug devolvió:`, data);
   return Astro.redirect("/404");
 }
+
+console.log(`✅ [DEBUG] Vinilo "${slug}" encontrado:`, data.title);
 
 const imagenVinilo =
   data.imagenPrincipalUrl ||
