@@ -209,225 +209,371 @@ const contactInfo = {
 </MainLayout>
 
 <script>
-  // Script para cargar y manejar el formulario de Gravity Forms con REST API v1
+  // 🔧 SCRIPT CORREGIDO PARA FORMULARIO DE CONTACTO
   document.addEventListener('DOMContentLoaded', async function() {
+    console.log('🚀 [CLIENT] Iniciando carga del formulario...');
+    
     const container = document.getElementById('gravity-form-container');
     const loadingMessage = container?.querySelector('.loading-message');
     const errorMessage = container?.querySelector('.error-message');
     
-    // Configuración de la API
-    const API_BASE = 'https://cms.vinylstation.es/wp-json/gf/v2';
-    const PUBLIC_KEY = '60fa0813d4';
-    const PRIVATE_KEY = '17a5d6a599a532d';
-    const FORM_ID = 1;
-    
-    // Función para calcular la firma de autenticación
-    function calculateSig(stringToSign, privateKey) {
-      // Para el frontend, usaremos una petición simple sin firma
-      // En producción, deberías hacer esto desde el servidor
-      return '';
+    if (!container) {
+      console.error('❌ [CLIENT] Contenedor del formulario no encontrado');
+      return;
     }
     
     try {
-      // 1. Obtener la estructura del formulario desde el proxy local
-      const formResponse = await fetch('/api/gravity-form');
+      console.log('📡 [CLIENT] Solicitando estructura del formulario...');
+      
+      // ✅ CARGAR FORMULARIO con validación mejorada
+      const formResponse = await fetch('/api/gravity-form', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      
+      console.log('📊 [CLIENT] Status respuesta:', formResponse.status);
       
       if (!formResponse.ok) {
-        throw new Error(`Error ${formResponse.status}: ${formResponse.statusText}`);
+        const errorText = await formResponse.text();
+        console.error('❌ [CLIENT] Error del servidor:', errorText);
+        throw new Error(`Error ${formResponse.status}: No se pudo cargar el formulario`);
       }
       
       const formData = await formResponse.json();
+      console.log('✅ [CLIENT] Formulario cargado:', formData);
       
-      // 2. Construir el formulario dinámicamente
+      if (!formData || !formData.fields || !Array.isArray(formData.fields)) {
+        throw new Error('Estructura de formulario inválida');
+      }
+      
+      // ✅ CONSTRUIR FORMULARIO dinámicamente
       const form = document.createElement('form');
       form.id = 'gravityForm';
       form.className = 'contact-form';
+      form.noValidate = true; // Validación personalizada
       
-      // Agregar campos con animación escalonada
+      // ✅ CREAR CAMPOS con validación mejorada
       formData.fields.forEach((field, index) => {
-        const fieldGroup = document.createElement('div');
-        fieldGroup.className = 'form-group';
-        fieldGroup.style.opacity = '0';
-        fieldGroup.style.transform = 'translateY(20px)';
-        
-        const label = document.createElement('label');
-        label.htmlFor = `input_${field.id}`;
-        label.textContent = field.label + (field.required ? ' *' : '');
-        fieldGroup.appendChild(label);
-        
-        if (field.type === 'text' || field.type === 'name') {
-          const input = document.createElement('input');
-          input.type = 'text';
-          input.id = `input_${field.id}`;
-          input.name = `input_${field.id}`;
-          input.placeholder = field.placeholder || '';
-          input.required = field.isRequired || false;
-          fieldGroup.appendChild(input);
-        } else if (field.type === 'email') {
-          const input = document.createElement('input');
-          input.type = 'email';
-          input.id = `input_${field.id}`;
-          input.name = `input_${field.id}`;
-          input.placeholder = field.placeholder || '';
-          input.required = field.isRequired || false;
-          fieldGroup.appendChild(input);
-        } else if (field.type === 'phone') {
-          const input = document.createElement('input');
-          input.type = 'tel';
-          input.id = `input_${field.id}`;
-          input.name = `input_${field.id}`;
-          input.placeholder = field.placeholder || '';
-          input.required = field.isRequired || false;
-          fieldGroup.appendChild(input);
-        } else if (field.type === 'textarea') {
-          const textarea = document.createElement('textarea');
-          textarea.id = `input_${field.id}`;
-          textarea.name = `input_${field.id}`;
-          textarea.placeholder = field.placeholder || '';
-          textarea.required = field.isRequired || false;
-          textarea.rows = 5;
-          fieldGroup.appendChild(textarea);
-        } else if (field.type === 'select' && field.choices) {
-          const select = document.createElement('select');
-          select.id = `input_${field.id}`;
-          select.name = `input_${field.id}`;
-          select.required = field.isRequired || false;
-          
-          // Opción vacía
-          const emptyOption = document.createElement('option');
-          emptyOption.value = '';
-          emptyOption.textContent = field.placeholder || 'Selecciona una opción';
-          select.appendChild(emptyOption);
-          
-          // Agregar opciones
-          field.choices.forEach(choice => {
-            const option = document.createElement('option');
-            option.value = choice.value;
-            option.textContent = choice.text;
-            select.appendChild(option);
-          });
-          
-          fieldGroup.appendChild(select);
-        }
-        
+        const fieldGroup = createFormField(field, index);
         form.appendChild(fieldGroup);
-        
-        // Animar entrada del campo
-        setTimeout(() => {
-          fieldGroup.style.transition = 'all 0.5s ease-out';
-          fieldGroup.style.opacity = '1';
-          fieldGroup.style.transform = 'translateY(0)';
-        }, 100 + (index * 100));
       });
       
-      // Botón de envío
-      const submitDiv = document.createElement('div');
-      submitDiv.className = 'form-actions';
-      submitDiv.style.opacity = '0';
-      submitDiv.style.transform = 'translateY(20px)';
-      
-      const submitButton = document.createElement('button');
-      submitButton.type = 'submit';
-      submitButton.className = 'btn primary-btn';
-      submitButton.innerHTML = `<span>${formData.button?.text || 'Enviar'}</span>`;
-      submitDiv.appendChild(submitButton);
+      // ✅ BOTÓN DE ENVÍO
+      const submitDiv = createSubmitButton(formData.button?.text || 'Enviar mensaje');
       form.appendChild(submitDiv);
       
-      // Animar botón
-      setTimeout(() => {
-        submitDiv.style.transition = 'all 0.5s ease-out';
-        submitDiv.style.opacity = '1';
-        submitDiv.style.transform = 'translateY(0)';
-      }, 600);
-      
-      // Mensaje de resultado
+      // ✅ MENSAJE DE RESULTADO
       const formMessage = document.createElement('div');
       formMessage.id = 'formMessage';
       formMessage.className = 'form-message';
       formMessage.style.display = 'none';
       
-      // 3. Manejar envío del formulario
+      // ✅ MANEJAR ENVÍO con validación y feedback mejorado
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        console.log('📝 [CLIENT] Enviando formulario...');
         
-        // Animación del botón
-        submitButton.innerHTML = '<span class="spinner-small"></span> Enviando...';
-        submitButton.disabled = true;
-        submitButton.classList.add('loading');
-        
-        const formDataToSend = new FormData(form);
-        const entry = {
-          form_id: String(FORM_ID)
-        };
-        
-        // Preparar valores para la API
-        for (let [key, value] of formDataToSend.entries()) {
-          if (value) {
-            const fieldId = key.replace('input_', '');
-            entry[fieldId] = value.toString();
-          }
+        // Validar formulario
+        if (!validateForm(form)) {
+          console.log('❌ [CLIENT] Validación fallida');
+          return;
         }
         
-        try {
-          // Enviar a través del proxy local
-          const submitResponse = await fetch('/api/gravity-form', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              input_values: entry
-            })
-          });
-          
-          if (!submitResponse.ok) {
-            throw new Error(`Error ${submitResponse.status}: ${submitResponse.statusText}`);
-          }
-          
-          // Éxito - animar mensaje
-          formMessage.className = 'form-message success';
-          formMessage.innerHTML = `
-            <div class="success-icon">✓</div>
-            <p>¡Mensaje enviado correctamente!</p>
-            <p>Te responderemos pronto.</p>
-          `;
-          formMessage.style.display = 'block';
-          form.reset();
-          formMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          
-          // Ocultar formulario con animación
-          form.style.transition = 'all 0.5s ease-out';
-          form.style.opacity = '0.5';
-          form.style.transform = 'scale(0.98)';
-          
-        } catch (error) {
-          console.error('Error:', error);
-          formMessage.className = 'form-message error';
-          formMessage.innerHTML = `
-            <div class="error-icon">✕</div>
-            <p>No se pudo enviar el formulario automáticamente.</p>
-            <p>Por favor, envíanos un email a: <a href="mailto:hola@vinylstation.com">hola@vinylstation.com</a></p>
-          `;
-          formMessage.style.display = 'block';
-        } finally {
-          submitButton.innerHTML = `<span>${formData.button?.text || 'Enviar'}</span>`;
-          submitButton.disabled = false;
-          submitButton.classList.remove('loading');
-        }
+        await submitForm(form, formMessage);
       });
       
-      // Reemplazar contenido del contenedor
+      // ✅ REEMPLAZAR CONTENIDO
       container.innerHTML = '';
       container.appendChild(form);
       container.appendChild(formMessage);
       container.classList.remove('form-loading');
       
+      console.log('✅ [CLIENT] Formulario renderizado correctamente');
+      
     } catch (error) {
-      console.error('Error cargando formulario:', error);
-      if (loadingMessage) loadingMessage.style.display = 'none';
-      if (errorMessage) errorMessage.style.display = 'block';
+      console.error('❌ [CLIENT] Error cargando formulario:', error);
+      showFormError(container, error.message);
     }
   });
+  
+  // ✅ FUNCIÓN PARA CREAR CAMPOS DE FORMULARIO
+  function createFormField(field, index) {
+    const fieldGroup = document.createElement('div');
+    fieldGroup.className = 'form-group';
+    fieldGroup.style.opacity = '0';
+    fieldGroup.style.transform = 'translateY(20px)';
+    
+    // Label
+    const label = document.createElement('label');
+    label.htmlFor = `input_${field.id}`;
+    label.textContent = field.label + (field.isRequired ? ' *' : '');
+    fieldGroup.appendChild(label);
+    
+    // Campo de entrada
+    let inputElement;
+    
+    switch (field.type) {
+      case 'text':
+      case 'name':
+        inputElement = document.createElement('input');
+        inputElement.type = 'text';
+        break;
+        
+      case 'email':
+        inputElement = document.createElement('input');
+        inputElement.type = 'email';
+        break;
+        
+      case 'phone':
+        inputElement = document.createElement('input');
+        inputElement.type = 'tel';
+        break;
+        
+      case 'textarea':
+        inputElement = document.createElement('textarea');
+        inputElement.rows = 5;
+        break;
+        
+      case 'select':
+        inputElement = document.createElement('select');
+        
+        // Opción vacía
+        const emptyOption = document.createElement('option');
+        emptyOption.value = '';
+        emptyOption.textContent = field.placeholder || 'Selecciona una opción';
+        inputElement.appendChild(emptyOption);
+        
+        // Opciones del campo
+        if (field.choices) {
+          field.choices.forEach(choice => {
+            const option = document.createElement('option');
+            option.value = choice.value;
+            option.textContent = choice.text;
+            inputElement.appendChild(option);
+          });
+        }
+        break;
+        
+      default:
+        inputElement = document.createElement('input');
+        inputElement.type = 'text';
+    }
+    
+    // Configurar atributos del campo
+    inputElement.id = `input_${field.id}`;
+    inputElement.name = `input_${field.id}`;
+    inputElement.placeholder = field.placeholder || '';
+    inputElement.required = field.isRequired || false;
+    
+    // Añadir campo al grupo
+    fieldGroup.appendChild(inputElement);
+    
+    // Animación de entrada
+    setTimeout(() => {
+      fieldGroup.style.transition = 'all 0.5s ease-out';
+      fieldGroup.style.opacity = '1';
+      fieldGroup.style.transform = 'translateY(0)';
+    }, 100 + (index * 100));
+    
+    return fieldGroup;
+  }
+  
+  // ✅ FUNCIÓN PARA CREAR BOTÓN DE ENVÍO
+  function createSubmitButton(buttonText) {
+    const submitDiv = document.createElement('div');
+    submitDiv.className = 'form-actions';
+    submitDiv.style.opacity = '0';
+    submitDiv.style.transform = 'translateY(20px)';
+    
+    const submitButton = document.createElement('button');
+    submitButton.type = 'submit';
+    submitButton.className = 'btn primary-btn';
+    submitButton.innerHTML = `<span>${buttonText}</span>`;
+    submitDiv.appendChild(submitButton);
+    
+    // Animación del botón
+    setTimeout(() => {
+      submitDiv.style.transition = 'all 0.5s ease-out';
+      submitDiv.style.opacity = '1';
+      submitDiv.style.transform = 'translateY(0)';
+    }, 600);
+    
+    return submitDiv;
+  }
+  
+  // ✅ FUNCIÓN PARA VALIDAR FORMULARIO
+  function validateForm(form) {
+    let isValid = true;
+    const formData = new FormData(form);
+    
+    // Limpiar errores previos
+    form.querySelectorAll('.field-error').forEach(error => error.remove());
+    form.querySelectorAll('.form-group').forEach(group => group.classList.remove('has-error'));
+    
+    // Validar cada campo requerido
+    for (let [key, value] of formData.entries()) {
+      const input = form.querySelector(`[name="${key}"]`);
+      const fieldGroup = input?.closest('.form-group');
+      
+      if (input?.required && (!value || value.toString().trim() === '')) {
+        showFieldError(fieldGroup, 'Este campo es obligatorio');
+        isValid = false;
+      } else if (input?.type === 'email' && value && !isValidEmail(value.toString())) {
+        showFieldError(fieldGroup, 'Por favor, introduce un email válido');
+        isValid = false;
+      }
+    }
+    
+    return isValid;
+  }
+  
+  // ✅ FUNCIÓN PARA MOSTRAR ERROR DE CAMPO
+  function showFieldError(fieldGroup, message) {
+    if (!fieldGroup) return;
+    
+    fieldGroup.classList.add('has-error');
+    
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'field-error';
+    errorDiv.textContent = message;
+    fieldGroup.appendChild(errorDiv);
+  }
+  
+  // ✅ FUNCIÓN PARA VALIDAR EMAIL
+  function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+  
+  // ✅ FUNCIÓN PARA ENVIAR FORMULARIO
+  async function submitForm(form, messageContainer) {
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    
+    try {
+      // Estado de carga
+      submitButton.innerHTML = '<span class="spinner-small"></span> Enviando...';
+      submitButton.disabled = true;
+      submitButton.classList.add('loading');
+      
+      // ✅ PREPARAR DATOS CORRECTAMENTE
+      const formData = new FormData(form);
+      const inputValues = {};
+      
+      // Extraer valores de los campos
+      for (let [key, value] of formData.entries()) {
+        if (value && value.toString().trim()) {
+          const fieldId = key.replace('input_', '');
+          inputValues[fieldId] = value.toString().trim();
+        }
+      }
+      
+      console.log('📋 [CLIENT] Datos preparados:', inputValues);
+      
+      // ✅ ESTRUCTURA CORRECTA para el servidor
+      const payload = {
+        input_values: inputValues
+      };
+      
+      console.log('🚀 [CLIENT] Enviando payload:', JSON.stringify(payload, null, 2));
+      
+      // Enviar formulario
+      const submitResponse = await fetch('/api/gravity-form', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      console.log('📡 [CLIENT] Status envío:', submitResponse.status);
+      
+      const responseText = await submitResponse.text();
+      console.log('📄 [CLIENT] Respuesta del servidor:', responseText);
+      
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+      } catch {
+        responseData = { message: responseText };
+      }
+      
+      if (!submitResponse.ok) {
+        throw new Error(responseData.details || responseData.message || `Error ${submitResponse.status}`);
+      }
+      
+      // ✅ ÉXITO
+      console.log('✅ [CLIENT] Formulario enviado correctamente');
+      showSuccessMessage(messageContainer, form);
+      
+    } catch (error) {
+      console.error('❌ [CLIENT] Error enviando formulario:', error);
+      showErrorMessage(messageContainer, error.message);
+    } finally {
+      // Restaurar botón
+      submitButton.innerHTML = originalText;
+      submitButton.disabled = false;
+      submitButton.classList.remove('loading');
+    }
+  }
+  
+  // ✅ FUNCIÓN PARA MOSTRAR ÉXITO
+  function showSuccessMessage(messageContainer, form) {
+    messageContainer.className = 'form-message success';
+    messageContainer.innerHTML = `
+      <div class="success-icon">✓</div>
+      <p><strong>¡Mensaje enviado correctamente!</strong></p>
+      <p>Te responderemos en breve. Gracias por contactar con VinylStation.</p>
+    `;
+    messageContainer.style.display = 'block';
+    
+    // Limpiar formulario
+    form.reset();
+    
+    // Scroll al mensaje
+    messageContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
+    // Efecto visual en el formulario
+    form.style.transition = 'all 0.5s ease-out';
+    form.style.opacity = '0.7';
+    form.style.transform = 'scale(0.98)';
+  }
+  
+  // ✅ FUNCIÓN PARA MOSTRAR ERROR
+  function showErrorMessage(messageContainer, errorDetails) {
+    messageContainer.className = 'form-message error';
+    messageContainer.innerHTML = `
+      <div class="error-icon">✕</div>
+      <p><strong>No se pudo enviar el formulario</strong></p>
+      <p class="error-details">${errorDetails}</p>
+      <hr>
+      <p><strong>Contacto alternativo:</strong></p>
+      <p>📧 <a href="mailto:hola@vinylstation.com">hola@vinylstation.com</a></p>
+      <p>📞 <a href="tel:+34925676778">+34 925 676 778</a></p>
+    `;
+    messageContainer.style.display = 'block';
+    messageContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  
+  // ✅ FUNCIÓN PARA MOSTRAR ERROR DE CARGA
+  function showFormError(container, errorMessage) {
+    const loadingMessage = container.querySelector('.loading-message');
+    const errorDiv = container.querySelector('.error-message');
+    
+    if (loadingMessage) loadingMessage.style.display = 'none';
+    if (errorDiv) {
+      errorDiv.style.display = 'block';
+      // Añadir detalles del error
+      const errorDetails = errorDiv.querySelector('.error-text');
+      if (errorDetails) {
+        errorDetails.textContent = `Error: ${errorMessage}`;
+      }
+    }
+  }
 </script>
 
 <style>
@@ -878,6 +1024,50 @@ const contactInfo = {
 
   @keyframes spin {
     to { transform: rotate(360deg); }
+  }
+  
+  /* ✅ ESTILOS PARA VALIDACIÓN DE CAMPOS */
+  .form-group.has-error {
+    animation: shake 0.5s ease-in-out;
+  }
+  
+  .form-group.has-error input,
+  .form-group.has-error select,
+  .form-group.has-error textarea {
+    border-color: #f44336;
+    background: rgba(244, 67, 54, 0.1);
+  }
+  
+  .field-error {
+    color: #f44336;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .field-error::before {
+    content: '⚠️';
+    font-size: 1rem;
+  }
+  
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+  
+  /* Mejorar el aspecto del mensaje de error */
+  .form-message .error-details {
+    font-size: 0.95rem;
+    opacity: 0.8;
+    margin: 1rem 0;
+    font-family: monospace;
+    background: rgba(0,0,0,0.2);
+    padding: 0.5rem;
+    border-radius: 4px;
   }
   
   /* Responsive */
