@@ -1,5 +1,8 @@
 import type { APIRoute } from 'astro';
 
+// ✅ CONFIGURACIÓN PARA ASTRO HYBRID MODE
+export const prerender = false;
+
 // 🔧 VERSIÓN CORREGIDA DE LA API DE GRAVITY FORMS
 export const GET: APIRoute = async () => {
   try {
