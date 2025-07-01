@@ -14,6 +14,16 @@ export default defineConfig({
       enabled: true
     }
   }),
+  
+  // ✅ CONFIGURACIÓN DE IMÁGENES PARA CLOUDFLARE
+  image: {
+    service: {
+      entrypoint: '@astrojs/cloudflare/image-service'
+    },
+    // Permitir optimizar imágenes externas de WordPress CMS
+    domains: ['cms.vinylstation.es', 'vinylstation.es']
+  },
+  
   integrations: [
     react(), 
     tailwind(), 
