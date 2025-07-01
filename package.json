@@ -7,6 +7,8 @@
     "start": "astro dev",
     "build": "astro build",
     "build:clean": "rm -rf dist .astro && astro build",
+    "sitemap:generate": "node generate-sitemap.js",
+    "sitemap:verify": "node verificar-sitemap.js",
     "preview": "astro preview",
     "astro": "astro",
     "deploy": "wrangler pages deploy dist/ --project-name vinylstation"

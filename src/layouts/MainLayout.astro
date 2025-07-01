@@ -4,6 +4,7 @@
 
 import Header from '../components/Header.astro';
 import Footer from '../components/Footer.astro';
+import GoogleAnalytics from '../components/analytics/GoogleAnalytics.astro';
 import { getSiteInfo, getMenuNavegacion, logCacheStats } from '../lib/wordpress.js';
 
 interface Props {
@@ -63,6 +64,9 @@ const fullTitle = title.includes(siteInfo.title) ? title : `${title} | ${siteInf
 
     <title>{fullTitle}</title>
 
+    <!-- Google Analytics 4 -->
+    <GoogleAnalytics />
+
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -88,6 +92,7 @@ const fullTitle = title.includes(siteInfo.title) ? title : `${title} | ${siteInf
     <!-- Load interactive components -->
     <script>
       import '../lib/interactive-init.js';
+      import '../lib/navigationAnalytics.js';
     </script>
   </body>
 </html>

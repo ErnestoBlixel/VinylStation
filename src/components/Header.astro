@@ -232,6 +232,18 @@ try {
     // Inicializar reproductor móvil
     new MobileHeaderPlayer();
     
+    // === CARGAR ANALYTICS DE RADIO ===
+    // Cargar módulo de analytics de radio después de que los reproductores estén listos
+    setTimeout(() => {
+      import('../lib/radioAnalytics.js')
+        .then(module => {
+          console.log('📊 Analytics de radio inicializado');
+        })
+        .catch(error => {
+          console.warn('⚠️ Error cargando analytics de radio:', error);
+        });
+    }, 1000); // Delay para asegurar que los reproductores estén listos
+    
     // === CARGAR REPRODUCTOR EN HEADER (DESKTOP) ===
     function loadHeaderRadioPlayer() {
       const headerPlayerContainer = document.getElementById('header-radio-player');

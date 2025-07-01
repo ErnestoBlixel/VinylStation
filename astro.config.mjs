@@ -13,50 +13,120 @@ export default defineConfig({
     react(), 
     tailwind(), 
     sitemap({
-      // Configuración del sitemap
+      // 🔧 CONFIGURACIÓN MEJORADA DEL SITEMAP
       filter: (page) => {
         // Excluir páginas que no deben aparecer en el sitemap
         const excludedPages = [
           '/api/', // Excluir endpoints de API
-          '/404', // Página de error
-          '/vinilos/page/', // 🔥 NUEVA: Excluir páginas de paginación de vinilos
-          '/noticias/page/', // 🔥 NUEVA: Excluir páginas de paginación de noticias
+          '/404',  // Página de error
+          '/test-', // Páginas de testing
         ];
         
-        return !excludedPages.some(excluded => page.includes(excluded));
+        // 🚫 EXCLUSIONES ESPECÍFICAS (más precisas)
+        const excludedPatterns = [
+          // Excluir solo páginas de paginación específicas si es necesario
+          // '/vinilos/page/1', // La página 1 es redundante con /vinilos
+          // '/noticias/page/1', // La página 1 es redundante con /noticias
+        ];
+        
+        // Verificar exclusiones generales
+        const isExcluded = excludedPages.some(excluded => page.includes(excluded));
+        
+        // Verificar patrones específicos
+        const isPatternExcluded = excludedPatterns.some(pattern => page === pattern);
+        
+        return !isExcluded && !isPatternExcluded;
       },
+      
+      // 🎯 PÁGINAS PERSONALIZADAS (solo páginas esenciales, el resto se detecta automáticamente)
       customPages: [
-        // Agregar páginas dinámicas si es necesario
-        // 'https://vinylstation.es/noticias/page/2',
-        // 'https://vinylstation.es/vinilos/page/2',
+        // Páginas principales que siempre deben estar
+        'https://vinylstation.es/',
+        'https://vinylstation.es/en-directo',
+        'https://vinylstation.es/vinilos',
+        'https://vinylstation.es/noticias', 
+        'https://vinylstation.es/programas',
+        'https://vinylstation.es/contacto',
+        
+        // Páginas legales
+        'https://vinylstation.es/aviso-legal',
+        'https://vinylstation.es/politica-cookies-privacidad',
+        'https://vinylstation.es/politica-devoluciones',
+        'https://vinylstation.es/politicas-legales',
+        
+        // NOTA: Las páginas de paginación (page/2, page/3, etc.) y contenido dinámico
+        // se detectan automáticamente durante el build de Astro
       ],
+      
+      // 🏷️ CONFIGURACIÓN SEO OPTIMIZADA
       serialize: (item) => {
-        // Personalizar la prioridad y frecuencia de cambio
+        // 🏠 HOME - Máxima prioridad
         if (item.url === 'https://vinylstation.es/') {
           return {
             ...item,
             changefreq: 'daily',
             priority: 1.0,
+            lastmod: new Date().toISOString().split('T')[0], // Fecha actual
           };
         }
         
-        if (item.url.includes('/noticias/')) {
+        // 📻 RADIO EN DIRECTO - Muy alta prioridad (contenido principal)
+        if (item.url.includes('/en-directo')) {
           return {
             ...item,
-            changefreq: 'weekly',
-            priority: 0.8,
+            changefreq: 'always',
+            priority: 0.9,
+            lastmod: new Date().toISOString().split('T')[0],
           };
         }
         
-        if (item.url.includes('/vinilos/')) {
+        // 💿 VINILOS - Alta prioridad
+        if (item.url.includes('/vinilos')) {
+          // Páginas individuales de vinilos
+          if (item.url.match(/\/vinilos\/[^\/]+$/) && !item.url.includes('/page/')) {
+            return {
+              ...item,
+              changefreq: 'weekly',
+              priority: 0.8,
+            };
+          }
+          // Listado principal y paginación
           return {
             ...item,
-            changefreq: 'weekly',
-            priority: 0.8,
+            changefreq: 'daily',
+            priority: item.url === 'https://vinylstation.es/vinilos' ? 0.8 : 0.6,
           };
         }
         
-        if (item.url.includes('/programas/')) {
+        // 📰 NOTICIAS - Alta prioridad
+        if (item.url.includes('/noticias')) {
+          // Artículos individuales
+          if (item.url.match(/\/noticias\/[^\/]+$/) && !item.url.includes('/page/')) {
+            return {
+              ...item,
+              changefreq: 'monthly',
+              priority: 0.8,
+            };
+          }
+          // Listado principal y paginación
+          return {
+            ...item,
+            changefreq: 'daily',
+            priority: item.url === 'https://vinylstation.es/noticias' ? 0.8 : 0.6,
+          };
+        }
+        
+        // 📻 PROGRAMAS - Media-alta prioridad
+        if (item.url.includes('/programas')) {
+          // Programas individuales
+          if (item.url.match(/\/programas\/[^\/]+$/)) {
+            return {
+              ...item,
+              changefreq: 'weekly',
+              priority: 0.7,
+            };
+          }
+          // Listado principal
           return {
             ...item,
             changefreq: 'weekly',
@@ -64,15 +134,16 @@ export default defineConfig({
           };
         }
         
-        if (item.url.includes('/en-directo')) {
+        // 📞 CONTACTO - Media prioridad
+        if (item.url.includes('/contacto')) {
           return {
             ...item,
-            changefreq: 'always',
-            priority: 0.9,
+            changefreq: 'monthly',
+            priority: 0.6,
           };
         }
         
-        // Páginas legales
+        // 📄 PÁGINAS LEGALES - Baja prioridad
         if (item.url.includes('/aviso-legal') || 
             item.url.includes('/politica-') || 
             item.url.includes('/politicas-legales')) {
@@ -83,7 +154,16 @@ export default defineConfig({
           };
         }
         
-        // Por defecto
+        // 🔍 BÚSQUEDA Y OTROS - Baja prioridad
+        if (item.url.includes('/search') || item.url.includes('/vinilos-search')) {
+          return {
+            ...item,
+            changefreq: 'weekly',
+            priority: 0.4,
+          };
+        }
+        
+        // 📄 POR DEFECTO
         return {
           ...item,
           changefreq: 'monthly',
