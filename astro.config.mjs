@@ -15,12 +15,12 @@ export default defineConfig({
     }
   }),
   
-  // ✅ CONFIGURACIÓN DE IMÁGENES PARA CLOUDFLARE
+  // ✅ CONFIGURACIÓN DE IMÁGENES PARA CLOUDFLARE (NOOP)
   image: {
     service: {
-      entrypoint: '@astrojs/cloudflare/image-service'
+      entrypoint: 'astro/assets/services/noop'
     },
-    // Permitir optimizar imágenes externas de WordPress CMS
+    // Permitir imágenes externas de WordPress CMS
     domains: ['cms.vinylstation.es', 'vinylstation.es']
   },
   
