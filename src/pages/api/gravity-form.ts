@@ -51,14 +51,19 @@ export const GET: APIRoute = async () => {
 
 export const POST: APIRoute = async ({ request }) => {
   try {
-    console.log('📝 Enviando formulario...');
+    console.log('📝 POST: Iniciando envío formulario...');
     
     const formData = await request.json();
-    console.log('📋 Datos recibidos:', formData);
+    console.log('📋 POST: Datos recibidos:', JSON.stringify(formData, null, 2));
     
-    // ✅ Usar variables de entorno para credenciales
+    // ✅ Verificar variables de entorno en producción
     const username = import.meta.env.WORDPRESS_USER || 'vinyl';
     const password = import.meta.env.WORDPRESS_APP_PASSWORD || 'aByA gkgO ftxM D9Q8 rEXw 5OzY';
+    
+    console.log('🔐 POST: Variables entorno - Usuario:', username ? '✅' : '❌');
+    console.log('🔐 POST: Variables entorno - Password:', password ? '✅' : '❌');
+    console.log('🔐 POST: Username real:', username);
+    
     const credentials = `${username}:${password}`;
     
     // ✅ ESTRUCTURA CORRECTA para Gravity Forms API v2
@@ -69,7 +74,8 @@ export const POST: APIRoute = async ({ request }) => {
       source_page: 1
     };
     
-    console.log('🚀 Enviando payload:', payload);
+    console.log('🚀 POST: Enviando payload a WordPress:', JSON.stringify(payload, null, 2));
+    console.log('🌐 POST: URL destino: https://cms.vinylstation.es/wp-json/gf/v2/forms/1/submissions');
     
     const response = await fetch('https://cms.vinylstation.es/wp-json/gf/v2/forms/1/submissions', {
       method: 'POST',
@@ -81,40 +87,54 @@ export const POST: APIRoute = async ({ request }) => {
       body: JSON.stringify(payload)
     });
     
-    console.log('📡 Status envío:', response.status);
+    console.log('📡 POST: Status respuesta WordPress:', response.status);
+    console.log('📡 POST: Headers respuesta:', Object.fromEntries(response.headers.entries()));
     
     const responseText = await response.text();
-    console.log('📄 Respuesta:', responseText);
+    console.log('📄 POST: Respuesta completa WordPress:', responseText);
     
     let responseData;
     try {
       responseData = JSON.parse(responseText);
-    } catch {
+      console.log('📊 POST: Respuesta parseada:', JSON.stringify(responseData, null, 2));
+    } catch (parseError) {
+      console.error('❌ POST: Error parseando respuesta JSON:', parseError.message);
       responseData = { message: responseText };
     }
     
     if (!response.ok) {
+      console.error('❌ POST: WordPress devolvió error:', response.status);
       throw new Error(`HTTP ${response.status}: ${responseData.message || response.statusText}`);
     }
     
-    console.log('✅ Formulario enviado correctamente');
+    console.log('✅ POST: Formulario enviado correctamente a WordPress');
     
     return new Response(JSON.stringify({
       success: true,
       message: 'Formulario enviado correctamente',
-      data: responseData
+      data: responseData,
+      debug: {
+        wp_status: response.status,
+        timestamp: new Date().toISOString()
+      }
     }), { 
       status: 200,
       headers: { 'Content-Type': 'application/json' }
     });
     
   } catch (error) {
-    console.error('❌ Error enviando formulario:', error);
+    console.error('❌ POST: Error enviando formulario:', error);
+    console.error('❌ POST: Stack trace:', error.stack);
+    
     return new Response(JSON.stringify({ 
       success: false,
       error: 'No se pudo enviar el formulario',
       details: error.message,
-      suggestion: 'Verificar conexión con WordPress y configuración de Gravity Forms'
+      suggestion: 'Verificar conexión con WordPress y configuración de Gravity Forms',
+      debug: {
+        error_type: error.constructor.name,
+        timestamp: new Date().toISOString()
+      }
     }), { 
       status: 500,
       headers: { 'Content-Type': 'application/json' }
