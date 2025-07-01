@@ -4,10 +4,9 @@ export const GET: APIRoute = async () => {
   try {
     console.log('Proxy: Iniciando petición a Gravity Forms...');
     
-    // ⚠️ ACTUALIZA ESTA LÍNEA CON TU NUEVA CONTRASEÑA
+    // ✅ CREDENCIALES ACTUALIZADAS - Application Password "Formulario"
     // Formato: 'usuario:contraseña'
-    // Ejemplo: 'vinyl:abcd EFGH ijkl MNOP qrst UVWX'
-    const credentials = 'vinyl:ltkA 1D4H NELg aNRj GVoT XiNQ';
+    const credentials = 'vinyl:aByA gkgO ftxM D9Q8 rEXw 5OzY';
     
     const res = await fetch('https://cms.vinylstation.es/wp-json/gf/v2/forms/1', {
       headers: { 
@@ -47,8 +46,8 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     const payload = await request.json();
     
-    // ⚠️ ACTUALIZA ESTA LÍNEA TAMBIÉN
-    const credentials = 'vinyl:ltkA 1D4H NELg aNRj GVoT XiNQ';
+    // ✅ CREDENCIALES ACTUALIZADAS - Application Password "Formulario"
+    const credentials = 'vinyl:aByA gkgO ftxM D9Q8 rEXw 5OzY';
     
     const res = await fetch('https://cms.vinylstation.es/wp-json/gf/v2/forms/1/submissions', {
       method: 'POST',
