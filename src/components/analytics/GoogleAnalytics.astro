@@ -68,6 +68,7 @@ const isProduction = import.meta.env.PROD;
       // Función específica para tracking de radio
       window.trackRadioEvent = function(action, details = {}) {
         if (typeof gtag !== 'undefined') {
+          // Evento principal de radio (mantener funcionamiento actual)
           gtag('event', 'radio_interaction', {
             event_category: 'Radio Player',
             event_label: action,
@@ -77,6 +78,19 @@ const isProduction = import.meta.env.PROD;
             send_to: measurementId,
             ...details
           });
+          
+          // NUEVO: Evento específico de conversión para reproducción
+          if (action === 'play') {
+            gtag('event', 'radio_play', {
+              'event_category': 'Radio Player',
+              'event_label': 'Usuario inicia reproducción',
+              'value': 1,
+              'stream_url': details.streamUrl || 'https://stream.zeno.fm/4g7qxnxrloluv',
+              'player_type': details.player_type || 'unknown',
+              'timestamp': new Date().toISOString(),
+              'send_to': measurementId
+            });
+          }
         }
       };
       

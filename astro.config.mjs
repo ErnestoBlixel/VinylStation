@@ -20,13 +20,15 @@ export default defineConfig({
           '/api/', // Excluir endpoints de API
           '/404',  // Página de error
           '/test-', // Páginas de testing
+          '/page/', // 🚫 EXCLUIR TODAS LAS PÁGINAS DE PAGINACIÓN
         ];
         
-        // 🚫 EXCLUSIONES ESPECÍFICAS (más precisas)
+        // 🚫 EXCLUSIONES ESPECÍFICAS (páginas redundantes)
         const excludedPatterns = [
-          // Excluir solo páginas de paginación específicas si es necesario
-          // '/vinilos/page/1', // La página 1 es redundante con /vinilos
-          // '/noticias/page/1', // La página 1 es redundante con /noticias
+          // Excluir páginas de paginación redundantes (page/1 = mismo contenido que /vinilos)
+          'https://vinylstation.es/vinilos/page/1', // Redundante con /vinilos
+          'https://vinylstation.es/noticias/page/1', // Redundante con /noticias
+          'https://vinylstation.es/programas/page/1', // Redundante con /programas
         ];
         
         // Verificar exclusiones generales
@@ -38,14 +40,14 @@ export default defineConfig({
         return !isExcluded && !isPatternExcluded;
       },
       
-      // 🎯 PÁGINAS PERSONALIZADAS (solo páginas esenciales, el resto se detecta automáticamente)
+      // 🎯 PÁGINAS PERSONALIZADAS (solo páginas esenciales)
       customPages: [
         // Páginas principales que siempre deben estar
         'https://vinylstation.es/',
         'https://vinylstation.es/en-directo',
-        'https://vinylstation.es/vinilos',
-        'https://vinylstation.es/noticias', 
-        'https://vinylstation.es/programas',
+        'https://vinylstation.es/vinilos',      // Listado principal de vinilos
+        'https://vinylstation.es/noticias',     // Listado principal de noticias
+        'https://vinylstation.es/programas',    // Listado principal de programas
         'https://vinylstation.es/contacto',
         
         // Páginas legales
@@ -54,8 +56,9 @@ export default defineConfig({
         'https://vinylstation.es/politica-devoluciones',
         'https://vinylstation.es/politicas-legales',
         
-        // NOTA: Las páginas de paginación (page/2, page/3, etc.) y contenido dinámico
+        // NOTA: Las páginas individuales (/vinilos/[slug], /noticias/[slug], etc.)
         // se detectan automáticamente durante el build de Astro
+        // Las páginas de paginación (/page/) están EXCLUIDAS del sitemap
       ],
       
       // 🏷️ CONFIGURACIÓN SEO OPTIMIZADA
@@ -82,38 +85,42 @@ export default defineConfig({
         
         // 💿 VINILOS - Alta prioridad
         if (item.url.includes('/vinilos')) {
-          // Páginas individuales de vinilos
+          // Páginas individuales de vinilos (lo más importante)
           if (item.url.match(/\/vinilos\/[^\/]+$/) && !item.url.includes('/page/')) {
             return {
               ...item,
               changefreq: 'weekly',
+              priority: 0.9, // 🔥 PRIORIDAD MUY ALTA para vinilos individuales
+            };
+          }
+          // Listado principal de vinilos
+          if (item.url === 'https://vinylstation.es/vinilos') {
+            return {
+              ...item,
+              changefreq: 'daily',
               priority: 0.8,
             };
           }
-          // Listado principal y paginación
-          return {
-            ...item,
-            changefreq: 'daily',
-            priority: item.url === 'https://vinylstation.es/vinilos' ? 0.8 : 0.6,
-          };
         }
         
         // 📰 NOTICIAS - Alta prioridad
         if (item.url.includes('/noticias')) {
-          // Artículos individuales
+          // Artículos individuales de noticias (contenido único)
           if (item.url.match(/\/noticias\/[^\/]+$/) && !item.url.includes('/page/')) {
             return {
               ...item,
               changefreq: 'monthly',
+              priority: 0.9, // 🔥 PRIORIDAD MUY ALTA para noticias individuales
+            };
+          }
+          // Listado principal de noticias
+          if (item.url === 'https://vinylstation.es/noticias') {
+            return {
+              ...item,
+              changefreq: 'daily',
               priority: 0.8,
             };
           }
-          // Listado principal y paginación
-          return {
-            ...item,
-            changefreq: 'daily',
-            priority: item.url === 'https://vinylstation.es/noticias' ? 0.8 : 0.6,
-          };
         }
         
         // 📻 PROGRAMAS - Media-alta prioridad
@@ -123,15 +130,17 @@ export default defineConfig({
             return {
               ...item,
               changefreq: 'weekly',
+              priority: 0.8, // 🔥 PRIORIDAD ALTA para programas individuales
+            };
+          }
+          // Listado principal de programas
+          if (item.url === 'https://vinylstation.es/programas') {
+            return {
+              ...item,
+              changefreq: 'weekly',
               priority: 0.7,
             };
           }
-          // Listado principal
-          return {
-            ...item,
-            changefreq: 'weekly',
-            priority: 0.7,
-          };
         }
         
         // 📞 CONTACTO - Media prioridad
