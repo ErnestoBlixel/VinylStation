@@ -343,6 +343,8 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
   
   // Función para cargar formulario (mejorada como contacto.astro)
   async function loadContactForm() {
+    console.log('🚀 [HOME] Iniciando carga del formulario...');
+    
     const container = document.getElementById('gravity-form-container');
     const loadingMessage = container?.querySelector('.loading-message');
     const errorMessage = container?.querySelector('.error-message');
@@ -354,14 +356,29 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
     const FORM_ID = 1;
     
     try {
+      console.log('📡 [HOME] Solicitando estructura del formulario...');
+      
       // 1. Obtener la estructura del formulario desde el proxy local
-      const formResponse = await fetch('/api/gravity-form');
+      const formResponse = await fetch('/api/gravity-form', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      
+      console.log('📊 [HOME] Status respuesta:', formResponse.status);
       
       if (!formResponse.ok) {
         throw new Error(`Error ${formResponse.status}: ${formResponse.statusText}`);
       }
       
       const formData = await formResponse.json();
+      console.log('✅ [HOME] Formulario cargado:', formData);
+      
+      if (!formData || !formData.fields || !Array.isArray(formData.fields)) {
+        throw new Error('Estructura de formulario inválida');
+      }
       
       // 2. Construir el formulario dinámicamente
       const form = document.createElement('form');
@@ -475,39 +492,60 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
       form.addEventListener('submit', async (e) => {
         e.preventDefault();
         
+        console.log('📝 [HOME] Enviando formulario...');
+        
         // Animación del botón
         submitButton.innerHTML = '<span class="spinner-small"></span> Enviando...';
         submitButton.disabled = true;
         submitButton.classList.add('loading');
         
         const formDataToSend = new FormData(form);
-        const entry = {
-          form_id: String(FORM_ID)
-        };
+        const inputValues = {};
         
-        // Preparar valores para la API
+        // ✅ EXTRAER VALORES CORRECTAMENTE
         for (let [key, value] of formDataToSend.entries()) {
-          if (value) {
+          if (value && value.toString().trim()) {
             const fieldId = key.replace('input_', '');
-            entry[fieldId] = value.toString();
+            inputValues[fieldId] = value.toString().trim();
           }
         }
         
+        console.log('📋 [HOME] Datos preparados:', inputValues);
+        
         try {
+          // ✅ ESTRUCTURA CORRECTA para el servidor
+          const payload = {
+            input_values: inputValues
+          };
+          
+          console.log('🚀 [HOME] Enviando payload:', JSON.stringify(payload, null, 2));
           // Enviar a través del proxy local
           const submitResponse = await fetch('/api/gravity-form', {
             method: 'POST',
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
             },
-            body: JSON.stringify({
-              input_values: entry
-            })
+            body: JSON.stringify(payload)
           });
           
-          if (!submitResponse.ok) {
-            throw new Error(`Error ${submitResponse.status}: ${submitResponse.statusText}`);
+          console.log('📡 [HOME] Status envío:', submitResponse.status);
+          
+          const responseText = await submitResponse.text();
+          console.log('📄 [HOME] Respuesta del servidor:', responseText);
+          
+          let responseData;
+          try {
+            responseData = JSON.parse(responseText);
+          } catch {
+            responseData = { message: responseText };
           }
+          
+          if (!submitResponse.ok) {
+            throw new Error(responseData.details || responseData.message || `Error ${submitResponse.status}`);
+          }
+          
+          console.log('✅ [HOME] Formulario enviado correctamente');
           
           // Éxito - animar mensaje
           formMessage.className = 'form-message success';
@@ -526,12 +564,15 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
           form.style.transform = 'scale(0.98)';
           
         } catch (error) {
-          console.error('Error:', error);
+          console.error('❌ [HOME] Error enviando formulario:', error);
           formMessage.className = 'form-message error';
           formMessage.innerHTML = `
             <div class="error-icon">✕</div>
-            <p><strong>No se pudo enviar el formulario automáticamente.</strong></p>
-            <p>Por favor, envíanos un email a: <a href="mailto:hola@vinylstation.com">hola@vinylstation.com</a></p>
+            <p><strong>No se pudo enviar el formulario</strong></p>
+            <p class="error-details">${error.message}</p>
+            <hr>
+            <p><strong>Contacto alternativo:</strong></p>
+            <p>📧 <a href="mailto:hola@vinylstation.com">hola@vinylstation.com</a></p>
           `;
           formMessage.style.display = 'block';
         } finally {
@@ -546,6 +587,8 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
       container.appendChild(form);
       container.appendChild(formMessage);
       container.classList.remove('form-loading');
+      
+      console.log('✅ [HOME] Formulario renderizado correctamente');
       
     } catch (error) {
       console.error('Error cargando formulario:', error);
@@ -2030,6 +2073,17 @@ const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.
   
   .contact-form-container.compact .error-message a:hover {
     text-decoration: underline !important;
+  }
+  
+  /* ✅ ESTILO PARA ERROR DETAILS */
+  .form-message .error-details {
+    font-size: 0.95rem !important;
+    opacity: 0.8 !important;
+    margin: 1rem 0 !important;
+    font-family: monospace !important;
+    background: rgba(0,0,0,0.2) !important;
+    padding: 0.5rem !important;
+    border-radius: 4px !important;
   }
 
   /* ===== RESPONSIVE COMPACTO ===== */

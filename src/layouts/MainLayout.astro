@@ -73,7 +73,7 @@ const fullTitle = title.includes(siteInfo.title) ? title : `${title} | ${siteInf
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
     
     <!-- Preload critical assets -->
-    <link rel="preload" href="/images/logos/vinyl-station-logo.svg" as="image" />
+    <link rel="preload" href="/images/logos/logo vinylstation.png" as="image" />
   </head>
   <body class="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
     <!-- Skip to main content link for accessibility -->
@@ -89,10 +89,23 @@ const fullTitle = title.includes(siteInfo.title) ? title : `${title} | ${siteInf
     
     <Footer siteInfo={siteInfo} />
     
-    <!-- Load interactive components -->
+    <!-- Load interactive components with proper order -->
     <script>
       import '../lib/interactive-init.js';
-      import '../lib/navigationAnalytics.js';
+    </script>
+    
+    <!-- Load navigation analytics after a small delay to ensure GA4 is ready -->
+    <script>
+      // Cargar analytics después de asegurar que GA4 está disponible
+      setTimeout(() => {
+        import('../lib/navigationAnalytics.js')
+          .then(() => {
+            console.log('📊 Navigation Analytics cargado exitosamente');
+          })
+          .catch(error => {
+            console.warn('⚠️ Error cargando Navigation Analytics:', error);
+          });
+      }, 500);
     </script>
   </body>
 </html>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API Gravity Forms - VinylStation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #333;
+            border-radius: 8px;
+            background: #2a2a2a;
+        }
+        .success { color: #4caf50; font-weight: bold; }
+        .error { color: #f44336; font-weight: bold; }
+        .info { color: #2196F3; }
+        pre {
+            background: #1a1a1a;
+            padding: 15px;
+            overflow-x: auto;
+            border-radius: 4px;
+            border: 1px solid #333;
+        }
+        button {
+            padding: 12px 24px;
+            margin: 10px;
+            cursor: pointer;
+            background: #c5ad7b;
+            color: #1a1a1a;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+        }
+        button:hover {
+            background: #a8935e;
+        }
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test API Gravity Forms - VinylStation</h1>
+    
+    <div class="test-section">
+        <h2>1. Test Carga de Formulario (GET)</h2>
+        <button onclick="testFormLoad()">🔄 Probar Carga</button>
+        <div id="load-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Test Envío de Formulario (POST)</h2>
+        <button onclick="testFormSubmit()">📤 Probar Envío</button>
+        <div id="submit-result"></div>
+    </div>
+
+    <script>
+        const API_URL = '/api/gravity-form';
+        
+        async function testFormLoad() {
+            const resultDiv = document.getElementById('load-result');
+            const button = event.target;
+            
+            button.classList.add('loading');
+            button.textContent = '🔄 Cargando...';
+            resultDiv.innerHTML = '<p class="info">Probando carga del formulario...</p>';
+            
+            try {
+                console.log('🔄 Iniciando test de carga...');
+                
+                const response = await fetch(API_URL, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    }
+                });
+                
+                console.log('📡 Status:', response.status);
+                console.log('📡 Headers:', [...response.headers.entries()]);
+                
+                const responseText = await response.text();
+                console.log('📄 Respuesta raw:', responseText);
+                
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch {
+                    data = { error: 'Respuesta no es JSON válido', raw: responseText };
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${data.details || data.message || response.statusText}`);
+                }
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Carga exitosa</p>
+                    <p>Status: ${response.status}</p>
+                    <p>Campos encontrados: ${data.fields ? data.fields.length : 'N/A'}</p>
+                    <details>
+                        <summary>Ver respuesta completa</summary>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </details>
+                `;
+                
+            } catch (error) {
+                console.error('❌ Error:', error);
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error en carga</p>
+                    <p>Error: ${error.message}</p>
+                    <p class="info">Revisar consola para más detalles</p>
+                `;
+            } finally {
+                button.classList.remove('loading');
+                button.textContent = '🔄 Probar Carga';
+            }
+        }
+        
+        async function testFormSubmit() {
+            const resultDiv = document.getElementById('submit-result');
+            const button = event.target;
+            
+            button.classList.add('loading');
+            button.textContent = '📤 Enviando...';
+            resultDiv.innerHTML = '<p class="info">Probando envío del formulario...</p>';
+            
+            try {
+                console.log('📤 Iniciando test de envío...');
+                
+                // Datos de prueba
+                const testData = {
+                    input_values: {
+                        "1": "Test Usuario",      // Nombre
+                        "2": "test@vinylstation.com",  // Email  
+                        "3": "+34 123 456 789",   // Teléfono
+                        "4": "Test Subject",      // Asunto
+                        "5": "Este es un mensaje de prueba desde el test de API."  // Mensaje
+                    }
+                };
+                
+                console.log('📋 Datos de prueba:', testData);
+                
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify(testData)
+                });
+                
+                console.log('📡 Status:', response.status);
+                
+                const responseText = await response.text();
+                console.log('📄 Respuesta raw:', responseText);
+                
+                let data;
+                try {
+                    data = JSON.parse(responseText);
+                } catch {
+                    data = { error: 'Respuesta no es JSON válido', raw: responseText };
+                }
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${data.details || data.message || response.statusText}`);
+                }
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✅ Envío exitoso</p>
+                    <p>Status: ${response.status}</p>
+                    <p>Mensaje: ${data.message || 'Formulario enviado'}</p>
+                    <details>
+                        <summary>Ver respuesta completa</summary>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </details>
+                `;
+                
+            } catch (error) {
+                console.error('❌ Error:', error);
+                resultDiv.innerHTML = `
+                    <p class="error">❌ Error en envío</p>
+                    <p>Error: ${error.message}</p>
+                    <p class="info">Revisar consola para más detalles</p>
+                `;
+            } finally {
+                button.classList.remove('loading');
+                button.textContent = '📤 Probar Envío';
+            }
+        }
+        
+        // Información de la página
+        document.addEventListener('DOMContentLoaded', () => {
+            const info = document.createElement('div');
+            info.className = 'test-section';
+            info.innerHTML = `
+                <h2>ℹ️ Información del Test</h2>
+                <p><strong>URL actual:</strong> ${window.location.origin}</p>
+                <p><strong>API endpoint:</strong> ${API_URL}</p>
+                <p><strong>Timestamp:</strong> ${new Date().toLocaleString()}</p>
+                <p class="info">Abre la consola del navegador (F12) para ver logs detallados</p>
+            `;
+            document.body.insertBefore(info, document.body.firstChild);
+        });
+    </script>
+</body>
+</html>

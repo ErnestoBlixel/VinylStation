@@ -2,13 +2,18 @@ import { defineConfig } from 'astro/config';
 import react from '@astrojs/react';
 import tailwind from '@astrojs/tailwind';
 import sitemap from '@astrojs/sitemap';
-// import cloudflare from '@astrojs/cloudflare'; // Comentado temporalmente
+import cloudflare from '@astrojs/cloudflare'; // ✅ Reactivado para APIs
 
 // https://astro.build/config
 export default defineConfig({
   site: 'https://vinylstation.es', // URL de producción correcta
-  output: 'static', // Explícitamente estático para Cloudflare Pages
-  // adapter: cloudflare(), // No necesario para output estático
+  // 🔧 CAMBIO CRÍTICO: Activar SSR completo para APIs de formularios
+  output: 'server', // ✅ Modo servidor completo para APIs que funcionan
+  adapter: cloudflare({
+    platformProxy: {
+      enabled: true
+    }
+  }),
   integrations: [
     react(), 
     tailwind(), 
@@ -198,12 +203,28 @@ export default defineConfig({
     },
     server: {
       proxy: {
+        // ✅ Proxy mejorado para APIs de WordPress
         '/api/wordpress': {
           target: 'https://cms.vinylstation.es/wp-json',
           changeOrigin: true,
           rewrite: (path) => path.replace(/^\/api\/wordpress/, ''),
+          configure: (proxy, _options) => {
+            proxy.on('error', (err, _req, _res) => {
+              console.log('Proxy error:', err);
+            });
+            proxy.on('proxyReq', (proxyReq, req, _res) => {
+              console.log('Sending Request to Target:', req.method, req.url);
+            });
+            proxy.on('proxyRes', (proxyRes, req, _res) => {
+              console.log('Received Response from Target:', proxyRes.statusCode, req.url);
+            });
+          },
         },
       },
     },
   },
+  // ✅ CONFIGURACIÓN ESPECÍFICA PARA CLOUDFLARE PAGES
+  experimental: {
+    serverIslands: false // Desactivar para evitar problemas con Cloudflare
+  }
 });
