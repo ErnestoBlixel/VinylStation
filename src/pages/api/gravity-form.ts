@@ -1,8 +1,5 @@
 import type { APIRoute } from 'astro';
 
-// ✅ CONFIGURACIÓN PARA ASTRO HYBRID MODE
-export const prerender = false;
-
 // 🔧 VERSIÓN CORREGIDA DE LA API DE GRAVITY FORMS
 export const GET: APIRoute = async () => {
   try {
@@ -11,6 +8,11 @@ export const GET: APIRoute = async () => {
     // ✅ Usar variables de entorno para credenciales
     const username = import.meta.env.WORDPRESS_USER || 'vinyl';
     const password = import.meta.env.WORDPRESS_APP_PASSWORD || 'aByA gkgO ftxM D9Q8 rEXw 5OzY';
+    
+    // 🔍 DEBUG: Verificar variables en producción
+    if (!import.meta.env.WORDPRESS_USER || !import.meta.env.WORDPRESS_APP_PASSWORD) {
+      console.warn('⚠️ GET: Variables de entorno no configuradas, usando valores por defecto');
+    }
     const credentials = `${username}:${password}`;
     
     const response = await fetch('https://cms.vinylstation.es/wp-json/gf/v2/forms/1', {
@@ -63,9 +65,11 @@ export const POST: APIRoute = async ({ request }) => {
     const username = import.meta.env.WORDPRESS_USER || 'vinyl';
     const password = import.meta.env.WORDPRESS_APP_PASSWORD || 'aByA gkgO ftxM D9Q8 rEXw 5OzY';
     
-    console.log('🔐 POST: Variables entorno - Usuario:', username ? '✅' : '❌');
-    console.log('🔐 POST: Variables entorno - Password:', password ? '✅' : '❌');
-    console.log('🔐 POST: Username real:', username);
+    // 🔍 DEBUG MEJORADO para producción
+    console.log('🔐 POST: Variables entorno - Usuario:', import.meta.env.WORDPRESS_USER ? '✅ DEFINIDA' : '❌ NO DEFINIDA (usando default)');
+    console.log('🔐 POST: Variables entorno - Password:', import.meta.env.WORDPRESS_APP_PASSWORD ? '✅ DEFINIDA' : '❌ NO DEFINIDA (usando default)');
+    console.log('🔐 POST: Username usado:', username);
+    console.log('🔐 POST: Entorno actual:', import.meta.env.MODE || 'production');
     
     const credentials = `${username}:${password}`;
     
