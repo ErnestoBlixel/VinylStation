@@ -53,63 +53,8 @@ export const POST: APIRoute = async ({ request }) => {
   try {
     console.log('📝 Enviando formulario...');
     
-    // ✅ VALIDACIÓN DE CONTENIDO MUY PERMISIVA
-    const contentType = request.headers.get('content-type');
-    console.log('🔍 Content-Type recibido:', contentType);
-    
-    const isDevelopment = import.meta.env.DEV;
-    
-    if (isDevelopment && contentType === null) {
-      console.log('🚪 [DEV] Content-Type es null en modo development - continuando...');
-    }
-    
-    // ✅ LEER el cuerpo con múltiples estrategias
-    let rawBody = '';
-    
-    try {
-      // Estrategia 1: request.text()
-      rawBody = await request.text();
-      console.log('📄 [Estrategia 1] Raw body length:', rawBody.length);
-    } catch (error1) {
-      console.log('⚠️ [Estrategia 1] Falló request.text():', error1.message);
-      
-      try {
-        // Estrategia 2: request.json() directamente
-        const directJson = await request.json();
-        rawBody = JSON.stringify(directJson);
-        console.log('📄 [Estrategia 2] JSON directo exitoso, length:', rawBody.length);
-      } catch (error2) {
-        console.log('⚠️ [Estrategia 2] Falló request.json():', error2.message);
-        
-        // Estrategia 3: Usar ArrayBuffer
-        try {
-          const buffer = await request.arrayBuffer();
-          rawBody = new TextDecoder().decode(buffer);
-          console.log('📄 [Estrategia 3] ArrayBuffer exitoso, length:', rawBody.length);
-        } catch (error3) {
-          console.log('⚠️ [Estrategia 3] Falló ArrayBuffer:', error3.message);
-          throw new Error('No se pudo leer el cuerpo de la petición con ninguna estrategia');
-        }
-      }
-    }
-    
-    console.log('📄 Raw body preview:', rawBody.substring(0, 200));
-    
-    if (!rawBody || rawBody.trim() === '') {
-      console.error('❌ Cuerpo de petición vacío');
-      throw new Error('Cuerpo de la petición está vacío');
-    }
-    
-    // ✅ PARSEAR JSON de forma segura
-    let formData;
-    try {
-      formData = JSON.parse(rawBody);
-      console.log('✅ JSON parseado correctamente:', formData);
-    } catch (parseError) {
-      console.error('❌ Error parseando JSON:', parseError);
-      console.error('❌ Raw body que causó error:', rawBody);
-      throw new Error(`JSON malformado: ${parseError.message}`);
-    }
+    const formData = await request.json();
+    console.log('📋 Datos recibidos:', formData);
     
     // ✅ Usar variables de entorno para credenciales
     const username = import.meta.env.WORDPRESS_USER || 'vinyl';
@@ -124,7 +69,7 @@ export const POST: APIRoute = async ({ request }) => {
       source_page: 1
     };
     
-    console.log('🚀 Enviando payload:', JSON.stringify(payload, null, 2));
+    console.log('🚀 Enviando payload:', payload);
     
     const response = await fetch('https://cms.vinylstation.es/wp-json/gf/v2/forms/1/submissions', {
       method: 'POST',
@@ -149,23 +94,6 @@ export const POST: APIRoute = async ({ request }) => {
     }
     
     if (!response.ok) {
-      // Manejo especial para errores de validación de Gravity Forms (400)
-      if (response.status === 400 && responseData.validation_messages) {
-        console.log('⚠️ Errores de validación de WordPress:', responseData.validation_messages);
-        
-        return new Response(JSON.stringify({
-          success: false,
-          error: 'Errores de validación en el formulario',
-          validation_errors: responseData.validation_messages,
-          details: 'Por favor, corrije los campos marcados',
-          is_validation_error: true
-        }), { 
-          status: 400, // Mantener el 400 para errores de validación
-          headers: { 'Content-Type': 'application/json' }
-        });
-      }
-      
-      // Para otros errores (500, 401, etc.)
       throw new Error(`HTTP ${response.status}: ${responseData.message || response.statusText}`);
     }
     
