@@ -1,6 +1,238 @@
 // 🔧 SCRIPT MEJORADO PARA FORMULARIO DE CONTACTO
 // Versión corregida que maneja errores y usa la API correctamente
 
+// 🎨 INYECTAR ESTILOS CSS PARA EL FORMULARIO
+function injectFormStyles() {
+  const style = document.createElement('style');
+  style.textContent = `
+    /* Estilos del formulario de contacto */
+    #gravity-form-container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    
+    #gravity-form-container.form-loading {
+      min-height: 400px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .loading-message, .error-message {
+      text-align: center;
+      padding: 40px 20px;
+    }
+    
+    .loading-message p, .error-message p {
+      margin: 10px 0;
+      color: #666;
+    }
+    
+    .error-message {
+      color: #dc3545;
+    }
+    
+    .spinner {
+      animation: rotate 2s linear infinite;
+      width: 50px;
+      height: 50px;
+      margin: 0 auto 20px;
+    }
+    
+    .spinner .path {
+      stroke: #3b82f6;
+      stroke-linecap: round;
+      animation: dash 1.5s ease-in-out infinite;
+    }
+    
+    @keyframes rotate {
+      100% { transform: rotate(360deg); }
+    }
+    
+    @keyframes dash {
+      0% { stroke-dasharray: 1, 150; stroke-dashoffset: 0; }
+      50% { stroke-dasharray: 90, 150; stroke-dashoffset: -35; }
+      100% { stroke-dasharray: 90, 150; stroke-dashoffset: -124; }
+    }
+    
+    .contact-form {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: all 0.3s ease;
+    }
+    
+    .form-group.has-error input,
+    .form-group.has-error textarea,
+    .form-group.has-error select {
+      border-color: #dc3545;
+      background-color: #fff5f5;
+    }
+    
+    .form-group label {
+      font-weight: 600;
+      color: #1a1a1a;
+      font-size: 0.95rem;
+      margin-bottom: 4px;
+    }
+    
+    .dark .form-group label {
+      color: #f3f4f6;
+    }
+    
+    .form-group input,
+    .form-group textarea,
+    .form-group select {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e5e7eb;
+      border-radius: 8px;
+      font-size: 16px;
+      background-color: #ffffff;
+      transition: all 0.3s ease;
+      font-family: inherit;
+    }
+    
+    .dark .form-group input,
+    .dark .form-group textarea,
+    .dark .form-group select {
+      background-color: #1f2937;
+      border-color: #374151;
+      color: #f3f4f6;
+    }
+    
+    .form-group input:focus,
+    .form-group textarea:focus,
+    .form-group select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .form-group textarea {
+      min-height: 120px;
+      resize: vertical;
+    }
+    
+    .field-error {
+      color: #dc3545;
+      font-size: 0.875rem;
+      margin-top: 4px;
+      animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .form-actions {
+      margin-top: 12px;
+    }
+    
+    .btn.primary-btn {
+      width: 100%;
+      padding: 14px 24px;
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .btn.primary-btn:hover {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.3);
+    }
+    
+    .btn.primary-btn:disabled,
+    .btn.primary-btn.loading {
+      opacity: 0.7;
+      cursor: not-allowed;
+      transform: none;
+    }
+    
+    .spinner-small {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 0.8s linear infinite;
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    
+    .form-message {
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 20px;
+      text-align: center;
+      animation: fadeIn 0.5s ease;
+    }
+    
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .form-message.success {
+      background-color: #f0fdf4;
+      border: 1px solid #86efac;
+      color: #166534;
+    }
+    
+    .form-message.error {
+      background-color: #fef2f2;
+      border: 1px solid #fca5a5;
+      color: #991b1b;
+    }
+    
+    .success-icon, .error-icon {
+      font-size: 3rem;
+      margin-bottom: 10px;
+    }
+    
+    .success-icon { color: #10b981; }
+    .error-icon { color: #ef4444; }
+    
+    .form-message p { margin: 8px 0; }
+    .form-message strong { font-weight: 700; }
+    
+    .form-message a {
+      color: #3b82f6;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    
+    .form-message a:hover {
+      text-decoration: underline;
+    }
+  `;
+  document.head.appendChild(style);
+}
+
+// Inyectar estilos al cargar
+injectFormStyles();
+
 document.addEventListener('DOMContentLoaded', async function() {
   console.log('🚀 Iniciando carga del formulario de contacto...');
   
@@ -313,7 +545,8 @@ function showSuccessMessage(messageContainer, form) {
   messageContainer.innerHTML = `
     <div class="success-icon">✓</div>
     <p><strong>¡Mensaje enviado correctamente!</strong></p>
-    <p>Te responderemos en breve. Gracias por contactar con VinylStation.</p>
+    <p>Hemos recibido tu mensaje y te responderemos lo antes posible.</p>
+    <p>Gracias por contactar con VinylStation Radio 🎧</p>
   `;
   messageContainer.style.display = 'block';
   
@@ -327,6 +560,18 @@ function showSuccessMessage(messageContainer, form) {
   form.style.transition = 'all 0.5s ease-out';
   form.style.opacity = '0.7';
   form.style.transform = 'scale(0.98)';
+  
+  // Ocultar mensaje después de 10 segundos
+  setTimeout(() => {
+    messageContainer.style.transition = 'opacity 0.5s ease-out';
+    messageContainer.style.opacity = '0';
+    setTimeout(() => {
+      messageContainer.style.display = 'none';
+      messageContainer.style.opacity = '1';
+      form.style.opacity = '1';
+      form.style.transform = 'scale(1)';
+    }, 500);
+  }, 10000);
 }
 
 // ✅ FUNCIÓN PARA MOSTRAR ERROR
@@ -334,12 +579,12 @@ function showErrorMessage(messageContainer, errorDetails) {
   messageContainer.className = 'form-message error';
   messageContainer.innerHTML = `
     <div class="error-icon">✕</div>
-    <p><strong>No se pudo enviar el formulario</strong></p>
-    <p class="error-details">${errorDetails}</p>
+    <p><strong>Error al enviar el mensaje</strong></p>
+    <p class="error-details">Por favor, inténtalo de nuevo en unos momentos.</p>
     <hr>
-    <p><strong>Contacto alternativo:</strong></p>
-    <p>📧 <a href="mailto:hola@vinylstation.com">hola@vinylstation.com</a></p>
-    <p>📞 <a href="tel:+34925676778">+34 925 676 778</a></p>
+    <p><strong>También puedes contactarnos directamente:</strong></p>
+    <p>📧 <a href="mailto:hola@vinylstation.es">hola@vinylstation.es</a></p>
+    <p>📱 Redes sociales: @vinylstation_radio</p>
   `;
   messageContainer.style.display = 'block';
   messageContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
