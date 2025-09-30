@@ -1,0 +1,609 @@
+---
+// UniversalHero.astro - Hero consistente para todas las páginas (mejorado v2)
+import { getSiteInfo } from '../lib/wordpress';
+
+// Props del componente
+export interface Props {
+  title?: string;
+  description?: string;
+  showButton?: boolean;
+  buttonText?: string;
+  customClass?: string;
+  showLogo?: boolean;
+}
+
+const { 
+  title: customTitle, 
+  description: customDescription, 
+  showButton = false, 
+  buttonText = "Escuchar en vivo",
+  customClass = "",
+  showLogo = true
+} = Astro.props;
+
+// Obtener información del sitio desde WordPress
+let siteInfo = null;
+let hasError = false;
+
+try {
+  siteInfo = await getSiteInfo();
+} catch (error) {
+  hasError = true;
+  console.error('Error obteniendo información del sitio:', error);
+}
+
+// Usar título y descripción personalizados o los del sitio
+const heroTitle = customTitle || (hasError ? 'VinylStation Radio' : (siteInfo?.title || 'VinylStation Radio'));
+const heroDescription = customDescription || (hasError ? 'Emisora online desde Fuensalida, Toledo' : (siteInfo?.description || 'Una emisora nueva donde queremos conocerte y escuchar tu opinión'));
+---
+
+<section class={`universal-hero ${customClass}`}>
+  <div class="hero-background">
+    <div class="gradient-orb orb-1"></div>
+    <div class="gradient-orb orb-2"></div>
+    <div class="gradient-orb orb-3"></div>
+  </div>
+  
+  <div class="container">
+    <div class="hero-content">
+      {showLogo && (
+        <img src="/images/logos/logo vinylstation.png" alt="VinylStation Radio" class="hero-logo" />
+      )}
+      <h1>{heroTitle}</h1>
+      <p class="hero-description">{heroDescription}</p>
+      
+      {showButton && (
+        <div class="cta-buttons">
+          <button id="universal-listen-btn" class="btn primary-btn">
+            <span class="btn-text">{buttonText}</span>
+            <div class="btn-ripple"></div>
+          </button>
+        </div>
+      )}
+    </div>
+  </div>
+  
+  <!-- Efectos de partículas -->
+  <div class="particles-container">
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+    <div class="particle"></div>
+  </div>
+</section>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // Auto-play del reproductor si existe el botón
+    const listenBtn = document.getElementById('universal-listen-btn');
+    if (listenBtn) {
+      listenBtn.addEventListener('click', function(e) {
+        // Efecto de ripple
+        const ripple = this.querySelector('.btn-ripple');
+        const rect = this.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height);
+        const x = e.clientX - rect.left - size / 2;
+        const y = e.clientY - rect.top - size / 2;
+        
+        ripple.style.width = ripple.style.height = size + 'px';
+        ripple.style.left = x + 'px';
+        ripple.style.top = y + 'px';
+        ripple.classList.add('animate');
+        
+        setTimeout(() => ripple.classList.remove('animate'), 600);
+        
+        // Reproducir audio
+        const audioPlayer = document.getElementById('radio-stream') || 
+                           document.getElementById('radio-stream-hero') ||
+                           document.getElementById('main-radio-stream');
+        if (audioPlayer) {
+          audioPlayer.play().catch(() => {
+            console.log('No se pudo reproducir automáticamente');
+          });
+        }
+      });
+    }
+    
+    // Crear partículas dinámicamente
+    function createFloatingParticles() {
+      const container = document.querySelector('.particles-container');
+      if (!container) return;
+      
+      setInterval(() => {
+        const particle = document.createElement('div');
+        particle.className = 'floating-particle';
+        particle.style.left = Math.random() * 100 + '%';
+        particle.style.animationDuration = (Math.random() * 3 + 2) + 's';
+        particle.style.opacity = Math.random() * 0.5 + 0.1;
+        container.appendChild(particle);
+        
+        setTimeout(() => {
+          if (particle.parentNode) {
+            particle.parentNode.removeChild(particle);
+          }
+        }, 5000);
+      }, 2000);
+    }
+    
+    createFloatingParticles();
+  });
+</script>
+
+<style>
+  /* Variables para consistencia total con HomeHero */
+  :root {
+    --hero-primary: var(--title-color);
+    --hero-primary-dark: #a8935e;
+    --hero-bg: var(--color-bg);
+    --hero-text: var(--color-text);
+    --hero-subtitle: #888;
+    --hero-accent: rgba(197, 173, 123, 0.1);
+  }
+
+  .universal-hero {
+    position: relative;
+    padding: 8rem 0 6rem;
+    text-align: center;
+    background: linear-gradient(135deg, var(--hero-bg) 0%, rgba(0, 0, 0, 0.02) 100%);
+    overflow: hidden;
+    min-height: 500px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Fondo con gradientes orb animados - similar al HomeHero */
+  .hero-background {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    overflow: hidden;
+  }
+
+  .gradient-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(60px);
+    opacity: 0.3;
+    animation: orbFloat 15s ease-in-out infinite;
+  }
+
+  .orb-1 {
+    width: 400px;
+    height: 400px;
+    background: radial-gradient(circle, rgba(197, 173, 123, 0.3) 0%, transparent 70%);
+    top: -200px;
+    left: -200px;
+    animation-delay: 0s;
+  }
+
+  .orb-2 {
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(255, 51, 51, 0.2) 0%, transparent 70%);
+    top: 50%;
+    right: -150px;
+    animation-delay: -5s;
+  }
+
+  .orb-3 {
+    width: 250px;
+    height: 250px;
+    background: radial-gradient(circle, rgba(197, 173, 123, 0.25) 0%, transparent 70%);
+    bottom: -100px;
+    left: 30%;
+    animation-delay: -10s;
+  }
+
+  @keyframes orbFloat {
+    0%, 100% {
+      transform: translate(0, 0) rotate(0deg);
+    }
+    25% {
+      transform: translate(30px, -30px) rotate(90deg);
+    }
+    50% {
+      transform: translate(-20px, 20px) rotate(180deg);
+    }
+    75% {
+      transform: translate(40px, 10px) rotate(270deg);
+    }
+  }
+
+  /* Efecto de shimmer similar al HomeHero */
+  .universal-hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(197, 173, 123, 0.1), transparent);
+    animation: shimmer 3s ease-in-out infinite;
+    z-index: 1;
+  }
+
+  @keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    position: relative;
+    z-index: 2;
+  }
+
+  .hero-content {
+    max-width: 800px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* Logo del hero - exactamente como HomeHero */
+  .hero-logo {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 2rem;
+    display: block;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+    animation: pulse 3s infinite ease-in-out;
+    transition: transform 0.3s ease;
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255, 51, 51, 0.5)); }
+    50% { transform: scale(1.05); filter: drop-shadow(0 0 8px rgba(255, 51, 51, 0.8)); }
+    100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255, 51, 51, 0.5)); }
+  }
+
+  .hero-logo:hover {
+    transform: scale(1.1);
+  }
+
+  /* Título del hero - exactamente como HomeHero */
+  .universal-hero h1 {
+    font-size: 4rem;
+    margin: 0 0 1rem;
+    font-weight: 700;
+    color: var(--hero-primary);
+    line-height: 1.2;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Descripción del hero */
+  .hero-description {
+    font-size: 1.5rem;
+    color: var(--hero-subtitle);
+    margin: 0 0 3rem;
+    line-height: 1.6;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Botones CTA - mejorados con efectos avanzados */
+  .cta-buttons {
+    margin-top: 2rem;
+  }
+
+  .primary-btn {
+    background: linear-gradient(135deg, var(--hero-primary) 0%, var(--hero-primary-dark) 100%);
+    color: var(--color-bg);
+    padding: 1.2rem 2.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(197, 173, 123, 0.3);
+    position: relative;
+    overflow: hidden;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .btn-text {
+    position: relative;
+    z-index: 2;
+    transition: transform 0.3s ease;
+  }
+
+  .btn-ripple {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.6);
+    transform: scale(0);
+    pointer-events: none;
+  }
+
+  .btn-ripple.animate {
+    animation: rippleEffect 0.6s ease-out;
+  }
+
+  @keyframes rippleEffect {
+    to {
+      transform: scale(4);
+      opacity: 0;
+    }
+  }
+
+  .primary-btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.6s ease;
+    z-index: 1;
+  }
+
+  .primary-btn:hover::before {
+    left: 100%;
+  }
+
+  .primary-btn:hover {
+    background: linear-gradient(135deg, #d4bb85 0%, var(--hero-primary) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(197, 173, 123, 0.4);
+  }
+
+  .primary-btn:hover .btn-text {
+    transform: scale(1.05);
+  }
+
+  /* Partículas flotantes */
+  .particles-container {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .particle {
+    position: absolute;
+    width: 4px;
+    height: 4px;
+    background: var(--hero-primary);
+    border-radius: 50%;
+    opacity: 0.3;
+  }
+
+  .particle:nth-child(1) {
+    left: 20%;
+    animation: particleFloat 6s ease-in-out infinite;
+    animation-delay: 0s;
+  }
+
+  .particle:nth-child(2) {
+    left: 40%;
+    animation: particleFloat 8s ease-in-out infinite;
+    animation-delay: 1s;
+  }
+
+  .particle:nth-child(3) {
+    left: 60%;
+    animation: particleFloat 7s ease-in-out infinite;
+    animation-delay: 2s;
+  }
+
+  .particle:nth-child(4) {
+    left: 80%;
+    animation: particleFloat 9s ease-in-out infinite;
+    animation-delay: 0.5s;
+  }
+
+  .particle:nth-child(5) {
+    left: 90%;
+    animation: particleFloat 5s ease-in-out infinite;
+    animation-delay: 1.5s;
+  }
+
+  @keyframes particleFloat {
+    0%, 100% {
+      transform: translateY(100vh) scale(0);
+      opacity: 0;
+    }
+    10% {
+      transform: translateY(90vh) scale(1);
+      opacity: 0.3;
+    }
+    90% {
+      transform: translateY(-10vh) scale(1);
+      opacity: 0.3;
+    }
+    100% {
+      transform: translateY(-20vh) scale(0);
+      opacity: 0;
+    }
+  }
+
+  .floating-particle {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: var(--hero-primary);
+    border-radius: 50%;
+    bottom: 0;
+    animation: floatUp 5s linear infinite;
+    pointer-events: none;
+  }
+
+  @keyframes floatUp {
+    to {
+      transform: translateY(-100vh) rotate(360deg);
+      opacity: 0;
+    }
+  }
+
+  /* Variantes del hero */
+  .universal-hero.compact {
+    padding: 5rem 0 4rem;
+    min-height: 400px;
+  }
+
+  .universal-hero.compact h1 {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+  }
+
+  .universal-hero.compact .hero-description {
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+  }
+
+  .universal-hero.compact .hero-logo {
+    width: 100px;
+    height: 100px;
+    margin-bottom: 1.5rem;
+  }
+
+  .universal-hero.minimal {
+    padding: 4rem 0 3rem;
+    min-height: 300px;
+  }
+
+  .universal-hero.minimal h1 {
+    font-size: 2.5rem;
+  }
+
+  .universal-hero.minimal .hero-description {
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .universal-hero.minimal .hero-logo {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 1rem;
+  }
+
+  /* Ancho completo en modo noche */
+  [data-theme="night"] .universal-hero .container {
+    max-width: 100%;
+    padding: 0 2rem;
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .container {
+      padding: 0 1rem;
+    }
+    
+    .universal-hero {
+      padding: 6rem 0 4rem;
+      min-height: 400px;
+    }
+    
+    .universal-hero h1 {
+      font-size: 2.5rem;
+      margin-bottom: 1rem;
+      line-height: 1.2;
+      word-wrap: break-word;
+    }
+    
+    .hero-description {
+      font-size: 1.2rem;
+      margin-bottom: 2rem;
+      line-height: 1.4;
+      padding: 0 0.5rem;
+    }
+    
+    .hero-logo {
+      width: 80px;
+      height: 80px;
+      margin-bottom: 1.5rem;
+    }
+
+    .universal-hero.compact {
+      padding: 4rem 0 3rem;
+      min-height: 350px;
+    }
+
+    .universal-hero.compact h1 {
+      font-size: 2.2rem;
+    }
+
+    .universal-hero.compact .hero-description {
+      font-size: 1.1rem;
+    }
+
+    .universal-hero.minimal {
+      padding: 3rem 0 2rem;
+      min-height: 280px;
+    }
+
+    .primary-btn {
+      padding: 1rem 2rem;
+      font-size: 1rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .universal-hero {
+      padding: 5rem 0 3rem;
+      min-height: 350px;
+    }
+    
+    .universal-hero h1 {
+      font-size: 2rem;
+      line-height: 1.1;
+      padding: 0 0.25rem;
+    }
+    
+    .hero-description {
+      font-size: 1rem;
+      margin-bottom: 1.5rem;
+      line-height: 1.3;
+      padding: 0 0.25rem;
+    }
+    
+    .hero-logo {
+      width: 60px;
+      height: 60px;
+      margin-bottom: 1rem;
+    }
+    
+    .primary-btn {
+      padding: 0.9rem 1.8rem;
+      font-size: 0.95rem;
+      letter-spacing: 0.3px;
+    }
+
+    .universal-hero.compact {
+      padding: 3.5rem 0 2.5rem;
+      min-height: 300px;
+    }
+
+    .universal-hero.compact h1 {
+      font-size: 1.8rem;
+    }
+
+    .universal-hero.minimal {
+      padding: 2.5rem 0 2rem;
+      min-height: 250px;
+    }
+
+    .universal-hero.minimal h1 {
+      font-size: 1.6rem;
+    }
+  }
+</style>

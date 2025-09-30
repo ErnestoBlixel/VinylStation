@@ -1,0 +1,248 @@
+---
+// Footer reutilizable para páginas legales
+export interface Props {
+  showBackToHome?: boolean;
+  showContact?: boolean;
+  showOtherPolicies?: boolean;
+  version?: string;
+  lastUpdated?: string;
+}
+
+const { 
+  showBackToHome = true,
+  showContact = true,
+  showOtherPolicies = true,
+  version = "1.0",
+  lastUpdated = "Junio 2025"
+} = Astro.props;
+
+// Enlaces a otras políticas
+const policyLinks = [
+  { href: '/aviso-legal', label: '⚖️ Aviso Legal', icon: '⚖️' },
+  { href: '/politica-cookies-privacidad', label: '🍪 Privacidad', icon: '🍪' },
+  { href: '/politica-devoluciones', label: '🔄 Devoluciones', icon: '🔄' }
+];
+
+// Obtener la página actual para no mostrar enlace a sí misma
+const currentPath = Astro.url.pathname;
+const filteredLinks = policyLinks.filter(link => link.href !== currentPath);
+---
+
+<div class="legal-footer">
+  <div class="update-info">
+    <p><strong>Última actualización:</strong> {lastUpdated}</p>
+    <p><strong>Versión:</strong> {version}</p>
+    <div class="compliance-badges">
+      <span class="compliance-badge gdpr">🇪🇺 RGPD</span>
+      <span class="compliance-badge lssi">📋 LSSI</span>
+      <span class="compliance-badge consumer">🛡️ Protección Consumidor</span>
+    </div>
+  </div>
+  
+  <div class="back-actions">
+    {showBackToHome && (
+      <a href="/" class="btn primary-btn">
+        🏠 Volver al Inicio
+      </a>
+    )}
+    
+    {showContact && (
+      <a href="/contacto" class="btn secondary-btn">
+        📧 Contactar
+      </a>
+    )}
+    
+    {showOtherPolicies && filteredLinks.map(link => (
+      <a href={link.href} class="btn secondary-btn">
+        {link.label}
+      </a>
+    ))}
+  </div>
+  
+  <div class="legal-disclaimer">
+    <p>
+      <strong>Vinyl Station Radio</strong> - Asociación Dacrepro Salud (CIF: G/29992282)<br>
+      Fuensalida - 45510 - Toledo, España
+    </p>
+    <p class="small-text">
+      Todas las políticas están sujetas a la legislación española y europea vigente.
+      Para consultas legales específicas, consulte con un profesional cualificado.
+    </p>
+  </div>
+</div>
+
+<style>
+  .legal-footer {
+    text-align: center;
+    padding: 3rem 0 4rem;
+    border-top: 1px solid rgba(197, 173, 123, 0.2);
+    margin-top: 3rem;
+    background: linear-gradient(
+      180deg,
+      transparent 0%,
+      rgba(197, 173, 123, 0.02) 100%
+    );
+  }
+  
+  .update-info {
+    margin-bottom: 2rem;
+  }
+  
+  .update-info p {
+    color: #777;
+    font-size: 0.9rem;
+    font-style: italic;
+    margin-bottom: 0.5rem;
+  }
+  
+  .compliance-badges {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-top: 1rem;
+  }
+  
+  .compliance-badge {
+    padding: 0.3rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid;
+  }
+  
+  .compliance-badge.gdpr {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+  
+  .compliance-badge.lssi {
+    background: rgba(34, 197, 94, 0.1);
+    color: #22c55e;
+    border-color: rgba(34, 197, 94, 0.3);
+  }
+  
+  .compliance-badge.consumer {
+    background: rgba(168, 85, 247, 0.1);
+    color: #a855f7;
+    border-color: rgba(168, 85, 247, 0.3);
+  }
+  
+  .back-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-bottom: 2rem;
+  }
+  
+  .btn {
+    display: inline-block;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    min-width: 160px;
+    text-align: center;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .primary-btn {
+    background: var(--color-primary, #1a3459);
+    color: #ffffff;
+    border: 2px solid var(--color-primary, #1a3459);
+  }
+  
+  .primary-btn:hover {
+    background: var(--color-secondary, #904139);
+    border-color: var(--color-secondary, #904139);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(26, 52, 89, 0.3);
+  }
+  
+  .secondary-btn {
+    background: transparent;
+    color: var(--color-primary, #1a3459);
+    border: 2px solid var(--color-primary, #1a3459);
+  }
+  
+  .secondary-btn:hover {
+    background: var(--color-primary, #1a3459);
+    color: #ffffff;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(26, 52, 89, 0.3);
+  }
+  
+  .legal-disclaimer {
+    padding: 2rem 1rem 1rem;
+    border-top: 1px solid rgba(197, 173, 123, 0.1);
+    margin-top: 2rem;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  
+  .legal-disclaimer p {
+    color: #666;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin-bottom: 0.5rem;
+  }
+  
+  .small-text {
+    font-size: 0.8rem !important;
+    font-style: italic;
+    color: #888 !important;
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .legal-footer {
+      padding: 2rem 0 3rem;
+    }
+    
+    .back-actions {
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .btn {
+      width: 200px;
+    }
+    
+    .compliance-badges {
+      justify-content: center;
+    }
+    
+    .legal-disclaimer {
+      padding: 1.5rem 0.5rem 0.5rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .compliance-badges {
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .compliance-badge {
+      font-size: 0.65rem;
+    }
+    
+    .legal-disclaimer p {
+      font-size: 0.8rem;
+    }
+    
+    .small-text {
+      font-size: 0.7rem !important;
+    }
+  }
+</style>
