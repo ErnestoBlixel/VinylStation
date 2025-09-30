@@ -1,7 +1,22 @@
 ---
 import MainLayout from '../../layouts/MainLayout.astro';
 import UniversalHero from '../../components/UniversalHero.astro';
-import { getEquipoBySlug } from '../../lib/wordpress.js';
+import { getEquipo, getEquipoBySlug } from '../../lib/wordpress.js';
+
+// ⚡ GENERAR RUTAS ESTÁTICAS
+export async function getStaticPaths() {
+  try {
+    const data = await getEquipo({ limit: 100 });
+    const equipo = data?.equipo || [];
+
+    return equipo.map((miembro) => ({
+      params: { slug: miembro.slug },
+    }));
+  } catch (error) {
+    console.error('❌ Error en getStaticPaths de equipo:', error);
+    return [];
+  }
+}
 
 const { slug } = Astro.params;
 
