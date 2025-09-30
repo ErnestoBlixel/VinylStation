@@ -1580,6 +1580,216 @@ export async function getPodcastBySlug(slug) {
 }
 
 // ===============================
+// FUNCIONES PARA EQUIPO
+// ===============================
+export async function getEquipo({ limit = 50 } = {}) {
+  console.log(`👥 Obteniendo ${limit} miembros del equipo...`);
+  const QUERY = gql`
+    query GetEquipo($first: Int!) {
+      equipos(first: $first, where: {orderby: {field: DATE, order: DESC}}) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        nodes {
+          id
+          slug
+          title
+          date
+          content
+          featuredImage {
+            node {
+              sourceUrl
+              altText
+            }
+          }
+          camposEquipo {
+            vsFacebook
+            vsInstagram
+            vsWhatsapp
+            vsTiktok
+            vsYoutube
+            vsSoundcloud
+            vsPaginaWeb
+          }
+          seo {
+            title
+            metaDesc
+            opengraphTitle
+            opengraphDescription
+            twitterTitle
+            twitterDescription
+          }
+        }
+      }
+    }
+  `;
+
+  try {
+    const { equipos } = await request(
+      WORDPRESS_GRAPHQL_URL,
+      QUERY,
+      { first: limit }
+    );
+
+    const nodes = equipos?.nodes;
+    if (!Array.isArray(nodes)) {
+      console.warn('⚠️ getEquipo: respuesta inesperada o sin nodos', equipos);
+      return { equipo: [], pageInfo: null };
+    }
+
+    const equipoProcesado = nodes.map((e) => {
+      const imgUrl =
+        processImageURL(e.featuredImage?.node?.sourceUrl) ||
+        '/images/placeholder-team.jpg';
+
+      const alt =
+        e.featuredImage?.node?.altText ||
+        e.seo?.title ||
+        e.title;
+      
+      let cleanExcerpt = '';
+      if (e.content) {
+        cleanExcerpt = e.content.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+        cleanExcerpt = cleanExcerpt.substring(0, 160) + (cleanExcerpt.length > 160 ? '...' : '');
+      } else {
+        cleanExcerpt = e.seo?.metaDesc || `Miembro del equipo "${e.title}"`;
+      }
+
+      return {
+        ...e,
+        imagenDestacadaUrl: imgUrl,
+        featuredImage: { node: { sourceUrl: imgUrl, altText: alt } },
+        excerpt: cleanExcerpt,
+        camposEquipo: {
+          vsFacebook: e.camposEquipo?.vsFacebook || '',
+          vsInstagram: e.camposEquipo?.vsInstagram || '',
+          vsWhatsapp: e.camposEquipo?.vsWhatsapp || '',
+          vsTiktok: e.camposEquipo?.vsTiktok || '',
+          vsYoutube: e.camposEquipo?.vsYoutube || '',
+          vsSoundcloud: e.camposEquipo?.vsSoundcloud || '',
+          vsPaginaWeb: e.camposEquipo?.vsPaginaWeb || '',
+        },
+        seo:
+          e.seo?.title ? e.seo : { 
+            title: `${e.title} | VinylStation Equipo`,
+            metaDesc: cleanExcerpt,
+          },
+      };
+    });
+
+    console.log(`✅ ${equipoProcesado.length} miembros del equipo procesados correctamente`);
+
+    return {
+      equipo: equipoProcesado,
+      pageInfo: equipos.pageInfo,
+    };
+  } catch (error) {
+    console.error('❌ Error en getEquipo:', error.message);
+    if (error.response?.errors) {
+        console.error('GraphQL Errors (getEquipo):', JSON.stringify(error.response.errors, null, 2));
+    }
+    return { equipo: [], pageInfo: null };
+  }
+}
+
+export async function getEquipoBySlug(slug) {
+  console.log(`👤 Obteniendo miembro del equipo: ${slug}`);
+  const QUERY = gql`
+    query GetEquipoBySlug($slug: ID!) {
+      equipo(id: $slug, idType: SLUG) {
+        id
+        title
+        slug
+        date
+        content
+        featuredImage {
+          node {
+            sourceUrl
+            altText
+          }
+        }
+        camposEquipo {
+          vsFacebook
+          vsInstagram
+          vsWhatsapp
+          vsTiktok
+          vsYoutube
+          vsSoundcloud
+          vsPaginaWeb
+        }
+        seo {
+          title
+          metaDesc
+          opengraphTitle
+          opengraphDescription
+          twitterTitle
+          twitterDescription
+        }
+      }
+    }
+  `;
+
+  try {
+    const { equipo } = await request(
+      WORDPRESS_GRAPHQL_URL,
+      QUERY,
+      { slug }
+    );
+    if (!equipo) {
+        console.warn(`⚠️ No se encontró miembro del equipo con slug: ${slug}`);
+        return null;
+    }
+
+    const imgUrl =
+      processImageURL(equipo.featuredImage?.node?.sourceUrl) ||
+      '/images/placeholder-team.jpg';
+
+    const alt =
+      equipo.featuredImage?.node?.altText ||
+      equipo.seo?.title ||
+      equipo.title;
+    
+    let cleanExcerpt = '';
+    if (equipo.content) {
+        cleanExcerpt = equipo.content.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+        cleanExcerpt = cleanExcerpt.substring(0, 160) + (cleanExcerpt.length > 160 ? '...' : '');
+    } else {
+        cleanExcerpt = equipo.seo?.metaDesc || `Miembro del equipo "${equipo.title}"`;
+    }
+
+    return {
+      ...equipo,
+      imagenDestacadaUrl: imgUrl,
+      featuredImage: { node: { sourceUrl: imgUrl, altText: alt } },
+      excerpt: cleanExcerpt,
+      camposEquipo: {
+        vsFacebook: equipo.camposEquipo?.vsFacebook || '',
+        vsInstagram: equipo.camposEquipo?.vsInstagram || '',
+        vsWhatsapp: equipo.camposEquipo?.vsWhatsapp || '',
+        vsTiktok: equipo.camposEquipo?.vsTiktok || '',
+        vsYoutube: equipo.camposEquipo?.vsYoutube || '',
+        vsSoundcloud: equipo.camposEquipo?.vsSoundcloud || '',
+        vsPaginaWeb: equipo.camposEquipo?.vsPaginaWeb || '',
+      },
+      seo:
+        equipo.seo?.title ? equipo.seo : {
+          title: `${equipo.title} | VinylStation`,
+          metaDesc:
+            cleanExcerpt ||
+            `Conoce a ${equipo.title}, parte del equipo de VinylStation`,
+        },
+    };
+  } catch (error) {
+    console.error(`❌ Error en getEquipoBySlug(${slug}):`, error.message);
+     if (error.response?.errors) {
+        console.error('GraphQL Errors (getEquipoBySlug):', JSON.stringify(error.response.errors, null, 2));
+    }
+    return null;
+  }
+}
+
+// ===============================
 // FUNCIONES PARA PROGRAMA POR SLUG
 // ===============================
 export async function getProgramaBySlug(slug) {
@@ -2547,6 +2757,8 @@ export default {
   getProgramaBySlug,
   getPodcasts,
   getPodcastBySlug,
+  getEquipo,
+  getEquipoBySlug,
   getPageData, 
   getEmisora,
   getMenuNavegacion,
