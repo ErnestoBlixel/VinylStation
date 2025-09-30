@@ -261,6 +261,126 @@ export async function getProgramas({ limit = 10 } = {}) {
 }
 
 // ===============================
+// FUNCIÓN PARA OBTENER PODCASTS
+// ===============================
+export async function getPodcasts({ limit = 50 } = {}) {
+  console.log(`🎙️ Obteniendo ${limit} podcasts...`);
+  const QUERY = gql`
+    query GetPodcasts($first: Int!) {
+      podcasts(first: $first, where: {orderby: {field: DATE, order: DESC}}) {
+        pageInfo {
+          hasNextPage
+          endCursor
+        }
+        nodes {
+          id
+          slug
+          title
+          date
+          content
+          featuredImage {
+            node {
+              sourceUrl
+              altText
+            }
+          }
+          camposPodcast {
+            vsSoundcloud
+            vsYoutube
+            vsFechaEmision
+          }
+          seo {
+            title
+            metaDesc
+            opengraphTitle
+            opengraphDescription
+            twitterTitle
+            twitterDescription
+          }
+        }
+      }
+    }
+  `;
+
+  try {
+    const { podcasts } = await request(
+      WORDPRESS_GRAPHQL_URL,
+      QUERY,
+      { first: limit }
+    );
+
+    const nodes = podcasts?.nodes;
+    if (!Array.isArray(nodes)) {
+      console.warn('⚠️ getPodcasts: respuesta inesperada o sin nodos', podcasts);
+      return { podcasts: [], pageInfo: null };
+    }
+
+    const podcastsProcesados = nodes.map((p) => {
+      const imgUrl =
+        processImageURL(p.featuredImage?.node?.sourceUrl) ||
+        '/images/placeholder-podcast.jpg';
+
+      const alt =
+        p.featuredImage?.node?.altText ||
+        p.seo?.title ||
+        p.title;
+      
+      let cleanExcerpt = '';
+      if (p.content) {
+        cleanExcerpt = p.content.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+        cleanExcerpt = cleanExcerpt.substring(0, 160) + (cleanExcerpt.length > 160 ? '...' : '');
+      } else {
+        cleanExcerpt = p.seo?.metaDesc || `Podcast "${p.title}" - Programa grabado`;
+      }
+
+      // Formatear fecha de emisión
+      const fechaEmision = p.camposPodcast?.vsFechaEmision 
+        ? new Date(p.camposPodcast.vsFechaEmision).toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          })
+        : new Date(p.date).toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+          });
+
+      return {
+        ...p,
+        imagenDestacadaUrl: imgUrl,
+        featuredImage: { node: { sourceUrl: imgUrl, altText: alt } },
+        excerpt: cleanExcerpt,
+        fechaEmisionFormateada: fechaEmision,
+        camposPodcast: {
+          vsSoundcloud: p.camposPodcast?.vsSoundcloud || '',
+          vsYoutube: p.camposPodcast?.vsYoutube || '',
+          vsFechaEmision: p.camposPodcast?.vsFechaEmision || p.date,
+        },
+        seo:
+          p.seo?.title ? p.seo : { 
+            title: `${p.title} | VinylStation Podcasts`,
+            metaDesc: cleanExcerpt,
+          },
+      };
+    });
+
+    console.log(`✅ ${podcastsProcesados.length} podcasts procesados correctamente`);
+
+    return {
+      podcasts: podcastsProcesados,
+      pageInfo: podcasts.pageInfo,
+    };
+  } catch (error) {
+    console.error('❌ Error en getPodcasts:', error.message);
+    if (error.response?.errors) {
+        console.error('GraphQL Errors (getPodcasts):', JSON.stringify(error.response.errors, null, 2));
+    }
+    return { podcasts: [], pageInfo: null };
+  }
+}
+
+// ===============================
 // FUNCION getPageData (CORREGIDA)
 // ===============================
 export async function getPageData(slug) {
@@ -1355,7 +1475,112 @@ export async function getViniloBySlug(slug) {
 
 
 // ===============================
-// FUNCIONES PARA PROGRAMA POR SLUG (EXISTENTE, SIN CAMBIOS MAYORES)
+// FUNCIÓN PARA OBTENER PODCAST POR SLUG
+// ===============================
+export async function getPodcastBySlug(slug) {
+  console.log(`🎙️ Obteniendo podcast: ${slug}`);
+  const QUERY = gql`
+    query GetPodcastBySlug($slug: ID!) {
+      podcast(id: $slug, idType: SLUG) {
+        id
+        title
+        slug
+        date
+        content
+        featuredImage {
+          node {
+            sourceUrl
+            altText
+          }
+        }
+        camposPodcast {
+          vsSoundcloud
+          vsYoutube
+          vsFechaEmision
+        }
+        seo {
+          title
+          metaDesc
+          opengraphTitle
+          opengraphDescription
+          twitterTitle
+          twitterDescription
+        }
+      }
+    }
+  `;
+
+  try {
+    const { podcast } = await request(
+      WORDPRESS_GRAPHQL_URL,
+      QUERY,
+      { slug }
+    );
+    if (!podcast) {
+        console.warn(`⚠️ No se encontró podcast con slug: ${slug}`);
+        return null;
+    }
+
+    const imgUrl =
+      processImageURL(podcast.featuredImage?.node?.sourceUrl) ||
+      '/images/placeholder-podcast.jpg';
+
+    const alt =
+      podcast.featuredImage?.node?.altText ||
+      podcast.seo?.title ||
+      podcast.title;
+    
+    let cleanExcerpt = '';
+    if (podcast.content) {
+        cleanExcerpt = podcast.content.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+        cleanExcerpt = cleanExcerpt.substring(0, 160) + (cleanExcerpt.length > 160 ? '...' : '');
+    } else {
+        cleanExcerpt = podcast.seo?.metaDesc || `Podcast "${podcast.title}" - Programa grabado`;
+    }
+
+    // Formatear fecha de emisión
+    const fechaEmision = podcast.camposPodcast?.vsFechaEmision 
+      ? new Date(podcast.camposPodcast.vsFechaEmision).toLocaleDateString('es-ES', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        })
+      : new Date(podcast.date).toLocaleDateString('es-ES', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric'
+        });
+
+    return {
+      ...podcast,
+      imagenDestacadaUrl: imgUrl,
+      featuredImage: { node: { sourceUrl: imgUrl, altText: alt } },
+      excerpt: cleanExcerpt,
+      fechaEmisionFormateada: fechaEmision,
+      camposPodcast: {
+        vsSoundcloud: podcast.camposPodcast?.vsSoundcloud || '',
+        vsYoutube: podcast.camposPodcast?.vsYoutube || '',
+        vsFechaEmision: podcast.camposPodcast?.vsFechaEmision || podcast.date,
+      },
+      seo:
+        podcast.seo?.title ? podcast.seo : {
+          title: `${podcast.title || 'Podcast'} | VinylStation`,
+          metaDesc:
+            cleanExcerpt ||
+            `Escucha "${podcast.title || 'este podcast'}" en VinylStation`,
+        },
+    };
+  } catch (error) {
+    console.error(`❌ Error en getPodcastBySlug(${slug}):`, error.message);
+     if (error.response?.errors) {
+        console.error('GraphQL Errors (getPodcastBySlug):', JSON.stringify(error.response.errors, null, 2));
+    }
+    return null;
+  }
+}
+
+// ===============================
+// FUNCIONES PARA PROGRAMA POR SLUG
 // ===============================
 export async function getProgramaBySlug(slug) {
   console.log(`📻 Obteniendo programa: ${slug}`);
@@ -2320,6 +2545,8 @@ export default {
   getSiteInfo,
   getProgramas,
   getProgramaBySlug,
+  getPodcasts,
+  getPodcastBySlug,
   getPageData, 
   getEmisora,
   getMenuNavegacion,
