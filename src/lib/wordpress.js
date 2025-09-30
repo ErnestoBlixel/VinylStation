@@ -347,7 +347,7 @@ export async function getPageData(slug) {
       seo:
         page.seo?.title ? page.seo : {
           title: `${page.title || 'Página'} | VinylStation`,
-          metaDesc: cleanExcerpt.substring(0,160) || 'Tu emisora de vinilo 24/7',
+          metaDesc: cleanExcerpt.substring(0,500) || 'Tu emisora de vinilo 24/7',
         },
     };
   } catch (error) {
