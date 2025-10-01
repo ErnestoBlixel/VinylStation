@@ -31,11 +31,11 @@ let miembro = null;
 try {
   const data = await getEquipoBySlug(slug);
   
-  if (!data || !data.miembro) {
+  if (!data) {
     throw new Error(`No se encontró el miembro del equipo con slug: ${slug}`);
   }
   
-  miembro = data.miembro;
+  miembro = data;
 } catch (error) {
   hasError = true;
   errorMessage = error.message;
@@ -57,11 +57,31 @@ const imagenDestacada = !hasError
   : '/images/placeholder-team.jpg';
 
 // Obtener datos adicionales del miembro
-const cargo = miembro?.equipoCampos?.cargo || '';
-const email = miembro?.equipoCampos?.email || '';
-const telefono = miembro?.equipoCampos?.telefono || '';
 const biografia = miembro?.content || '';
-const redesSociales = miembro?.equipoCampos?.redesSociales || [];
+
+// Redes sociales disponibles
+const redesSociales = [];
+if (miembro?.camposEquipo?.vsFacebook) {
+  redesSociales.push({ plataforma: 'Facebook', url: miembro.camposEquipo.vsFacebook });
+}
+if (miembro?.camposEquipo?.vsInstagram) {
+  redesSociales.push({ plataforma: 'Instagram', url: miembro.camposEquipo.vsInstagram });
+}
+if (miembro?.camposEquipo?.vsWhatsapp) {
+  redesSociales.push({ plataforma: 'WhatsApp', url: miembro.camposEquipo.vsWhatsapp });
+}
+if (miembro?.camposEquipo?.vsTiktok) {
+  redesSociales.push({ plataforma: 'TikTok', url: miembro.camposEquipo.vsTiktok });
+}
+if (miembro?.camposEquipo?.vsYoutube) {
+  redesSociales.push({ plataforma: 'YouTube', url: miembro.camposEquipo.vsYoutube });
+}
+if (miembro?.camposEquipo?.vsSoundcloud) {
+  redesSociales.push({ plataforma: 'SoundCloud', url: miembro.camposEquipo.vsSoundcloud });
+}
+if (miembro?.camposEquipo?.vsPaginaWeb) {
+  redesSociales.push({ plataforma: 'Web', url: miembro.camposEquipo.vsPaginaWeb });
+}
 ---
 
 <MainLayout title={pageTitle} description={pageDescription}>
@@ -97,7 +117,7 @@ const redesSociales = miembro?.equipoCampos?.redesSociales || [];
         {/* HERO UNIVERSAL */}
         <UniversalHero 
           title={miembro.title}
-          description={cargo || stripHtml(miembro.excerpt || '')}
+          description={stripHtml(miembro.excerpt || '')}
           customClass="compact"
         />
 
@@ -120,40 +140,7 @@ const redesSociales = miembro?.equipoCampos?.redesSociales || [];
                   />
                 </div>
 
-                {/* INFORMACIÓN DE CONTACTO */}
-                <div class="member-info-card">
-                  <h3 class="info-title">Información de Contacto</h3>
-                  
-                  {cargo && (
-                    <div class="info-item">
-                      <span class="info-icon">💼</span>
-                      <div class="info-content">
-                        <span class="info-label">Cargo</span>
-                        <span class="info-value">{cargo}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  {email && (
-                    <div class="info-item">
-                      <span class="info-icon">📧</span>
-                      <div class="info-content">
-                        <span class="info-label">Email</span>
-                        <a href={`mailto:${email}`} class="info-value info-link">{email}</a>
-                      </div>
-                    </div>
-                  )}
-
-                  {telefono && (
-                    <div class="info-item">
-                      <span class="info-icon">📱</span>
-                      <div class="info-content">
-                        <span class="info-label">Teléfono</span>
-                        <a href={`tel:${telefono}`} class="info-value info-link">{telefono}</a>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                {/* INFORMACIÓN - Oculta por ahora ya que no hay campos disponibles */}
 
                 {/* REDES SOCIALES */}
                 {redesSociales && redesSociales.length > 0 && (
@@ -168,11 +155,13 @@ const redesSociales = miembro?.equipoCampos?.redesSociales || [];
                           class="social-link"
                           title={red.plataforma}
                         >
-                          {red.plataforma === 'LinkedIn' && '💼'}
-                          {red.plataforma === 'Twitter' && '🐦'}
-                          {red.plataforma === 'Instagram' && '📷'}
                           {red.plataforma === 'Facebook' && '👥'}
-                          {!['LinkedIn', 'Twitter', 'Instagram', 'Facebook'].includes(red.plataforma) && '🔗'}
+                          {red.plataforma === 'Instagram' && '📷'}
+                          {red.plataforma === 'WhatsApp' && '📱'}
+                          {red.plataforma === 'TikTok' && '🎵'}
+                          {red.plataforma === 'YouTube' && '🎥'}
+                          {red.plataforma === 'SoundCloud' && '🎶'}
+                          {red.plataforma === 'Web' && '🌐'}
                           <span>{red.plataforma}</span>
                         </a>
                       ))}

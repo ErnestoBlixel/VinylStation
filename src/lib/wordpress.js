@@ -1586,7 +1586,7 @@ export async function getEquipo({ limit = 50 } = {}) {
   console.log(`👥 Obteniendo ${limit} miembros del equipo...`);
   const QUERY = gql`
     query GetEquipo($first: Int!) {
-      equipos(first: $first, where: {orderby: {field: DATE, order: DESC}}) {
+      miembrosEquipo(first: $first, where: {orderby: {field: DATE, order: DESC}}) {
         pageInfo {
           hasNextPage
           endCursor
@@ -1626,15 +1626,15 @@ export async function getEquipo({ limit = 50 } = {}) {
   `;
 
   try {
-    const { equipos } = await request(
+    const { miembrosEquipo } = await request(
       WORDPRESS_GRAPHQL_URL,
       QUERY,
       { first: limit }
     );
 
-    const nodes = equipos?.nodes;
+    const nodes = miembrosEquipo?.nodes;
     if (!Array.isArray(nodes)) {
-      console.warn('⚠️ getEquipo: respuesta inesperada o sin nodos', equipos);
+      console.warn('⚠️ getEquipo: respuesta inesperada o sin nodos', miembrosEquipo);
       return { equipo: [], pageInfo: null };
     }
 
@@ -1682,7 +1682,7 @@ export async function getEquipo({ limit = 50 } = {}) {
 
     return {
       equipo: equipoProcesado,
-      pageInfo: equipos.pageInfo,
+      pageInfo: miembrosEquipo.pageInfo,
     };
   } catch (error) {
     console.error('❌ Error en getEquipo:', error.message);
@@ -1697,7 +1697,7 @@ export async function getEquipoBySlug(slug) {
   console.log(`👤 Obteniendo miembro del equipo: ${slug}`);
   const QUERY = gql`
     query GetEquipoBySlug($slug: ID!) {
-      equipo(id: $slug, idType: SLUG) {
+      miembroEquipo(id: $slug, idType: SLUG) {
         id
         title
         slug
@@ -1731,53 +1731,53 @@ export async function getEquipoBySlug(slug) {
   `;
 
   try {
-    const { equipo } = await request(
+    const { miembroEquipo } = await request(
       WORDPRESS_GRAPHQL_URL,
       QUERY,
       { slug }
     );
-    if (!equipo) {
+    if (!miembroEquipo) {
         console.warn(`⚠️ No se encontró miembro del equipo con slug: ${slug}`);
         return null;
     }
 
     const imgUrl =
-      processImageURL(equipo.featuredImage?.node?.sourceUrl) ||
+      processImageURL(miembroEquipo.featuredImage?.node?.sourceUrl) ||
       '/images/placeholder-team.jpg';
 
     const alt =
-      equipo.featuredImage?.node?.altText ||
-      equipo.seo?.title ||
-      equipo.title;
+      miembroEquipo.featuredImage?.node?.altText ||
+      miembroEquipo.seo?.title ||
+      miembroEquipo.title;
     
     let cleanExcerpt = '';
-    if (equipo.content) {
-        cleanExcerpt = equipo.content.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+    if (miembroEquipo.content) {
+        cleanExcerpt = miembroEquipo.content.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
         cleanExcerpt = cleanExcerpt.substring(0, 160) + (cleanExcerpt.length > 160 ? '...' : '');
     } else {
-        cleanExcerpt = equipo.seo?.metaDesc || `Miembro del equipo "${equipo.title}"`;
+        cleanExcerpt = miembroEquipo.seo?.metaDesc || `Miembro del equipo "${miembroEquipo.title}"`;
     }
 
     return {
-      ...equipo,
+      ...miembroEquipo,
       imagenDestacadaUrl: imgUrl,
       featuredImage: { node: { sourceUrl: imgUrl, altText: alt } },
       excerpt: cleanExcerpt,
       camposEquipo: {
-        vsFacebook: equipo.camposEquipo?.vsFacebook || '',
-        vsInstagram: equipo.camposEquipo?.vsInstagram || '',
-        vsWhatsapp: equipo.camposEquipo?.vsWhatsapp || '',
-        vsTiktok: equipo.camposEquipo?.vsTiktok || '',
-        vsYoutube: equipo.camposEquipo?.vsYoutube || '',
-        vsSoundcloud: equipo.camposEquipo?.vsSoundcloud || '',
-        vsPaginaWeb: equipo.camposEquipo?.vsPaginaWeb || '',
+        vsFacebook: miembroEquipo.camposEquipo?.vsFacebook || '',
+        vsInstagram: miembroEquipo.camposEquipo?.vsInstagram || '',
+        vsWhatsapp: miembroEquipo.camposEquipo?.vsWhatsapp || '',
+        vsTiktok: miembroEquipo.camposEquipo?.vsTiktok || '',
+        vsYoutube: miembroEquipo.camposEquipo?.vsYoutube || '',
+        vsSoundcloud: miembroEquipo.camposEquipo?.vsSoundcloud || '',
+        vsPaginaWeb: miembroEquipo.camposEquipo?.vsPaginaWeb || '',
       },
       seo:
-        equipo.seo?.title ? equipo.seo : {
-          title: `${equipo.title} | VinylStation`,
+        miembroEquipo.seo?.title ? miembroEquipo.seo : {
+          title: `${miembroEquipo.title} | VinylStation`,
           metaDesc:
             cleanExcerpt ||
-            `Conoce a ${equipo.title}, parte del equipo de VinylStation`,
+            `Conoce a ${miembroEquipo.title}, parte del equipo de VinylStation`,
         },
     };
   } catch (error) {
