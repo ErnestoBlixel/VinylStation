@@ -1954,15 +1954,89 @@ export async function getProgramaBySlug(slug) {
 
 
 // ===============================
-// EMISORA (EXISTENTE, SIN CAMBIOS)
+// EMISORA - OBTIENE DATOS REALES DE WORDPRESS
 // ===============================
 export async function getEmisora() {
-  console.log('🎵 Obteniendo información de la emisora (local)');
+  console.log('🎵 Obteniendo información de la emisora desde WordPress...');
+  
+  const QUERY = gql`
+    query ObtenerPrimeraEmisora {
+      emisoras(first: 1) {
+        nodes {
+          id
+          databaseId
+          title
+          slug
+          camposEmisora {
+            vsProtocolo
+            vsUrlStream
+            vsPuerto
+            vsFormato
+            vsUrlCompleta
+          }
+        }
+      }
+    }
+  `;
+
+  try {
+    const { emisoras } = await request(WORDPRESS_GRAPHQL_URL, QUERY);
+    
+    const emisora = emisoras?.nodes?.[0];
+    
+    if (!emisora) {
+      console.warn('⚠️ No se encontró ninguna emisora en WordPress, usando fallback');
+      return getFallbackEmisora();
+    }
+
+    console.log(`✅ Emisora obtenida: ${emisora.title}`);
+    
+    // Construir URL del stream desde los campos
+    const streamUrl = emisora.camposEmisora?.vsUrlCompleta || 
+                     `${emisora.camposEmisora?.vsProtocolo || 'https'}://${emisora.camposEmisora?.vsUrlStream || 'stream.zeno.fm/4g7qxnxrloluv'}${emisora.camposEmisora?.vsPuerto ? ':' + emisora.camposEmisora.vsPuerto : ''}`;
+    
+    return {
+      id: emisora.slug || emisora.databaseId?.toString() || 'vinylstation',
+      databaseId: emisora.databaseId,
+      title: emisora.title || 'VinylStation Radio',
+      slug: emisora.slug,
+      camposEmisora: {
+        // Mantener compatibilidad con el código existente
+        vsMp3StreamUrl: streamUrl,
+        // Campos originales de ACF
+        vsProtocolo: emisora.camposEmisora?.vsProtocolo || 'https',
+        vsUrlStream: emisora.camposEmisora?.vsUrlStream || 'stream.zeno.fm/4g7qxnxrloluv',
+        vsPuerto: emisora.camposEmisora?.vsPuerto || '',
+        vsFormato: emisora.camposEmisora?.vsFormato || 'MP3',
+        vsUrlCompleta: streamUrl,
+        // Datos adicionales para compatibilidad
+        vsNombre: emisora.title || 'VinylStation Radio',
+        vsDescripcion: `Emisora de radio ${emisora.title || 'VinylStation'}`,
+      },
+    };
+    
+  } catch (error) {
+    console.error('❌ Error obteniendo emisora desde WordPress:', error.message);
+    if (error.response?.errors) {
+      console.error('GraphQL Errors (getEmisora):', JSON.stringify(error.response.errors, null, 2));
+    }
+    return getFallbackEmisora();
+  }
+}
+
+// Función helper para fallback de emisora
+function getFallbackEmisora() {
+  console.log('⚠️ Usando datos de emisora por defecto (fallback)');
   return {
     id: 'vinylstation',
     title: 'VinylStation Radio',
     camposEmisora: {
       vsMp3StreamUrl: 'https://stream.zeno.fm/4g7qxnxrloluv',
+      vsProtocolo: 'https',
+      vsUrlStream: 'stream.zeno.fm/4g7qxnxrloluv',
+      vsPuerto: '',
+      vsFormato: 'MP3',
+      vsUrlCompleta: 'https://stream.zeno.fm/4g7qxnxrloluv',
       vsNombre: 'VinylStation Radio',
       vsDescripcion: 'Tu emisora de radio especializada en música vinilo',
     },
