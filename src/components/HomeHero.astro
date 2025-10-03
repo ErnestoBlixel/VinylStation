@@ -1,6 +1,6 @@
 ---
 // src/components/HomeHero.astro - Hero especial para la página principal
-import { getSiteInfo } from '../lib/wordpress';
+import { getSiteInfo, getEmisora } from '../lib/wordpress';
 
 // Props del componente
 export interface Props {
@@ -13,8 +13,10 @@ const {
   description: customDescription 
 } = Astro.props;
 
-// Obtener información del sitio desde WordPress
+// Obtener información del sitio y emisora desde WordPress
 const siteInfo = await getSiteInfo();
+const emisoraData = await getEmisora();
+const streamUrl = emisoraData?.camposEmisora?.vsUrlCompleta || 'https://stream.zeno.fm/4g7qxnxrloluv';
 
 // Usar título y descripción personalizados o los del sitio
 const heroTitle = customTitle || siteInfo?.title || 'VinylStation Radio';
@@ -30,7 +32,7 @@ const heroDescription = customDescription || siteInfo?.description || "Una emiso
       
       <!-- Reproductor con diseño del header -->
       <div class="radio-player-hero desktop-only">
-        <audio id="radio-stream-hero" preload="none" data-stream-url="https://stream.zeno.fm/4g7qxnxrloluv"></audio>
+        <audio id="radio-stream-hero" preload="none" data-stream-url={streamUrl}></audio>
         
         <div class="player-controls">
           <button id="play-pause-hero" class="play-button" aria-label="Reproducir/Pausar">

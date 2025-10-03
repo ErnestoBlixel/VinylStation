@@ -1,7 +1,9 @@
 ---
-import { getSiteInfo, getMenuNavegacion } from '../lib/wordpress';
+import { getSiteInfo, getMenuNavegacion, getEmisora } from '../lib/wordpress';
 
 const siteInfo = await getSiteInfo();
+const emisoraData = await getEmisora();
+const streamUrl = emisoraData?.camposEmisora?.vsUrlCompleta || 'https://stream.zeno.fm/4g7qxnxrloluv';
 
 let menuItems = [];
 try {
@@ -102,7 +104,7 @@ try {
     <div class="header-right desktop-only">
       <div class="radio-container">
         <div class="header-radio-player">
-          <audio id="header-radio-stream" preload="none" src="https://stream.zeno.fm/4g7qxnxrloluv"></audio>
+          <audio id="header-radio-stream" preload="none" src={streamUrl}></audio>
           
           <div class="player-controls">
             <button id="header-play-pause" class="play-button" aria-label="Reproducir/Pausar">
@@ -170,7 +172,7 @@ try {
   </div>
   
   <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
-  <audio id="mobileRadioAudio" preload="none" data-stream-url="https://stream.zeno.fm/4g7qxnxrloluv" style="display: none;"></audio>
+  <audio id="mobileRadioAudio" preload="none" data-stream-url={streamUrl} style="display: none;"></audio>
 </header>
 
 <script>
