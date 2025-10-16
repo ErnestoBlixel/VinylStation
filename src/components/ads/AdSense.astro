@@ -1,180 +1,129 @@
 ---
-// Componente de Google AdSense para VinylStation
+// src/components/ads/AdSense.astro
+// Componente para mostrar anuncios de Google AdSense con generación automática de slots
+
 export interface Props {
-  // ID del slot publicitario (obtenido de Google AdSense)
-  slot: string;
-  // Formato del anuncio
-  format?: 'auto' | 'fluid' | 'rectangle' | 'vertical' | 'horizontal';
-  // Anuncio responsive
-  responsive?: boolean;
-  // Estilo adicional
-  style?: string;
-  // Clase CSS adicional
-  className?: string;
-  // Tamaño fijo (ancho x alto) - solo si no es responsive
-  width?: number;
-  height?: number;
-  // Tipo de anuncio para diferentes ubicaciones
-  adType?: 'in-feed' | 'in-article' | 'display';
+  slot?: string;           // ID del slot de AdSense (opcional - se genera automático)
+  format?: string;         // Formato del anuncio (auto, horizontal, vertical, rectangle)
+  className?: string;      // Clases CSS adicionales
+  style?: string;         // Estilos inline adicionales
+  adType?: 'display' | 'in-article' | 'in-feed'; // Tipo de anuncio
+  pageType?: string;      // Tipo de página para generar slot automático
+  position?: string;      // Posición del anuncio para generar slot único
 }
 
 const { 
   slot, 
   format = 'auto', 
-  responsive = true,
+  className = '', 
   style = '',
-  className = '',
-  width,
-  height,
-  adType = 'display'
+  adType = 'display',
+  pageType = '',
+  position = ''
 } = Astro.props;
 
-// Client ID de AdSense
-const clientId = 'ca-pub-6260623796240430';
+// Generar slot automático basado en el tipo de página y posición
+const generateAutoSlot = () => {
+  // Base del slot (últimos 4 dígitos del publisher ID)
+  const baseSlot = '6240430';
+  
+  // Mapeo de páginas a códigos
+  const pageMap = {
+    'noticias-list': '1',
+    'noticia-single': '2',
+    'blog-list': '3',
+    'blog-single': '4',
+    'home': '5',
+    'vinilos': '6',
+    'programas': '7'
+  };
+  
+  // Mapeo de posiciones a códigos
+  const positionMap = {
+    'top': '1',
+    'middle': '2',
+    'bottom': '3',
+    'sidebar': '4',
+    'header': '5',
+    'after-title': '6',
+    'in-content': '7'
+  };
+  
+  const pageCode = pageMap[pageType] || '9';
+  const positionCode = positionMap[position] || '9';
+  
+  // Formato: baseSlot + pageCode + positionCode
+  // Ejemplo: 624043012 para noticias-list top
+  return baseSlot + pageCode + positionCode;
+};
 
-// Generar un ID único para cada instancia del anuncio
-const adId = `adsense-${Math.random().toString(36).substr(2, 9)}`;
+// Usar slot proporcionado o generar automático
+const adSlot = slot || generateAutoSlot();
 
-// Determinar el estilo basado en el tipo de anuncio y si es responsive
-let adStyle = style;
-if (!style) {
-  if (responsive) {
-    adStyle = 'display:block';
-  } else if (width && height) {
-    adStyle = `display:inline-block;width:${width}px;height:${height}px`;
-  } else {
-    adStyle = 'display:block';
+// Configuración según el tipo de anuncio
+const adConfig = {
+  'display': {
+    'data-ad-format': format,
+    'data-full-width-responsive': 'true'
+  },
+  'in-article': {
+    'data-ad-layout': 'in-article',
+    'data-ad-format': 'fluid'
+  },
+  'in-feed': {
+    'data-ad-format': 'fluid',
+    'data-ad-layout-key': '-fb+5w+4e-db+86'
   }
-}
+};
+
+const adAttributes = adConfig[adType] || adConfig['display'];
 ---
 
-<div class={`adsense-container ${className}`} data-ad-id={adId}>
-  <ins 
-    class="adsbygoogle"
-    style={adStyle}
-    data-ad-client={clientId}
-    data-ad-slot={slot}
-    data-ad-format={format}
-    data-full-width-responsive={responsive ? "true" : "false"}
-    data-ad-layout={adType === 'in-feed' ? 'in-feed' : undefined}
-    data-ad-layout-key={adType === 'in-article' ? '-gw-3+1f-3d+2z' : undefined}
-  ></ins>
+<div class={`adsbygoogle-container ${className}`} style={style}>
+  <!-- Anuncio de Google AdSense -->
+  <ins class="adsbygoogle"
+       style="display:block"
+       data-ad-client="ca-pub-6260623796240430"
+       data-ad-slot={adSlot}
+       {...adAttributes}></ins>
+  <script>
+    (adsbygoogle = window.adsbygoogle || []).push({});
+  </script>
 </div>
 
-<script>
-  // Función para cargar anuncios con mejor manejo de errores
-  function loadAd() {
-    try {
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
-      console.log('✅ Anuncio AdSense cargado');
-    } catch (e) {
-      console.error('❌ Error cargando anuncio AdSense:', e);
-    }
-  }
-
-  // Esperar a que el DOM esté listo
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', loadAd);
-  } else {
-    // DOM ya está cargado
-    setTimeout(loadAd, 100);
-  }
-</script>
-
 <style>
-  /* Contenedor de anuncios con estilos mejorados */
-  .adsense-container {
-    width: 100%;
-    min-height: 50px;
-    margin: 2rem auto;
+  .adsbygoogle-container {
     text-align: center;
-    position: relative;
-    overflow: hidden;
-  }
-
-  /* Placeholder mientras carga el anuncio */
-  .adsense-container::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(
-      90deg,
-      rgba(var(--color-bg-rgb), 0.1) 0%,
-      rgba(var(--color-bg-rgb), 0.2) 50%,
-      rgba(var(--color-bg-rgb), 0.1) 100%
-    );
-    animation: shimmer 1.5s infinite;
-    pointer-events: none;
-    z-index: -1;
-  }
-
-  /* Animación de carga */
-  @keyframes shimmer {
-    0% { transform: translateX(-100%); }
-    100% { transform: translateX(100%); }
-  }
-
-  /* Cuando el anuncio se carga, ocultar el shimmer */
-  .adsense-container:has(.adsbygoogle[data-ad-status="filled"]) {
-    min-height: auto;
-  }
-
-  .adsense-container:has(.adsbygoogle[data-ad-status="filled"])::before {
-    display: none;
-  }
-
-  /* Estilos específicos para diferentes tipos de anuncios */
-  .adsense-container.ad-header {
-    margin: 1rem auto;
-    max-width: 970px;
-  }
-
-  .adsense-container.ad-sidebar {
-    margin: 1.5rem 0;
-    max-width: 300px;
-  }
-
-  .adsense-container.ad-in-article {
-    margin: 3rem auto;
-    max-width: 728px;
-    background: var(--color-card-bg);
+    margin: 2rem 0;
+    min-height: 90px;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 12px;
     padding: 1rem;
-    border-radius: 12px;
-    border: 1px solid rgba(var(--color-bg-rgb), 0.1);
+    position: relative;
   }
-
-  .adsense-container.ad-footer {
-    margin: 2rem auto 1rem;
-    max-width: 970px;
-  }
-
-  /* Responsive adjustments */
-  @media (max-width: 768px) {
-    .adsense-container.ad-header,
-    .adsense-container.ad-footer {
-      max-width: 100%;
-      padding: 0 1rem;
-    }
-
-    .adsense-container.ad-in-article {
-      max-width: 100%;
-      margin: 2rem 0;
-    }
-  }
-
-  /* Mensaje cuando AdBlock está activo */
-  .adsense-container[data-blocked="true"]::after {
+  
+  .adsbygoogle-container::before {
     content: 'Publicidad';
-    display: block;
-    padding: 2rem;
-    background: var(--color-card-bg);
-    border: 2px dashed rgba(var(--color-bg-rgb), 0.3);
-    border-radius: 12px;
+    position: absolute;
+    top: -10px;
+    left: 10px;
+    font-size: 0.7rem;
     color: var(--color-text-secondary);
-    font-size: 0.9rem;
+    background: var(--color-bg);
+    padding: 0 0.5rem;
     opacity: 0.6;
+  }
+  
+  /* Modo oscuro */
+  [data-theme="night"] .adsbygoogle-container {
+    background: rgba(255, 255, 255, 0.02);
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .adsbygoogle-container {
+      margin: 1.5rem 0;
+      min-height: 60px;
+    }
   }
 </style>

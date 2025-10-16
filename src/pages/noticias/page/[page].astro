@@ -196,7 +196,8 @@ const nextUrl = currentPage < totalPages ? `/noticias/page/${currentPage + 1}/` 
             
             {/* Anuncio AdSense después del header */}
             <AdSense 
-              slot="SLOT_NOTICIAS_TOP" 
+              pageType="noticias-list"
+              position="top"
               format="auto"
               className="ad-header"
               adType="display"
@@ -251,7 +252,8 @@ const nextUrl = currentPage < totalPages ? `/noticias/page/${currentPage + 1}/` 
                         {index === 5 && (
                           <div class="ad-in-grid">
                             <AdSense 
-                              slot="SLOT_NOTICIAS_MIDDLE" 
+                              pageType="noticias-list"
+                              position="middle"
                               format="auto"
                               className="ad-in-article"
                               adType="in-feed"

@@ -4,7 +4,27 @@
 
 ---
 
-## [1.1.0] - 2024-01-09
+## [1.1.1] - 2025-01-09
+
+### 🔧 Modificaciones
+**Cliente**: Rosa (VinylStation)  
+**Tipo**: Mejora de Monetización
+
+### Cambios Implementados
+
+#### Páginas de Noticias Individuales
+- ✅ Reemplazado el excerpt/introducción por espacio publicitario
+- ✅ Añadido slot de AdSense después del título de la noticia
+- ✅ Mejor integración visual del anuncio
+
+### Configuración Pendiente
+- Rosa debe crear un bloque de anuncios adicional en Google AdSense para:
+  * Noticias - Artículo individual (in-article)
+  * Reemplazar `SLOT_NOTICIA_HEADER` con el ID real
+
+---
+
+## [1.1.0] - 2025-01-09
 
 ### 🎯 Google AdSense Integration
 **Cliente**: Rosa (VinylStation)  

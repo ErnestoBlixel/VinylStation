@@ -2,6 +2,7 @@
 // src/pages/noticias/[slug].astro
 import MainLayout from "../../layouts/MainLayout.astro";
 import { getSiteInfo, getNoticiaBySlug, getNoticias } from "../../lib/wordpress";
+import AdSense from "../../components/ads/AdSense.astro";
 
 export async function getStaticPaths() {
   const { noticias } = await getNoticias({ limit: 20000 });
@@ -94,9 +95,16 @@ const autor = data.author?.node;
           
           <h1 class="noticia-title">{data.title}</h1>
           
-          {data.excerpt && (
-            <div class="noticia-excerpt" set:html={data.excerpt}></div>
-          )}
+          {/* Anuncio AdSense en lugar del excerpt */}
+          <div class="noticia-ad-container">
+            <AdSense 
+              pageType="noticia-single"
+              position="after-title"
+              format="auto"
+              className="ad-in-article"
+              adType="in-article"
+            />
+          </div>
           
           {autor && (
             <div class="noticia-author">
@@ -363,6 +371,18 @@ const autor = data.author?.node;
     border-left: 4px solid var(--color-text-secondary);
     border-radius: 0 15px 15px 0;
     backdrop-filter: blur(10px);
+  }
+  
+  /* Contenedor para el anuncio que reemplaza el excerpt */
+  .noticia-ad-container {
+    margin: 2rem 0;
+    min-height: 100px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.02);
+    border-radius: 12px;
+    padding: 1rem;
   }
 
   .noticia-author {

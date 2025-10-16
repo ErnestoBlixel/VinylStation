@@ -34,9 +34,15 @@
    - Estilo: Personalizar para que coincida con el diseño
    - Copiar el ID del slot
 
-   #### Bloque 3 (Opcional): Artículo Individual
-   - Nombre: `VinylStation Articulo`
+   #### Bloque 3: Noticia Individual - Header
+   - Nombre: `VinylStation Noticia Individual`
    - Tipo: In-article
+   - Estilo: Personalizar para integración con contenido
+   - Copiar el ID del slot
+
+   #### Bloque 4 (Opcional): Artículo Individual
+   - Nombre: `VinylStation Articulo Footer`
+   - Tipo: Display
    - Copiar el ID del slot
 
 ### 2️⃣ En el Código
@@ -60,6 +66,18 @@ Actualizar los siguientes archivos con los IDs reales:
   format="auto"
   className="ad-in-article"
   adType="in-feed"
+/>
+```
+
+#### Archivo: `/src/pages/noticias/[slug].astro` (NUEVO)
+
+```astro
+<!-- Línea ~100 - Reemplazar SLOT_NOTICIA_HEADER -->
+<AdSense 
+  slot="TU_ID_REAL_AQUI" 
+  format="auto"
+  className="ad-in-article"
+  adType="in-article"
 />
 ```
 
@@ -106,9 +124,10 @@ Después del título o en medio del contenido:
 - **Anuncio 1**: Después del header de la sección
 - **Anuncio 2**: Después de la 6ª noticia en el grid
 
-### 📄 Artículo Individual (preparado pero no activo)
+### 📄 Artículo Individual de Noticia
 - **URL**: `/noticias/[slug]`
-- **Ubicación sugerida**: Después del primer párrafo o al final
+- **Anuncio Principal**: Después del título (reemplaza el extracto/introducción)
+- **Ubicación adicional sugerida**: Al final del contenido
 
 ---
 
