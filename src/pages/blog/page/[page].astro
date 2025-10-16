@@ -1,0 +1,252 @@
+---
+// getStaticPaths() requerido para rutas dinámicas en modo estático
+import MainLayout from '../../../layouts/MainLayout.astro';
+import UniversalHero from '../../../components/UniversalHero.astro';
+import { getSiteInfo, getPageData, getBlogsPaginados } from '../../../lib/wordpress.js';
+
+export async function getStaticPaths() {
+  console.log('🔧 Generando rutas estáticas para páginas de blog...');
+  
+  const itemsPerPage = 12;
+  
+  try {
+    // Obtener información de la primera página para calcular el total
+    const firstPageData = await getBlogsPaginados({ page: 1, itemsPerPage });
+    const totalBlogs = firstPageData?.pageInfo?.total || firstPageData?.pageInfo?.totalBlogs || 0;
+    
+    if (totalBlogs === 0) {
+      console.warn('⚠️ No se encontraron blogs, generando solo página 1');
+      return [{ params: { page: '1' } }];
+    }
+    
+    const totalPages = Math.ceil(totalBlogs / itemsPerPage);
+    console.log(`📊 Total blogs: ${totalBlogs}, Páginas a generar: ${totalPages}`);
+    
+    // Generar rutas para todas las páginas
+    const paths = [];
+    for (let page = 1; page <= totalPages; page++) {
+      paths.push({ params: { page: page.toString() } });
+    }
+    
+    console.log(`✅ Generadas ${paths.length} rutas estáticas`);
+    return paths;
+    
+  } catch (error) {
+    console.error('❌ Error generando rutas:', error.message);
+    return [{ params: { page: '1' } }];
+  }
+}
+
+const currentPage = Math.max(1, parseInt(Astro.params.page) || 1);
+
+const stripHtml = (html) => html?.replace?.(/<[^>]*>/g, '').trim() || '';
+
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
+
+const itemsPerPage = 12;
+
+let hasError = false;
+let errorMessage = '';
+let siteInfo = null;
+let pageData = null;
+let blogsData = null;
+
+try {
+  siteInfo = await getSiteInfo();
+  
+  try {
+    pageData = await getPageData('blog');
+  } catch (e) {
+    pageData = {
+      title: 'Blog',
+      seo: {
+        title: 'Blog | VinylStation',
+        metaDesc: 'Artículos sobre música y vinilo'
+      }
+    };
+  }
+  
+  blogsData = await getBlogsPaginados({ page: currentPage, itemsPerPage });
+  
+  if (!siteInfo?.title) throw new Error('Error obteniendo sitio');
+} catch (error) {
+  hasError = true;
+  errorMessage = `Error: ${error.message}`;
+  console.error('❌ Error:', error);
+}
+
+const blogs = hasError ? [] : (blogsData?.blogs || []);
+const pageInfo = blogsData?.pageInfo || {};
+const totalPages = pageInfo.totalPages || 1;
+const totalBlogs = pageInfo.totalBlogs || pageInfo.total || blogs.length;
+
+const heroTitle = hasError ? "Error - Blog" : `Blog - Página ${currentPage}`;
+const heroDescription = hasError ? 
+  "Error cargando el blog" : 
+  `Artículos sobre música. Página ${currentPage} de ${totalPages}`;
+
+const pageTitle = hasError ? 'Error' : (pageData?.seo?.title || heroTitle);
+const pageDescription = hasError ? 'Error' : (pageData?.seo?.metaDesc || heroDescription);
+
+let paginasVisibles = [];
+if (totalPages <= 5) {
+  paginasVisibles = Array.from({ length: totalPages }, (_, i) => i + 1);
+} else {
+  if (currentPage <= 3) {
+    paginasVisibles = [1, 2, 3, 4, 5];
+  } else if (currentPage >= totalPages - 2) {
+    paginasVisibles = [totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+  } else {
+    paginasVisibles = [currentPage - 2, currentPage - 1, currentPage, currentPage + 1, currentPage + 2];
+  }
+  paginasVisibles = paginasVisibles.filter(p => p >= 1 && p <= totalPages);
+}
+
+const prevUrl = currentPage > 1 ? `/blog/page/${currentPage - 1}/` : null;
+const nextUrl = currentPage < totalPages ? `/blog/page/${currentPage + 1}/` : null;
+---
+<MainLayout title={pageTitle} description={pageDescription}>
+  <div class="main-content">
+    {hasError ? (
+      <div class="container">
+        <div class="error-container">
+          <div class="error-icon">📝</div>
+          <h2>Error</h2>
+          <p>{errorMessage}</p>
+          <a href="/" class="btn">← Inicio</a>
+        </div>
+      </div>
+    ) : (
+      <>
+        <UniversalHero 
+          title={heroTitle}
+          description={heroDescription}
+          customClass="compact"
+        />
+
+        <section id="blog" class="blog-section">
+          <div class="container">
+            <div class="section-header">
+              <h2>Últimos Artículos</h2>
+              <p>Descubre artículos sobre música y vinilo</p>
+            </div>
+            
+            {blogs.length > 0 ? (
+              <>
+                <div class="blog-grid">
+                  {blogs.map((blog) => {
+                    const imagen = blog.imagenDestacadaUrl || blog.featuredImage?.node?.sourceUrl || '/images/placeholder-news.jpg';
+                    const fecha = formatDate(blog.date);
+                    const categorias = blog.categorias?.nodes || blog.categories?.nodes || [];
+                    const autor = blog.author;
+                    const desc = stripHtml(blog.excerpt || '');
+
+                    return (
+                      <article class="blog-card">
+                        <div class="blog-image">
+                          <img src={imagen} alt={blog.title} loading="lazy" />
+                          <div class="blog-overlay">
+                            <a href={`/blog/${blog.slug}`} class="blog-link">Leer</a>
+                          </div>
+                          {categorias.length > 0 && (
+                            <div class="blog-categories">
+                              {categorias.slice(0, 2).map((cat) => (
+                                <span class="category-badge" key={cat.id}>{cat.name}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div class="blog-info">
+                          <h3 class="blog-title-card">{blog.title}</h3>
+                          <p class="blog-description">{desc}</p>
+                          <div class="blog-meta">
+                            <time>{fecha}</time>
+                            {autor && (
+                              <div class="blog-author">
+                                {autor.avatar?.url && <img src={autor.avatar.url} alt={autor.name} class="author-avatar" />}
+                                <span>{autor.name}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+
+                <nav class="pagination">
+                  <ul>
+                    <li>
+                      {prevUrl ? <a href={prevUrl} class="pagination-link">Anterior</a> : <span class="pagination-link disabled">Anterior</span>}
+                    </li>
+                    {paginasVisibles.map((p) => (
+                      <li>{p === currentPage ? <span class="pagination-link current">{p}</span> : <a href={`/blog/page/${p}/`} class="pagination-link">{p}</a>}</li>
+                    ))}
+                    <li>
+                      {nextUrl ? <a href={nextUrl} class="pagination-link">Siguiente</a> : <span class="pagination-link disabled">Siguiente</span>}
+                    </li>
+                  </ul>
+                </nav>
+              </>
+            ) : (
+              <div class="no-blog">
+                <div class="no-blog-icon">📝</div>
+                <h3>No hay artículos</h3>
+              </div>
+            )}
+          </div>
+        </section>
+      </>
+    )}
+  </div>
+</MainLayout>
+
+<style>
+  .main-content { background: linear-gradient(135deg, var(--color-bg) 0%, rgba(0, 0, 0, 0.02) 100%); min-height: 100vh; }
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 1rem; }
+  .error-container { text-align: center; padding: 2rem; margin: 2rem auto; background: var(--card-bg); border-radius: 15px; max-width: 600px; }
+  .error-icon { font-size: 4rem; margin-bottom: 1rem; }
+  .blog-section { padding: 4rem 0; }
+  .section-header { text-align: center; margin-bottom: 3rem; }
+  .section-header h2 { font-size: 3rem; color: var(--title-color); font-weight: 700; margin-bottom: 1rem; }
+  .section-header p { font-size: 1.2rem; color: var(--text-color); }
+  .blog-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2rem; }
+  .blog-card { background: var(--card-bg); border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1); transition: all 0.3s ease; }
+  .blog-card:hover { transform: translateY(-5px); box-shadow: 0 8px 25px rgba(197, 173, 123, 0.3); }
+  .blog-image { position: relative; aspect-ratio: 16 / 9; overflow: hidden; }
+  .blog-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s ease; }
+  .blog-card:hover .blog-image img { transform: scale(1.05); }
+  .blog-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); display: flex; align-items: center; justify-content: center; opacity: 0; transition: opacity 0.3s ease; }
+  .blog-card:hover .blog-overlay { opacity: 1; }
+  .blog-link { background: var(--title-color); color: var(--color-bg); padding: 0.8rem 1.5rem; border-radius: 8px; text-decoration: none; font-weight: 600; }
+  .blog-categories { position: absolute; top: 1rem; left: 1rem; display: flex; gap: 0.5rem; z-index: 2; }
+  .category-badge { background: var(--title-color); color: var(--color-bg); padding: 0.3rem 0.8rem; border-radius: 15px; font-size: 0.7rem; font-weight: 600; text-transform: uppercase; }
+  .blog-info { padding: 1.5rem; }
+  .blog-title-card { font-size: 1.2rem; font-weight: 700; color: var(--title-color); margin: 0 0 0.8rem 0; }
+  .blog-description { color: var(--text-color); font-size: 0.9rem; line-height: 1.5; margin: 0 0 1rem 0; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .blog-meta { display: flex; justify-content: space-between; align-items: center; padding-top: 1rem; border-top: 1px solid rgba(197, 173, 123, 0.1); font-size: 0.8rem; }
+  .blog-meta time { color: var(--title-color); font-weight: 600; }
+  .blog-author { display: flex; align-items: center; gap: 0.5rem; }
+  .author-avatar { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; border: 2px solid var(--title-color); }
+  .blog-author span { color: var(--text-color); font-size: 0.8rem; }
+  .no-blog { text-align: center; padding: 4rem 2rem; }
+  .no-blog-icon { font-size: 4rem; opacity: 0.5; margin-bottom: 1rem; }
+  .pagination { display: flex; justify-content: center; margin: 3rem 0; }
+  .pagination ul { list-style: none; display: flex; gap: 0.5rem; padding: 0; margin: 0; }
+  .pagination-link { display: inline-block; padding: 0.5rem 1rem; border-radius: 8px; background: var(--card-bg); color: var(--title-color); border: 2px solid var(--title-color); font-weight: 600; text-decoration: none; transition: all 0.3s ease; }
+  .pagination-link:hover:not(.disabled):not(.current) { background: var(--title-color); color: var(--color-bg); }
+  .pagination-link.current { background: var(--title-color); color: var(--color-bg); }
+  .pagination-link.disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn { display: inline-block; padding: 1rem 2rem; border-radius: 8px; background: var(--title-color); color: var(--color-bg); text-decoration: none; font-weight: 600; }
+  @media (max-width: 1400px) { .blog-grid { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 1024px) { .blog-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 768px) { .blog-grid { grid-template-columns: 1fr; } }
+</style>

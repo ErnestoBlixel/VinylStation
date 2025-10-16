@@ -1,0 +1,71 @@
+---
+// Página de debug para verificar el menú
+import MainLayout from '../layouts/MainLayout.astro';
+import { getMenuNavegacion } from '../lib/wordpress';
+
+let menuData = null;
+let error = null;
+
+try {
+  menuData = await getMenuNavegacion('Menu');
+} catch (e) {
+  error = e.message;
+}
+---
+
+<MainLayout title="Debug Menu">
+  <div class="container" style="padding: 2rem; margin-top: 2rem;">
+    <h1>Debug del Menú de WordPress</h1>
+    
+    {error ? (
+      <div style="background: #ff0000; color: white; padding: 1rem; border-radius: 8px;">
+        <h2>Error:</h2>
+        <pre>{error}</pre>
+      </div>
+    ) : (
+      <div>
+        <h2>Datos del Menú:</h2>
+        <pre style="background: #f0f0f0; padding: 1rem; border-radius: 8px; overflow-x: auto;">
+{JSON.stringify(menuData, null, 2)}
+        </pre>
+        
+        <h2>Items del Menú Procesados:</h2>
+        <table style="width: 100%; border-collapse: collapse; margin-top: 1rem;">
+          <thead>
+            <tr style="background: #333; color: white;">
+              <th style="padding: 0.5rem; text-align: left;">Label</th>
+              <th style="padding: 0.5rem; text-align: left;">URL Original</th>
+              <th style="padding: 0.5rem; text-align: left;">URL Procesada</th>
+              <th style="padding: 0.5rem; text-align: left;">Target</th>
+            </tr>
+          </thead>
+          <tbody>
+            {menuData?.items?.map((item, index) => (
+              <tr style={`background: ${index % 2 === 0 ? '#f9f9f9' : '#fff'}`}>
+                <td style="padding: 0.5rem; border: 1px solid #ddd;">{item.label}</td>
+                <td style="padding: 0.5rem; border: 1px solid #ddd;">{item.url}</td>
+                <td style="padding: 0.5rem; border: 1px solid #ddd;">
+                  <a href={item.url} style="color: blue; text-decoration: underline;">
+                    {item.url}
+                  </a>
+                </td>
+                <td style="padding: 0.5rem; border: 1px solid #ddd;">{item.target}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        
+        <div style="margin-top: 2rem; padding: 1rem; background: #ffffcc; border: 1px solid #ffcc00; border-radius: 8px;">
+          <h3>Nota para Rosa:</h3>
+          <p>Si el enlace de "Blog" muestra "/" como URL, necesitas:</p>
+          <ol>
+            <li>Ir a WordPress Admin → Apariencia → Menús</li>
+            <li>Editar el item "Blog" del menú</li>
+            <li>En la URL, asegurarte de que esté configurada como <code>/blog</code> (sin el dominio completo)</li>
+            <li>Guardar el menú</li>
+          </ol>
+        </div>
+      </div>
+    )}
+  </div>
+</MainLayout>

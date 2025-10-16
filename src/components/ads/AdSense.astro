@@ -1,0 +1,180 @@
+---
+// Componente de Google AdSense para VinylStation
+export interface Props {
+  // ID del slot publicitario (obtenido de Google AdSense)
+  slot: string;
+  // Formato del anuncio
+  format?: 'auto' | 'fluid' | 'rectangle' | 'vertical' | 'horizontal';
+  // Anuncio responsive
+  responsive?: boolean;
+  // Estilo adicional
+  style?: string;
+  // Clase CSS adicional
+  className?: string;
+  // Tamaño fijo (ancho x alto) - solo si no es responsive
+  width?: number;
+  height?: number;
+  // Tipo de anuncio para diferentes ubicaciones
+  adType?: 'in-feed' | 'in-article' | 'display';
+}
+
+const { 
+  slot, 
+  format = 'auto', 
+  responsive = true,
+  style = '',
+  className = '',
+  width,
+  height,
+  adType = 'display'
+} = Astro.props;
+
+// Client ID de AdSense
+const clientId = 'ca-pub-6260623796240430';
+
+// Generar un ID único para cada instancia del anuncio
+const adId = `adsense-${Math.random().toString(36).substr(2, 9)}`;
+
+// Determinar el estilo basado en el tipo de anuncio y si es responsive
+let adStyle = style;
+if (!style) {
+  if (responsive) {
+    adStyle = 'display:block';
+  } else if (width && height) {
+    adStyle = `display:inline-block;width:${width}px;height:${height}px`;
+  } else {
+    adStyle = 'display:block';
+  }
+}
+---
+
+<div class={`adsense-container ${className}`} data-ad-id={adId}>
+  <ins 
+    class="adsbygoogle"
+    style={adStyle}
+    data-ad-client={clientId}
+    data-ad-slot={slot}
+    data-ad-format={format}
+    data-full-width-responsive={responsive ? "true" : "false"}
+    data-ad-layout={adType === 'in-feed' ? 'in-feed' : undefined}
+    data-ad-layout-key={adType === 'in-article' ? '-gw-3+1f-3d+2z' : undefined}
+  ></ins>
+</div>
+
+<script>
+  // Función para cargar anuncios con mejor manejo de errores
+  function loadAd() {
+    try {
+      (window.adsbygoogle = window.adsbygoogle || []).push({});
+      console.log('✅ Anuncio AdSense cargado');
+    } catch (e) {
+      console.error('❌ Error cargando anuncio AdSense:', e);
+    }
+  }
+
+  // Esperar a que el DOM esté listo
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', loadAd);
+  } else {
+    // DOM ya está cargado
+    setTimeout(loadAd, 100);
+  }
+</script>
+
+<style>
+  /* Contenedor de anuncios con estilos mejorados */
+  .adsense-container {
+    width: 100%;
+    min-height: 50px;
+    margin: 2rem auto;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Placeholder mientras carga el anuncio */
+  .adsense-container::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(
+      90deg,
+      rgba(var(--color-bg-rgb), 0.1) 0%,
+      rgba(var(--color-bg-rgb), 0.2) 50%,
+      rgba(var(--color-bg-rgb), 0.1) 100%
+    );
+    animation: shimmer 1.5s infinite;
+    pointer-events: none;
+    z-index: -1;
+  }
+
+  /* Animación de carga */
+  @keyframes shimmer {
+    0% { transform: translateX(-100%); }
+    100% { transform: translateX(100%); }
+  }
+
+  /* Cuando el anuncio se carga, ocultar el shimmer */
+  .adsense-container:has(.adsbygoogle[data-ad-status="filled"]) {
+    min-height: auto;
+  }
+
+  .adsense-container:has(.adsbygoogle[data-ad-status="filled"])::before {
+    display: none;
+  }
+
+  /* Estilos específicos para diferentes tipos de anuncios */
+  .adsense-container.ad-header {
+    margin: 1rem auto;
+    max-width: 970px;
+  }
+
+  .adsense-container.ad-sidebar {
+    margin: 1.5rem 0;
+    max-width: 300px;
+  }
+
+  .adsense-container.ad-in-article {
+    margin: 3rem auto;
+    max-width: 728px;
+    background: var(--color-card-bg);
+    padding: 1rem;
+    border-radius: 12px;
+    border: 1px solid rgba(var(--color-bg-rgb), 0.1);
+  }
+
+  .adsense-container.ad-footer {
+    margin: 2rem auto 1rem;
+    max-width: 970px;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 768px) {
+    .adsense-container.ad-header,
+    .adsense-container.ad-footer {
+      max-width: 100%;
+      padding: 0 1rem;
+    }
+
+    .adsense-container.ad-in-article {
+      max-width: 100%;
+      margin: 2rem 0;
+    }
+  }
+
+  /* Mensaje cuando AdBlock está activo */
+  .adsense-container[data-blocked="true"]::after {
+    content: 'Publicidad';
+    display: block;
+    padding: 2rem;
+    background: var(--color-card-bg);
+    border: 2px dashed rgba(var(--color-bg-rgb), 0.3);
+    border-radius: 12px;
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+    opacity: 0.6;
+  }
+</style>

@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test CORS VinylStation</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        .info {
+            color: blue;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 10px;
+            overflow-x: auto;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test de Conectividad CORS - VinylStation</h1>
+    
+    <div class="test-section">
+        <h2>1. Test API REST</h2>
+        <button onclick="testRestAPI()">Probar API REST</button>
+        <div id="rest-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>2. Test GraphQL</h2>
+        <button onclick="testGraphQL()">Probar GraphQL</button>
+        <div id="graphql-result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>3. Test Fetch Directo</h2>
+        <button onclick="testDirectFetch()">Probar Fetch Directo</button>
+        <div id="fetch-result"></div>
+    </div>
+
+    <script>
+        const REST_URL = 'https://cms.vinylstation.es/wp-json';
+        const GRAPHQL_URL = 'https://cms.vinylstation.es/graphql';
+        
+        async function testRestAPI() {
+            const resultDiv = document.getElementById('rest-result');
+            resultDiv.innerHTML = '<p class="info">Probando API REST...</p>';
+            
+            try {
+                const response = await fetch(REST_URL);
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✓ API REST funciona correctamente</p>
+                    <p>Status: ${response.status}</p>
+                    <p>Headers CORS:</p>
+                    <pre>${JSON.stringify({
+                        'access-control-allow-origin': response.headers.get('access-control-allow-origin'),
+                        'access-control-allow-credentials': response.headers.get('access-control-allow-credentials')
+                    }, null, 2)}</pre>
+                    <details>
+                        <summary>Ver respuesta completa</summary>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </details>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">✗ Error al conectar con API REST</p>
+                    <p>Error: ${error.message}</p>
+                    <p>Esto indica un problema de CORS o conectividad.</p>
+                `;
+            }
+        }
+        
+        async function testGraphQL() {
+            const resultDiv = document.getElementById('graphql-result');
+            resultDiv.innerHTML = '<p class="info">Probando GraphQL...</p>';
+            
+            const query = `
+                query TestConnection {
+                    generalSettings {
+                        title
+                        description
+                    }
+                }
+            `;
+            
+            try {
+                const response = await fetch(GRAPHQL_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ query })
+                });
+                
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✓ GraphQL funciona correctamente</p>
+                    <p>Status: ${response.status}</p>
+                    <p>Headers CORS:</p>
+                    <pre>${JSON.stringify({
+                        'access-control-allow-origin': response.headers.get('access-control-allow-origin'),
+                        'access-control-allow-credentials': response.headers.get('access-control-allow-credentials')
+                    }, null, 2)}</pre>
+                    <details>
+                        <summary>Ver respuesta completa</summary>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </details>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">✗ Error al conectar con GraphQL</p>
+                    <p>Error: ${error.message}</p>
+                    <p>Esto indica un problema de CORS o conectividad.</p>
+                `;
+            }
+        }
+        
+        async function testDirectFetch() {
+            const resultDiv = document.getElementById('fetch-result');
+            resultDiv.innerHTML = '<p class="info">Probando fetch directo...</p>';
+            
+            try {
+                // Test simple sin headers especiales
+                const response = await fetch(GRAPHQL_URL, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                
+                resultDiv.innerHTML = `
+                    <p class="success">✓ Fetch directo funciona</p>
+                    <p>Status: ${response.status}</p>
+                    <p>Tipo de respuesta: ${response.type}</p>
+                    <p>URL: ${response.url}</p>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">✗ Error en fetch directo</p>
+                    <p>Error: ${error.message}</p>
+                    <p>Detalles del error:</p>
+                    <pre>${error.stack}</pre>
+                `;
+            }
+        }
+        
+        // Información adicional
+        document.addEventListener('DOMContentLoaded', () => {
+            const info = document.createElement('div');
+            info.className = 'test-section';
+            info.innerHTML = `
+                <h2>Información de la página</h2>
+                <p><strong>Origen actual:</strong> ${window.location.origin}</p>
+                <p><strong>API REST:</strong> ${REST_URL}</p>
+                <p><strong>GraphQL:</strong> ${GRAPHQL_URL}</p>
+            `;
+            document.body.insertBefore(info, document.body.firstChild);
+        });
+    </script>
+</body>
+</html>

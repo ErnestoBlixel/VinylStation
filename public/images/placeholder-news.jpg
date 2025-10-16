@@ -1,0 +1,39 @@
+<!-- Placeholder para noticias -->
+<svg width="300" height="200" viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo -->
+  <rect width="300" height="200" fill="#1a1a2e"/>
+  
+  <!-- Periódico -->
+  <rect x="50" y="40" width="200" height="120" fill="#f8f8f8" stroke="#ccc" stroke-width="1"/>
+  
+  <!-- Titular -->
+  <rect x="60" y="55" width="180" height="8" fill="#333"/>
+  <rect x="60" y="68" width="140" height="6" fill="#666"/>
+  
+  <!-- Columnas de texto -->
+  <rect x="60" y="85" width="85" height="4" fill="#999"/>
+  <rect x="60" y="92" width="85" height="4" fill="#999"/>
+  <rect x="60" y="99" width="85" height="4" fill="#999"/>
+  <rect x="60" y="106" width="85" height="4" fill="#999"/>
+  <rect x="60" y="113" width="85" height="4" fill="#999"/>
+  <rect x="60" y="120" width="65" height="4" fill="#999"/>
+  
+  <rect x="155" y="85" width="85" height="4" fill="#999"/>
+  <rect x="155" y="92" width="85" height="4" fill="#999"/>
+  <rect x="155" y="99" width="85" height="4" fill="#999"/>
+  <rect x="155" y="106" width="85" height="4" fill="#999"/>
+  <rect x="155" y="113" width="85" height="4" fill="#999"/>
+  <rect x="155" y="120" width="70" height="4" fill="#999"/>
+  
+  <!-- Imagen placeholder en el artículo -->
+  <rect x="60" y="130" width="60" height="20" fill="#ddd" stroke="#bbb"/>
+  <text x="90" y="143" text-anchor="middle" fill="#888" font-size="8" font-family="Arial, sans-serif">IMG</text>
+  
+  <!-- Ondas de actualización -->
+  <circle cx="220" cy="50" r="8" fill="none" stroke="#ff3333" stroke-width="2" opacity="0.8"/>
+  <circle cx="220" cy="50" r="12" fill="none" stroke="#ff3333" stroke-width="1" opacity="0.6"/>
+  <circle cx="220" cy="50" r="16" fill="none" stroke="#ff3333" stroke-width="1" opacity="0.4"/>
+  
+  <!-- Texto -->
+  <text x="150" y="185" text-anchor="middle" fill="#ff3333" font-size="14" font-family="Arial, sans-serif" font-weight="bold">NOTICIA</text>
+</svg>

@@ -1,0 +1,434 @@
+---
+// 🚀 MainLayout.astro OPTIMIZADO - Reducir llamadas API
+// src/layouts/MainLayout.astro
+
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import GoogleAnalytics from '../components/analytics/GoogleAnalytics.astro';
+import { getSiteInfo, getMenuNavegacion, logCacheStats } from '../lib/wordpress.js';
+
+interface Props {
+  title: string;
+  description?: string;
+  canonical?: string;
+  ogImage?: string;
+  noindex?: boolean;
+}
+
+const { 
+  title, 
+  description = "Tu emisora de vinilo 24/7", 
+  canonical, 
+  ogImage = "/images/og-default.jpg",
+  noindex = false 
+} = Astro.props;
+
+// 🚀 OPTIMIZACIÓN: Solo hacer las llamadas una vez con cache
+const siteInfo = await getSiteInfo();
+const menu = await getMenuNavegacion('Menu');
+
+// 📊 Log stats cada 50 páginas para monitoring
+if (Math.random() < 0.02) { // 2% de probabilidad
+  logCacheStats();
+}
+
+const canonicalURL = canonical || new URL(Astro.url.pathname, Astro.site);
+const fullTitle = title.includes(siteInfo.title) ? title : `${title} | ${siteInfo.title}`;
+---
+
+<!doctype html>
+<html lang="es" class="scroll-smooth">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="description" content={description} />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="canonical" href={canonicalURL} />
+    <meta name="generator" content={Astro.generator} />
+    
+    {noindex && <meta name="robots" content="noindex, nofollow" />}
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonicalURL} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:image" content={new URL(ogImage, Astro.site)} />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content={canonicalURL} />
+    <meta property="twitter:title" content={fullTitle} />
+    <meta property="twitter:description" content={description} />
+    <meta property="twitter:image" content={new URL(ogImage, Astro.site)} />
+
+    <title>{fullTitle}</title>
+
+    <!-- Google Analytics 4 -->
+    <GoogleAnalytics />
+
+    <!-- Google AdSense Script Global -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6260623796240430"
+         crossorigin="anonymous"></script>
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    
+    <!-- Preload critical assets -->
+    <link rel="preload" href="/images/logos/logo vinylstation.png" as="image" />
+  </head>
+  <body class="min-h-screen bg-gray-50 text-gray-900 dark:bg-gray-900 dark:text-gray-100">
+    <!-- Skip to main content link for accessibility -->
+    <a href="#main-content" class="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 bg-blue-600 text-white px-4 py-2 rounded-md z-50">
+      Saltar al contenido principal
+    </a>
+    
+    <Header siteInfo={siteInfo} menu={menu} />
+    
+    <main id="main-content" class="min-h-screen">
+      <slot />
+    </main>
+    
+    <Footer siteInfo={siteInfo} />
+    
+    <!-- Load interactive components with proper order -->
+    <script>
+      import '../lib/interactive-init.js';
+    </script>
+    
+    <!-- Load navigation analytics after a small delay to ensure GA4 is ready -->
+    <script>
+      // Cargar analytics después de asegurar que GA4 está disponible
+      setTimeout(() => {
+        import('../lib/navigationAnalytics.js')
+          .then(() => {
+            console.log('📊 Navigation Analytics cargado exitosamente');
+          })
+          .catch(error => {
+            console.warn('⚠️ Error cargando Navigation Analytics:', error);
+          });
+      }, 500);
+    </script>
+  </body>
+</html>
+
+<style is:global>
+  /* Variables CSS con modo noche/día */
+  :root {
+    /* Colores base */
+    --color-darkest:   #05021f;
+    --color-dark:      #0b1739;
+    --color-blue:      #1a3459;
+    --color-black:     #020202;
+    --color-gray-dark: #262626;
+    --color-gray:      #636162;
+    --color-brown:     #904139;
+    --color-gold:      #c5ad7b;
+    --color-white:     #ffffff;
+    --color-light-blue: #d5e6ff;
+
+    /* Modo Noche (por defecto) */
+    --bg-color: var(--color-darkest);
+    --bg-gradient-end: #0b1739; /* Gradiente hacia azul más claro */
+    --title-color: var(--color-gold);
+    --text-color: var(--color-white);
+    
+    /* Variables RGB para transparencias */
+    --color-bg-rgb: 5, 2, 31;
+    
+    /* Variables semánticas */
+    --color-primary:   var(--color-blue);
+    --color-secondary: var(--color-brown);
+    --color-accent:    var(--color-gold);
+
+    --color-bg:        var(--bg-color);
+    --color-surface:   var(--color-gray-dark);
+    --color-card-bg:   var(--color-gray-dark);
+    --color-text:      var(--text-color);
+    --color-text-secondary: var(--color-gray);
+    --color-text-light: var(--text-color);
+    --color-text-muted: var(--color-gray);
+    --color-border:    var(--color-gray-dark);
+
+    --font-family-base: 'Inter', sans-serif;
+    --header-height: 80px;
+    --header-mobile-height: 120px;
+  }
+
+  /* Modo Día */
+  [data-theme="day"] {
+    --bg-color: var(--color-light-blue);
+    --bg-gradient-end: #f0f6ff; /* Gradiente hacia azul aún más claro */
+    --title-color: var(--color-darkest);
+    --text-color: var(--color-black);
+    
+    /* Variables RGB para transparencias en modo día */
+    --color-bg-rgb: 213, 230, 255;
+    
+    --color-bg: var(--bg-color);
+    --color-text: var(--text-color);
+    --color-text-light: var(--text-color);
+    --color-surface: rgba(255, 255, 255, 0.8);
+    --color-card-bg: rgba(255, 255, 255, 0.9);
+    --color-border: rgba(5, 2, 31, 0.2);
+    --color-text-secondary: rgba(5, 2, 31, 0.7);
+    --color-text-muted: rgba(5, 2, 31, 0.6);
+  }
+
+
+  /* Reset y configuración base */
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+
+  html {
+    scroll-behavior: smooth; /* Para scroll suave en anclas */
+  }
+
+  body {
+    font-family: var(--font-family-base);
+    background: linear-gradient(135deg, var(--bg-color) 0%, var(--bg-gradient-end) 100%);
+    color: var(--color-text);
+    line-height: 1.6;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-size: 16px;
+    transition: background 0.3s ease, color 0.3s ease; /* Transición suave */
+    position: relative;
+    overflow-x: hidden;
+    padding-top: 70px; /* Espacio para header fijo en todas las versiones */
+  }
+  
+  @media (min-width: 768px) {
+    body {
+      padding-top: 80px; /* Un poco más de espacio en desktop */
+    }
+  }
+  
+  /* Fondo animado con partículas */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    background: 
+      radial-gradient(circle at 20% 80%, rgba(197, 173, 123, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(26, 52, 89, 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(197, 173, 123, 0.05) 0%, transparent 50%);
+    animation: backgroundFloat 20s ease-in-out infinite;
+  }
+
+  main {
+    flex: 1; /* Asegura que el main ocupe el espacio disponible para que el footer quede abajo */
+    width: 100%; /* Asegura que main ocupe todo el ancho */
+  }
+
+  /* Enlaces globales */
+  a {
+    color: var(--color-primary);
+    text-decoration: none; /* Es común quitar el subrayado por defecto y manejarlo con hover/focus */
+    transition: color 0.2s ease-in-out, background-color 0.2s ease-in-out;
+  }
+
+  a:hover,
+  a:focus { /* :focus es importante para accesibilidad */
+    color: var(--color-accent);
+    /* text-decoration: underline; Podrías añadir subrayado en hover/focus si lo deseas */
+  }
+
+  /* Headings con colores específicos */
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--title-color); /* Dorado en noche, azul oscuro en día */
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 0.75em;
+    transition: color 0.3s ease;
+  }
+  
+  h1 { font-size: 2.5rem; }
+  h2 { font-size: 2rem; }
+  h3 { font-size: 1.75rem; }
+  
+  /* Párrafos globales con colores automáticos día/noche */
+  p {
+    color: var(--color-text);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    transition: color 0.3s ease;
+  }
+  
+  /* Asegurar que todos los párrafos en cualquier contexto respeten los colores */
+  article p,
+  section p,
+  div p,
+  main p,
+  .content p,
+  .content-body p,
+  .noticia-content p {
+    color: var(--color-text) !important;
+  }
+  
+  /* En modo día: párrafos negros */
+  [data-theme="day"] p,
+  [data-theme="day"] article p,
+  [data-theme="day"] section p,
+  [data-theme="day"] div p,
+  [data-theme="day"] main p,
+  [data-theme="day"] .content p,
+  [data-theme="day"] .content-body p,
+  [data-theme="day"] .noticia-content p {
+    color: var(--color-black) !important;
+  }
+  
+  /* En modo noche: párrafos blancos */
+  [data-theme="night"] p,
+  [data-theme="night"] article p,
+  [data-theme="night"] section p,
+  [data-theme="night"] div p,
+  [data-theme="night"] main p,
+  [data-theme="night"] .content p,
+  [data-theme="night"] .content-body p,
+  [data-theme="night"] .noticia-content p {
+    color: var(--color-white) !important;
+  }
+
+
+  /* Imágenes responsivas por defecto */
+  img, video, svg {
+    max-width: 100%;
+    height: auto;
+    display: block; /* Evita espacio extra debajo de las imágenes inline */
+  }
+
+  /* Botones globales */
+  .btn {
+    display: inline-block;
+    padding: 0.875rem 1.75rem; /* Ajuste leve para mejor proporción */
+    border-radius: 0.5rem; /* Coherente con muchos diseños modernos */
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.2s ease-in-out; /* Transición más rápida */
+    border: 2px solid transparent; /* Borde base para evitar saltos en hover */
+    cursor: pointer;
+    font-family: inherit; /* Heredar la fuente del body */
+    text-align: center;
+    font-size: 1rem; /* Tamaño de fuente base para botones */
+  }
+
+  .btn-primary {
+    background-color: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
+  }
+
+  .btn-primary:hover,
+  .btn-primary:focus {
+    background-color: var(--color-secondary);
+    border-color: var(--color-secondary);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2); /* Añadir una sombra sutil en hover */
+  }
+
+  .btn-secondary {
+    background-color: transparent;
+    color: var(--color-primary);
+    border: 2px solid var(--color-primary);
+  }
+
+  .btn-secondary:hover,
+  .btn-secondary:focus {
+    background-color: var(--color-primary);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(147, 51, 234, 0.1); /* Sombra con color de acento si es apropiado */
+  }
+
+  /* Utilidades de espaciado */
+  .container {
+    width: 100%; /* Ocupa el ancho completo */
+    max-width: 1200px; /* Pero no más de 1200px */
+    margin-left: auto;  /* Centrado */
+    margin-right: auto; /* Centrado */
+    padding-left: 1rem;  /* Espacio interno en los lados */
+    padding-right: 1rem; /* Espacio interno en los lados */
+  }
+
+  .section {
+    padding-top: 3rem;
+    padding-bottom: 3rem;
+  }
+
+  /* Mejoras de accesibilidad para focus */
+  *:focus-visible {
+    outline: 3px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+
+  /* Responsive */
+  @media (max-width: 992px) { /* Breakpoint para tablets */
+    .container {
+        max-width: 960px;
+    }
+    h1 { font-size: 2.25rem; }
+    h2 { font-size: 1.75rem; }
+  }
+
+  @media (max-width: 768px) { /* Breakpoint para tablets pequeñas y móviles grandes */
+    .container {
+      /* max-width: 720px; Ya es 100% con padding */
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+    
+    .section {
+      padding-top: 2rem;
+      padding-bottom: 2rem;
+    }
+    h1 { font-size: 2rem; }
+    h2 { font-size: 1.5rem; }
+    .btn {
+      padding: 0.75rem 1.25rem;
+      font-size: 0.9rem;
+    }
+  }
+
+  @media (max-width: 576px) { /* Breakpoint para móviles */
+     /* Ajustes más específicos para móviles si son necesarios */
+     body {
+        font-size: 15px; /* Podrías ajustar el tamaño de fuente base para móviles */
+     }
+  }
+
+  /* Botón de cambio de tema global (ahora se maneja en el Header) */
+  
+  /* Animación del fondo */
+  @keyframes backgroundFloat {
+    0%, 100% {
+      transform: translate(0, 0) rotate(0deg);
+    }
+    33% {
+      transform: translate(30px, -30px) rotate(120deg);
+    }
+    66% {
+      transform: translate(-20px, 20px) rotate(240deg);
+    }
+  }
+  
+  [data-theme="day"] body::before {
+    background: 
+      radial-gradient(circle at 20% 80%, rgba(5, 2, 31, 0.05) 0%, transparent 50%),
+      radial-gradient(circle at 80% 20%, rgba(197, 173, 123, 0.08) 0%, transparent 50%),
+      radial-gradient(circle at 40% 40%, rgba(5, 2, 31, 0.03) 0%, transparent 50%);
+  }
+</style>

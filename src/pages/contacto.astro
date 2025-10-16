@@ -1,0 +1,1149 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import UniversalHero from '../components/UniversalHero.astro';
+import { getSiteInfo, getPageData } from '../lib/wordpress';
+
+// Variables para controlar errores
+let hasError = false;
+let errorMessage = '';
+let siteInfo = null;
+let pageData = null;
+
+try {
+  siteInfo = await getSiteInfo();
+  pageData = await getPageData('contacto');
+  if (!siteInfo || !siteInfo.title) throw new Error('No se pudo obtener el título del sitio desde WordPress');
+} catch (error) {
+  hasError = true;
+  errorMessage = `Error conectando con WordPress: ${error.message}`;
+}
+
+// Datos de la página
+const heroTitle = hasError ? "Error - Contacto" : (pageData?.title || "Contacto");
+const heroDescription = hasError ? 
+  "Error conectando con WordPress. Revisa la conexión e intenta de nuevo." : 
+  (pageData?.excerpt || "Ponte en contacto con VinylStation Radio. Estamos aquí para escucharte.");
+
+const pageTitle = hasError ? 'Error - Contacto' : (pageData?.seo?.title || `${heroTitle} - VinylStation`);
+const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.metaDesc || heroDescription);
+
+// Datos de contacto
+const contactInfo = {
+  phone: "+34 925 676 778",
+  email: "hola@vinylstation.com",
+  address: {
+    street: "Calle Principal",
+    city: "Fuensalida",
+    postalCode: "45510",
+    province: "Toledo",
+    country: "España"
+  },
+  web: "https://vinylstation.com/contacto"
+};
+---
+
+<MainLayout title={pageTitle} description={pageDescription}>
+  <div class="main-content">
+    {hasError ? (
+      <div class="container">
+        <UniversalHero 
+          title="Error - Contacto"
+          description="Error conectando con WordPress. Revisa la conexión e intenta de nuevo."
+          customClass="compact"
+        />
+        
+        <div class="error-container">
+          <div class="error-icon">⚠️</div>
+          <h2 class="error-title">Error de Conexión</h2>
+          <p class="error-message">{errorMessage}</p>
+          <div class="error-actions">
+            <button onclick="window.location.reload()" class="btn primary-btn">
+              🔄 Reintentar
+            </button>
+            <a href="/" class="btn secondary-btn">← Volver al inicio</a>
+          </div>
+        </div>
+      </div>
+    ) : (
+      <>
+        {/* HERO UNIVERSAL SIN EFECTOS */}
+        <UniversalHero 
+          title={heroTitle}
+          description={heroDescription}
+          customClass="compact"
+        />
+        
+        <!-- Sección de Contacto -->
+        <section class="contact-section">
+          <div class="container">
+            <div class="contact-grid">
+              <!-- Información de contacto -->
+              <div class="contact-info">
+                <h2>Información de Contacto</h2>
+                <p class="contact-intro">
+                  VinylStation Radio es tu emisora especializada en música vinilo. 
+                  Estamos aquí para compartir contigo la mejor música y experiencias analógicas.
+                </p>
+                
+                <div class="contact-details">
+                  <div class="contact-item">
+                    <div class="contact-icon">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M5 4h4l2 5l-2.5 1.5a11 11 0 0 0 5 5l1.5 -2.5l5 2v4a2 2 0 0 1 -2 2a16 16 0 0 1 -15 -15a2 2 0 0 1 2 -2" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </div>
+                    <div class="contact-text">
+                      <h3>Teléfono</h3>
+                      <a href={`tel:${contactInfo.phone.replace(/\s/g, '')}`}>{contactInfo.phone}</a>
+                    </div>
+                  </div>
+                  
+                  <div class="contact-item">
+                    <div class="contact-icon">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/>
+                        <path d="M3 7l9 6l9 -6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                    </div>
+                    <div class="contact-text">
+                      <h3>Email</h3>
+                      <a href={`mailto:${contactInfo.email}`}>{contactInfo.email}</a>
+                    </div>
+                  </div>
+                  
+                  <div class="contact-item">
+                    <div class="contact-icon">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" stroke="currentColor" stroke-width="2"/>
+                        <circle cx="12" cy="10" r="3" stroke="currentColor" stroke-width="2"/>
+                      </svg>
+                    </div>
+                    <div class="contact-text">
+                      <h3>Dirección</h3>
+                      <p>
+                        {contactInfo.address.city}<br/>
+                        {contactInfo.address.postalCode} {contactInfo.address.province}<br/>
+                        {contactInfo.address.country}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div class="contact-item">
+                    <div class="contact-icon">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/>
+                        <path d="M2 12h20" stroke="currentColor" stroke-width="2"/>
+                        <path d="M12 2a15.3 15.3 0 0 1 4 10a15.3 15.3 0 0 1 -4 10a15.3 15.3 0 0 1 -4 -10a15.3 15.3 0 0 1 4 -10z" stroke="currentColor" stroke-width="2"/>
+                      </svg>
+                    </div>
+                    <div class="contact-text">
+                      <h3>Web</h3>
+                      <a href={contactInfo.web} target="_blank" rel="noopener noreferrer">vinylstation.com</a>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="social-links">
+                  <h3>Síguenos</h3>
+                  <div class="social-icons">
+                    <a href="https://www.facebook.com/profile.php?id=61573773924772" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="Facebook">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                      </svg>
+                    </a>
+                    <a href="https://www.instagram.com/vinylstation_radio/" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="Instagram">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zM5.838 12a6.162 6.162 0 1 1 12.324 0 6.162 6.162 0 0 1-12.324 0zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm4.965-10.405a1.44 1.44 0 1 1 2.881.001 1.44 1.44 0 0 1-2.881-.001z"/>
+                      </svg>
+                    </a>
+                    <a href="https://www.tiktok.com/@vinylstation_radio" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="TikTok">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-5.2 1.74 2.89 2.89 0 012.31-4.64 2.93 2.93 0 01.88.13V9.4a6.84 6.84 0 00-.88-.05A6.33 6.33 0 005 20.1a6.34 6.34 0 0010.86-4.43v-7a8.16 8.16 0 004.77 1.52v-3.4a4.85 4.85 0 01-1-.1z"/>
+                      </svg>
+                    </a>
+                    <a href="https://zeno.fm/radio/vinyl-station-radio/" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="Zeno FM">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M4 4h16v16H4V4z"/>
+                        <path d="M7 8h10l-8 8h8" stroke="white" stroke-width="1.5" fill="none"/>
+                        <circle cx="6" cy="7" r="1" fill="white"/>
+                        <circle cx="18" cy="17" r="1" fill="white"/>
+                      </svg>
+                    </a>
+                    <a href="https://soundcloud.com/vinyl-station-radio" target="_blank" rel="noopener noreferrer" class="social-icon" aria-label="SoundCloud">
+                      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M3 14v4h1v-4zm1.5-.5v5h1v-5zm1.5-1v7h1v-7zm1.5.5v6h1v-6zm1.5-1v8h1v-8zm1.5.5v7h1v-7zm1.5-1.5v10h1v-10zm1.5.5v9h1v-9z"/>
+                        <path d="M16 10c2.21 0 4 1.79 4 4s-1.79 4-4 4H8v-2h8c1.1 0 2-.9 2-2s-.9-2-2-2c-.55 0-1.05.22-1.41.59-.36.36-.59.86-.59 1.41h-2c0-1.1.45-2.1 1.17-2.83C13.9 10.45 14.9 10 16 10z"/>
+                      </svg>
+                    </a>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Formulario de contacto -->
+              <div class="contact-form-container">
+                <h2>Envíanos un mensaje</h2>
+                <p>¿Tienes alguna pregunta? ¿Quieres colaborar con nosotros? Escríbenos y te responderemos lo antes posible.</p>
+                
+                <!-- Gravity Forms Container -->
+                <div id="gravity-form-container" class="form-loading">
+                  <div class="loading-message">
+                    <svg class="spinner" viewBox="0 0 50 50">
+                      <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+                    </svg>
+                    <p>Cargando formulario de contacto...</p>
+                  </div>
+                  <div class="error-message" style="display: none;">
+                    <p class="error-text">Error al cargar el formulario.</p>
+                    <p>Por favor, contáctanos directamente:</p>
+                    <p><strong>Email:</strong> <a href="mailto:hola@vinylstation.com">hola@vinylstation.com</a></p>
+                    <p><strong>Teléfono:</strong> <a href="tel:+34925676778">+34 925 676 778</a></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+      </>
+    )}
+  </div>
+</MainLayout>
+
+<script>
+  // 🔧 SCRIPT CORREGIDO PARA FORMULARIO DE CONTACTO
+  document.addEventListener('DOMContentLoaded', async function() {
+    console.log('🚀 [CLIENT] Iniciando carga del formulario...');
+    
+    const container = document.getElementById('gravity-form-container');
+    const loadingMessage = container?.querySelector('.loading-message');
+    const errorMessage = container?.querySelector('.error-message');
+    
+    if (!container) {
+      console.error('❌ [CLIENT] Contenedor del formulario no encontrado');
+      return;
+    }
+    
+    try {
+      console.log('📡 [CLIENT] Solicitando estructura del formulario...');
+      
+      // ✅ CARGAR FORMULARIO con validación mejorada
+      const formResponse = await fetch('/api/gravity-form', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      
+      console.log('📊 [CLIENT] Status respuesta:', formResponse.status);
+      
+      if (!formResponse.ok) {
+        const errorText = await formResponse.text();
+        console.error('❌ [CLIENT] Error del servidor:', errorText);
+        throw new Error(`Error ${formResponse.status}: No se pudo cargar el formulario`);
+      }
+      
+      const formData = await formResponse.json();
+      console.log('✅ [CLIENT] Formulario cargado:', formData);
+      
+      if (!formData || !formData.fields || !Array.isArray(formData.fields)) {
+        throw new Error('Estructura de formulario inválida');
+      }
+      
+      // ✅ CONSTRUIR FORMULARIO dinámicamente
+      const form = document.createElement('form');
+      form.id = 'gravityForm';
+      form.className = 'contact-form';
+      form.noValidate = true; // Validación personalizada
+      
+      // ✅ CREAR CAMPOS con validación mejorada
+      formData.fields.forEach((field, index) => {
+        const fieldGroup = createFormField(field, index);
+        form.appendChild(fieldGroup);
+      });
+      
+      // ✅ BOTÓN DE ENVÍO
+      const submitDiv = createSubmitButton(formData.button?.text || 'Enviar mensaje');
+      form.appendChild(submitDiv);
+      
+      // ✅ MENSAJE DE RESULTADO
+      const formMessage = document.createElement('div');
+      formMessage.id = 'formMessage';
+      formMessage.className = 'form-message';
+      formMessage.style.display = 'none';
+      
+      // ✅ MANEJAR ENVÍO con validación y feedback mejorado
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        console.log('📝 [CLIENT] Enviando formulario...');
+        
+        // Validar formulario
+        if (!validateForm(form)) {
+          console.log('❌ [CLIENT] Validación fallida');
+          return;
+        }
+        
+        await submitForm(form, formMessage);
+      });
+      
+      // ✅ REEMPLAZAR CONTENIDO
+      container.innerHTML = '';
+      container.appendChild(form);
+      container.appendChild(formMessage);
+      container.classList.remove('form-loading');
+      
+      console.log('✅ [CLIENT] Formulario renderizado correctamente');
+      
+    } catch (error) {
+      console.error('❌ [CLIENT] Error cargando formulario:', error);
+      showFormError(container, error.message);
+    }
+  });
+  
+  // ✅ FUNCIÓN PARA CREAR CAMPOS DE FORMULARIO
+  function createFormField(field, index) {
+    const fieldGroup = document.createElement('div');
+    fieldGroup.className = 'form-group';
+    fieldGroup.style.opacity = '0';
+    fieldGroup.style.transform = 'translateY(20px)';
+    
+    // Label
+    const label = document.createElement('label');
+    label.htmlFor = `input_${field.id}`;
+    label.textContent = field.label + (field.isRequired ? ' *' : '');
+    fieldGroup.appendChild(label);
+    
+    // Campo de entrada
+    let inputElement;
+    
+    switch (field.type) {
+      case 'text':
+      case 'name':
+        inputElement = document.createElement('input');
+        inputElement.type = 'text';
+        break;
+        
+      case 'email':
+        inputElement = document.createElement('input');
+        inputElement.type = 'email';
+        break;
+        
+      case 'phone':
+        inputElement = document.createElement('input');
+        inputElement.type = 'tel';
+        break;
+        
+      case 'textarea':
+        inputElement = document.createElement('textarea');
+        inputElement.rows = 5;
+        break;
+        
+      case 'select':
+        inputElement = document.createElement('select');
+        
+        // Opción vacía
+        const emptyOption = document.createElement('option');
+        emptyOption.value = '';
+        emptyOption.textContent = field.placeholder || 'Selecciona una opción';
+        inputElement.appendChild(emptyOption);
+        
+        // Opciones del campo
+        if (field.choices) {
+          field.choices.forEach(choice => {
+            const option = document.createElement('option');
+            option.value = choice.value;
+            option.textContent = choice.text;
+            inputElement.appendChild(option);
+          });
+        }
+        break;
+        
+      default:
+        inputElement = document.createElement('input');
+        inputElement.type = 'text';
+    }
+    
+    // Configurar atributos del campo
+    inputElement.id = `input_${field.id}`;
+    inputElement.name = `input_${field.id}`;
+    inputElement.placeholder = field.placeholder || '';
+    inputElement.required = field.isRequired || false;
+    
+    // Añadir campo al grupo
+    fieldGroup.appendChild(inputElement);
+    
+    // Animación de entrada
+    setTimeout(() => {
+      fieldGroup.style.transition = 'all 0.5s ease-out';
+      fieldGroup.style.opacity = '1';
+      fieldGroup.style.transform = 'translateY(0)';
+    }, 100 + (index * 100));
+    
+    return fieldGroup;
+  }
+  
+  // ✅ FUNCIÓN PARA CREAR BOTÓN DE ENVÍO
+  function createSubmitButton(buttonText) {
+    const submitDiv = document.createElement('div');
+    submitDiv.className = 'form-actions';
+    submitDiv.style.opacity = '0';
+    submitDiv.style.transform = 'translateY(20px)';
+    
+    const submitButton = document.createElement('button');
+    submitButton.type = 'submit';
+    submitButton.className = 'btn primary-btn';
+    submitButton.innerHTML = `<span>${buttonText}</span>`;
+    submitDiv.appendChild(submitButton);
+    
+    // Animación del botón
+    setTimeout(() => {
+      submitDiv.style.transition = 'all 0.5s ease-out';
+      submitDiv.style.opacity = '1';
+      submitDiv.style.transform = 'translateY(0)';
+    }, 600);
+    
+    return submitDiv;
+  }
+  
+  // ✅ FUNCIÓN PARA VALIDAR FORMULARIO
+  function validateForm(form) {
+    let isValid = true;
+    const formData = new FormData(form);
+    
+    // Limpiar errores previos
+    form.querySelectorAll('.field-error').forEach(error => error.remove());
+    form.querySelectorAll('.form-group').forEach(group => group.classList.remove('has-error'));
+    
+    // Validar cada campo requerido
+    for (let [key, value] of formData.entries()) {
+      const input = form.querySelector(`[name="${key}"]`);
+      const fieldGroup = input?.closest('.form-group');
+      
+      if (input?.required && (!value || value.toString().trim() === '')) {
+        showFieldError(fieldGroup, 'Este campo es obligatorio');
+        isValid = false;
+      } else if (input?.type === 'email' && value && !isValidEmail(value.toString())) {
+        showFieldError(fieldGroup, 'Por favor, introduce un email válido');
+        isValid = false;
+      }
+    }
+    
+    return isValid;
+  }
+  
+  // ✅ FUNCIÓN PARA MOSTRAR ERROR DE CAMPO
+  function showFieldError(fieldGroup, message) {
+    if (!fieldGroup) return;
+    
+    fieldGroup.classList.add('has-error');
+    
+    const errorDiv = document.createElement('div');
+    errorDiv.className = 'field-error';
+    errorDiv.textContent = message;
+    fieldGroup.appendChild(errorDiv);
+  }
+  
+  // ✅ FUNCIÓN PARA VALIDAR EMAIL
+  function isValidEmail(email) {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  }
+  
+  // ✅ FUNCIÓN PARA ENVIAR FORMULARIO
+  async function submitForm(form, messageContainer) {
+    const submitButton = form.querySelector('button[type="submit"]');
+    const originalText = submitButton.innerHTML;
+    
+    try {
+      // Estado de carga
+      submitButton.innerHTML = '<span class="spinner-small"></span> Enviando...';
+      submitButton.disabled = true;
+      submitButton.classList.add('loading');
+      
+      // ✅ PREPARAR DATOS CORRECTAMENTE
+      const formData = new FormData(form);
+      const inputValues = {};
+      
+      // Extraer valores de los campos
+      for (let [key, value] of formData.entries()) {
+        if (value && value.toString().trim()) {
+          const fieldId = key.replace('input_', '');
+          inputValues[fieldId] = value.toString().trim();
+        }
+      }
+      
+      console.log('📋 [CLIENT] Datos preparados:', inputValues);
+      
+      // ✅ ESTRUCTURA CORRECTA para el servidor
+      const payload = {
+        input_values: inputValues
+      };
+      
+      console.log('🚀 [CLIENT] Enviando payload:', JSON.stringify(payload, null, 2));
+      
+      // Enviar formulario
+      const submitResponse = await fetch('/api/gravity-form', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+      
+      console.log('📡 [CLIENT] Status envío:', submitResponse.status);
+      
+      const responseText = await submitResponse.text();
+      console.log('📄 [CLIENT] Respuesta del servidor:', responseText);
+      
+      let responseData;
+      try {
+        responseData = JSON.parse(responseText);
+      } catch {
+        responseData = { message: responseText };
+      }
+      
+      if (!submitResponse.ok) {
+        throw new Error(responseData.details || responseData.message || `Error ${submitResponse.status}`);
+      }
+      
+      // ✅ ÉXITO
+      console.log('✅ [CLIENT] Formulario enviado correctamente');
+      showSuccessMessage(messageContainer, form);
+      
+    } catch (error) {
+      console.error('❌ [CLIENT] Error enviando formulario:', error);
+      showErrorMessage(messageContainer, error.message);
+    } finally {
+      // Restaurar botón
+      submitButton.innerHTML = originalText;
+      submitButton.disabled = false;
+      submitButton.classList.remove('loading');
+    }
+  }
+  
+  // ✅ FUNCIÓN PARA MOSTRAR ÉXITO
+  function showSuccessMessage(messageContainer, form) {
+    messageContainer.className = 'form-message success';
+    messageContainer.innerHTML = `
+      <div class="success-icon">✓</div>
+      <p><strong>¡Mensaje enviado correctamente!</strong></p>
+      <p>Te responderemos en breve. Gracias por contactar con VinylStation.</p>
+    `;
+    messageContainer.style.display = 'block';
+    
+    // Limpiar formulario
+    form.reset();
+    
+    // Scroll al mensaje
+    messageContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    
+    // Efecto visual en el formulario
+    form.style.transition = 'all 0.5s ease-out';
+    form.style.opacity = '0.7';
+    form.style.transform = 'scale(0.98)';
+  }
+  
+  // ✅ FUNCIÓN PARA MOSTRAR ERROR
+  function showErrorMessage(messageContainer, errorDetails) {
+    messageContainer.className = 'form-message error';
+    messageContainer.innerHTML = `
+      <div class="error-icon">✕</div>
+      <p><strong>No se pudo enviar el formulario</strong></p>
+      <p class="error-details">${errorDetails}</p>
+      <hr>
+      <p><strong>Contacto alternativo:</strong></p>
+      <p>📧 <a href="mailto:hola@vinylstation.com">hola@vinylstation.com</a></p>
+      <p>📞 <a href="tel:+34925676778">+34 925 676 778</a></p>
+    `;
+    messageContainer.style.display = 'block';
+    messageContainer.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  
+  // ✅ FUNCIÓN PARA MOSTRAR ERROR DE CARGA
+  function showFormError(container, errorMessage) {
+    const loadingMessage = container.querySelector('.loading-message');
+    const errorDiv = container.querySelector('.error-message');
+    
+    if (loadingMessage) loadingMessage.style.display = 'none';
+    if (errorDiv) {
+      errorDiv.style.display = 'block';
+      // Añadir detalles del error
+      const errorDetails = errorDiv.querySelector('.error-text');
+      if (errorDetails) {
+        errorDetails.textContent = `Error: ${errorMessage}`;
+      }
+    }
+  }
+</script>
+
+<style>
+  /* ESTILOS LIMPIOS PARA CONTACTO */
+  .main-content {
+    background: linear-gradient(135deg, var(--color-bg) 0%, rgba(0, 0, 0, 0.02) 100%);
+    min-height: 100vh;
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+  
+  /* === ESTILOS PARA ERROR === */
+  .error-container {
+    text-align: center;
+    padding: 2rem;
+    margin: 2rem auto;
+    background: var(--card-bg);
+    border-radius: 15px;
+    border: 2px solid var(--title-color);
+    max-width: 600px;
+  }
+  
+  .error-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+  
+  .error-title {
+    color: var(--title-color);
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+  
+  .error-message {
+    color: var(--text-color);
+    font-size: 1rem;
+    margin-bottom: 2rem;
+    background: rgba(0,0,0,0.3);
+    padding: 1rem;
+    border-radius: 8px;
+    font-family: monospace;
+  }
+  
+  .error-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    border: 2px solid;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .primary-btn {
+    background: var(--title-color);
+    color: var(--color-bg);
+    border-color: var(--title-color);
+  }
+
+  .primary-btn:hover {
+    background: #a8935e;
+    border-color: #a8935e;
+  }
+
+  .secondary-btn {
+    background: transparent;
+    color: var(--title-color);
+    border-color: var(--title-color);
+  }
+
+  .secondary-btn:hover {
+    background: var(--title-color);
+    color: var(--color-bg);
+  }
+
+  /* === SECCIÓN DE CONTACTO === */
+  .contact-section {
+    padding: 4rem 0;
+  }
+  
+  .contact-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: stretch;
+  }
+  
+  /* Información de contacto */
+  .contact-info h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1.5rem;
+    color: var(--title-color);
+    font-weight: 700;
+  }
+  
+  .contact-intro {
+    font-size: 1.2rem;
+    color: var(--text-color);
+    line-height: 1.6;
+    margin-bottom: 3rem;
+  }
+  
+  .contact-details {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    margin-bottom: 3rem;
+  }
+  
+  .contact-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background: var(--card-bg);
+    border-radius: 12px;
+    border: 1px solid rgba(197, 173, 123, 0.1);
+    transition: all 0.3s ease;
+  }
+  
+  .contact-item:hover {
+    transform: translateX(5px);
+    border-color: rgba(197, 173, 123, 0.3);
+    box-shadow: 0 6px 20px rgba(197, 173, 123, 0.15);
+  }
+  
+  .contact-icon {
+    width: 50px;
+    height: 50px;
+    background: rgba(197, 173, 123, 0.15);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  
+  .contact-icon svg {
+    width: 24px;
+    height: 24px;
+    color: var(--title-color);
+  }
+  
+  .contact-text h3 {
+    font-size: 1.1rem;
+    color: var(--title-color);
+    margin: 0 0 0.5rem;
+    font-weight: 700;
+  }
+  
+  .contact-text a {
+    color: var(--text-color);
+    text-decoration: none;
+    font-size: 1.1rem;
+    transition: color 0.3s ease;
+  }
+  
+  .contact-text a:hover {
+    color: var(--title-color);
+  }
+  
+  .contact-text p {
+    color: var(--text-color);
+    margin: 0;
+    line-height: 1.6;
+  }
+  
+  /* Social links */
+  .social-links h3 {
+    font-size: 1.3rem;
+    color: var(--title-color);
+    margin-bottom: 1rem;
+  }
+  
+  .social-icons {
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .social-icon {
+    width: 45px;
+    height: 45px;
+    background: var(--card-bg);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid rgba(197, 173, 123, 0.1);
+    transition: all 0.3s ease;
+    text-decoration: none;
+  }
+  
+  .social-icon:hover {
+    background: var(--title-color);
+    border-color: var(--title-color);
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(197, 173, 123, 0.3);
+  }
+  
+  .social-icon svg {
+    width: 20px;
+    height: 20px;
+    color: var(--text-color);
+    transition: all 0.3s ease;
+  }
+  
+  .social-icon:hover svg {
+    color: var(--color-bg);
+    transform: scale(1.1);
+  }
+  
+  /* Formulario de contacto */
+  .contact-form-container {
+    background: var(--card-bg);
+    padding: 3rem;
+    border-radius: 20px;
+    border: 1px solid rgba(197, 173, 123, 0.15);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+  }
+  
+  .contact-form-container h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1.2rem;
+    color: var(--title-color);
+    font-weight: 700;
+    text-align: center;
+  }
+  
+  .contact-form-container > p {
+    color: var(--text-color);
+    font-size: 1.15rem;
+    margin-bottom: 2.5rem;
+    line-height: 1.7;
+    text-align: center;
+  }
+  
+  .contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    flex-grow: 1;
+  }
+  
+  /* Estilos para el formulario */
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+  
+  .form-group label {
+    color: var(--title-color);
+    font-weight: 600;
+    font-size: 1rem;
+  }
+  
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid rgba(197, 173, 123, 0.15);
+    border-radius: 8px;
+    padding: 1rem 1.2rem;
+    color: var(--text-color);
+    font-size: 1.05rem;
+    transition: all 0.3s ease;
+    font-family: inherit;
+    width: 100%;
+  }
+  
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--title-color);
+    background: rgba(255, 255, 255, 0.07);
+    box-shadow: 0 0 0 4px rgba(197, 173, 123, 0.1);
+  }
+  
+  .form-group input::placeholder,
+  .form-group textarea::placeholder {
+    color: #666;
+    font-style: italic;
+  }
+  
+  .form-group select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23c5ad7b' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 1.2rem center;
+    padding-right: 3rem;
+  }
+  
+  .form-group select option {
+    background: #1a1a1a;
+    color: #fff;
+    padding: 0.5rem;
+  }
+  
+  .form-group textarea {
+    resize: vertical;
+    min-height: 140px;
+    line-height: 1.6;
+  }
+  
+  .form-actions {
+    margin-top: 1.5rem;
+    display: flex;
+    justify-content: center;
+  }
+  
+  .form-actions .btn {
+    min-width: 240px;
+    font-size: 1.15rem;
+    padding: 1.1rem 2.5rem;
+  }
+  
+  .form-message {
+    padding: 1.2rem 1.8rem;
+    border-radius: 12px;
+    margin-top: 2rem;
+    font-weight: 600;
+    text-align: center;
+    font-size: 1.05rem;
+  }
+  
+  .form-message.success {
+    background: rgba(76, 175, 80, 0.1);
+    border: 2px solid #4caf50;
+    color: #4caf50;
+  }
+  
+  .form-message.error {
+    background: rgba(197, 173, 123, 0.1);
+    border: 2px solid var(--title-color);
+    color: var(--title-color);
+  }
+  
+  /* Spinner y loading */
+  .form-loading .loading-message {
+    text-align: center;
+    padding: 3rem;
+  }
+  
+  .spinner {
+    animation: rotate 2s linear infinite;
+    width: 50px;
+    height: 50px;
+    margin: 0 auto 1rem;
+  }
+  
+  .spinner .path {
+    stroke: var(--title-color);
+    stroke-linecap: round;
+    animation: dash 1.5s ease-in-out infinite;
+  }
+  
+  @keyframes rotate {
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  
+  @keyframes dash {
+    0% {
+      stroke-dasharray: 1, 150;
+      stroke-dashoffset: 0;
+    }
+    50% {
+      stroke-dasharray: 90, 150;
+      stroke-dashoffset: -35;
+    }
+    100% {
+      stroke-dasharray: 90, 150;
+      stroke-dashoffset: -124;
+    }
+  }
+  
+  .loading-message p {
+    color: var(--text-color);
+    font-size: 1.1rem;
+  }
+  
+  .error-message {
+    text-align: center;
+    padding: 2rem;
+  }
+  
+  .error-message .error-text {
+    color: var(--title-color);
+    font-size: 1.2rem;
+    margin-bottom: 1rem;
+  }
+  
+  .error-message p {
+    color: var(--text-color);
+    margin: 0.5rem 0;
+  }
+  
+  .error-message a {
+    color: var(--title-color);
+    text-decoration: none;
+  }
+  
+  .error-message a:hover {
+    text-decoration: underline;
+  }
+
+  .spinner-small {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 0.5rem;
+  }
+
+  .success-icon, .error-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+
+  .success-icon {
+    color: #4caf50;
+  }
+
+  .error-icon {
+    color: var(--title-color);
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  /* ✅ ESTILOS PARA VALIDACIÓN DE CAMPOS */
+  .form-group.has-error {
+    animation: shake 0.5s ease-in-out;
+  }
+  
+  .form-group.has-error input,
+  .form-group.has-error select,
+  .form-group.has-error textarea {
+    border-color: #f44336;
+    background: rgba(244, 67, 54, 0.1);
+  }
+  
+  .field-error {
+    color: #f44336;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  
+  .field-error::before {
+    content: '⚠️';
+    font-size: 1rem;
+  }
+  
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-5px); }
+    75% { transform: translateX(5px); }
+  }
+  
+  /* Mejorar el aspecto del mensaje de error */
+  .form-message .error-details {
+    font-size: 0.95rem;
+    opacity: 0.8;
+    margin: 1rem 0;
+    font-family: monospace;
+    background: rgba(0,0,0,0.2);
+    padding: 0.5rem;
+    border-radius: 4px;
+  }
+  
+  /* Responsive */
+  @media (max-width: 992px) {
+    .contact-grid {
+      grid-template-columns: 1fr;
+      gap: 3rem;
+    }
+    
+    .contact-info {
+      order: 2;
+    }
+    
+    .contact-form-container {
+      order: 1;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .contact-section {
+      padding: 2rem 0;
+    }
+    
+    .contact-info h2,
+    .contact-form-container h2 {
+      font-size: 2rem;
+    }
+    
+    .contact-intro {
+      font-size: 1.1rem;
+    }
+    
+    .contact-item {
+      padding: 1rem;
+      flex-direction: column;
+      text-align: center;
+      gap: 1rem;
+    }
+    
+    .contact-icon {
+      width: 40px;
+      height: 40px;
+    }
+    
+    .contact-text h3 {
+      font-size: 1rem;
+    }
+    
+    .contact-text a,
+    .contact-text p {
+      font-size: 0.95rem;
+    }
+    
+    .contact-form-container {
+      padding: 2rem 1.5rem;
+    }
+    
+    .social-icon {
+      width: 40px;
+      height: 40px;
+    }
+    
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      font-size: 16px; /* Evita zoom en iOS */
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .contact-details {
+      gap: 1rem;
+    }
+    
+    .contact-item {
+      padding: 1rem;
+    }
+  }
+</style>

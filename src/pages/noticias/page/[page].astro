@@ -1,0 +1,712 @@
+---
+// getStaticPaths() requerido para rutas dinámicas en modo estático
+import MainLayout from '../../../layouts/MainLayout.astro';
+import UniversalHero from '../../../components/UniversalHero.astro';
+import AdSense from '../../../components/ads/AdSense.astro';
+import { getSiteInfo, getPageData, getNoticiasPaginadas } from '../../../lib/wordpress.js';
+
+export async function getStaticPaths() {
+  console.log('🔧 Generando rutas estáticas para páginas de noticias...');
+  
+  const itemsPerPage = 12;
+  
+  try {
+    // Obtener información de la primera página para calcular el total
+    const firstPageData = await getNoticiasPaginadas({ page: 1, itemsPerPage });
+    const totalNoticias = firstPageData?.pageInfo?.total || firstPageData?.pageInfo?.totalNoticias || 0;
+    
+    if (totalNoticias === 0) {
+      console.warn('⚠️ No se encontraron noticias, generando solo página 1');
+      return [{ params: { page: '1' } }];
+    }
+    
+    const totalPages = Math.ceil(totalNoticias / itemsPerPage);
+    console.log(`📊 Total noticias: ${totalNoticias}, Páginas a generar: ${totalPages}`);
+    
+    // Generar rutas para todas las páginas
+    const paths = [];
+    for (let page = 1; page <= totalPages; page++) {
+      paths.push({ params: { page: page.toString() } });
+    }
+    
+    console.log(`✅ Generadas ${paths.length} rutas estáticas: /noticias/page/1 hasta /noticias/page/${totalPages}`);
+    return paths;
+    
+  } catch (error) {
+    console.error('❌ Error generando rutas estáticas:', error.message);
+    // Fallback: generar al menos las primeras 20 páginas
+    const fallbackPages = 20;
+    const paths = [];
+    for (let page = 1; page <= fallbackPages; page++) {
+      paths.push({ params: { page: page.toString() } });
+    }
+    console.log(`🔄 Fallback: Generadas ${fallbackPages} páginas por defecto`);
+    return paths;
+  }
+}
+
+// Obtener el número de página desde los parámetros de Astro (NO desde la URL)
+const currentPage = Math.max(1, parseInt(Astro.params.page) || 1);
+
+// Helper para quitar HTML de la descripción
+const stripHtml = (html) =>
+  html?.replace?.(/<[^>]*>/g, '').trim() || '';
+
+// Helper para formatear fecha
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
+
+// Configuración
+const itemsPerPage = 12;
+
+// Inicializa variables
+let hasError = false;
+let errorMessage = '';
+let siteInfo = null;
+let pageData = null;
+let noticiasData = null;
+
+try {
+  siteInfo = await getSiteInfo();
+  pageData = await getPageData('noticias');
+  
+  console.log(`🔍 Cargando página ${currentPage} de noticias (modo estático)...`);
+  
+  // Obtener noticias paginadas
+  noticiasData = await getNoticiasPaginadas({ 
+    page: currentPage, 
+    itemsPerPage 
+  });
+  
+  console.log('📊 Datos de noticias recibidos:', {
+    noticias: noticiasData?.noticias?.length || 0,
+    total: noticiasData?.pageInfo?.total || 0,
+    currentPage,
+    hasError: !noticiasData || !noticiasData.noticias
+  });
+  
+  if (!siteInfo || !siteInfo.title) throw new Error('No se pudo obtener el título del sitio desde WordPress');
+} catch (error) {
+  hasError = true;
+  errorMessage = `Error conectando con WordPress: ${error.message}`;
+  console.error('❌ Error en página de noticias:', error);
+}
+
+// Datos de paginación
+const noticias = hasError ? [] : (noticiasData?.noticias || []);
+const pageInfo = noticiasData?.pageInfo || {};
+const totalPages = pageInfo.totalPages || 1;
+const totalNoticias = pageInfo.totalNoticias || pageInfo.total || noticias.length;
+
+const heroTitle = hasError ? "Error - Noticias" : `Noticias - Página ${currentPage}`;
+const heroDescription = hasError ? 
+  "Error cargando las noticias desde WordPress" : 
+  `Últimas noticias de música, vinilo y cultura. Página ${currentPage} de ${totalPages} - ${totalNoticias} noticias en total.`;
+
+const pageTitle = hasError ? 'Error - Noticias' : (pageData?.seo?.title || `${heroTitle} - VinylStation`);
+const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.metaDesc || heroDescription);
+
+// Helpers para paginación visible (máximo 5 botones)
+let paginasVisibles = [];
+if (totalPages <= 5) {
+  paginasVisibles = Array.from({ length: totalPages }, (_, i) => i + 1);
+} else {
+  if (currentPage <= 3) {
+    paginasVisibles = [1, 2, 3, 4, 5];
+  } else if (currentPage >= totalPages - 2) {
+    paginasVisibles = [totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+  } else {
+    paginasVisibles = [currentPage - 2, currentPage - 1, currentPage, currentPage + 1, currentPage + 2];
+  }
+  paginasVisibles = paginasVisibles.filter(p => p >= 1 && p <= totalPages);
+}
+
+// URLs de paginación
+const prevUrl = currentPage > 1 ? `/noticias/page/${currentPage - 1}/` : null;
+const nextUrl = currentPage < totalPages ? `/noticias/page/${currentPage + 1}/` : null;
+---
+<MainLayout title={pageTitle} description={pageDescription}>
+  <div class="main-content">
+    {hasError ? (
+      <div class="container">
+        <UniversalHero 
+          title="Error - Noticias"
+          description="Error conectando con WordPress. Revisa la conexión e intenta de nuevo."
+          customClass="compact"
+        />
+        
+        <div class="error-container">
+          <div class="error-icon">📰</div>
+          <h2 class="error-title">Error Cargando Noticias</h2>
+          <p class="error-message">{errorMessage}</p>
+          <div class="error-details">
+            <h3>Posibles soluciones:</h3>
+            <ul>
+              <li>Verifica conexión a: https://cms.vinylstation.es/graphql</li>
+              <li>Comprueba que WordPress esté funcionando</li>
+              <li>Revisa configuración de GraphQL y ACF</li>
+              <li>Asegúrate de que las noticias tengan campos configurados</li>
+            </ul>
+          </div>
+          <div class="error-actions">
+            <button onclick="window.location.reload()" class="btn primary-btn">
+              🔄 Reintentar
+            </button>
+            <a href="/" class="btn secondary-btn">← Volver al inicio</a>
+          </div>
+        </div>
+      </div>
+    ) : (
+      <>
+        {/* HERO UNIVERSAL SIN EFECTOS */}
+        <UniversalHero 
+          title={heroTitle}
+          description={heroDescription}
+          customClass="compact"
+        />
+
+        {/* NOTICIAS */}
+        <section id="noticias" class="news-section">
+          <div class="container">
+            <div class="section-header">
+              <div class="section-title-row">
+                <h2>Últimas Noticias</h2>
+                <div class="news-stats">
+                  <div class="stat-badge">
+                    <span class="stat-number">{totalNoticias}</span>
+                    <span class="stat-label">Noticias</span>
+                  </div>
+                  <div class="stat-badge">
+                    <span class="stat-number">{currentPage}/{totalPages}</span>
+                    <span class="stat-label">Página</span>
+                  </div>
+                </div>
+              </div>
+              <p>
+                Mantente al día con las últimas noticias de música, vinilo, cultura y actualidad desde VinylStation Radio.
+              </p>
+            </div>
+            
+            {/* Anuncio AdSense después del header */}
+            <AdSense 
+              slot="SLOT_NOTICIAS_TOP" 
+              format="auto"
+              className="ad-header"
+              adType="display"
+            />
+            
+            {noticias.length > 0 ? (
+              <>
+                <div class="news-grid">
+                  {noticias.map((noticia, index) => {
+                    const imagen =
+                      noticia.imagenDestacadaUrl ||
+                      noticia.featuredImage?.node?.sourceUrl ||
+                      '/images/placeholder-news.jpg';
+
+                    const fechaPublicacion = formatDate(noticia.date);
+                    const categoriasNoticia = noticia.categorias?.nodes || [];
+                    const descripcion = stripHtml(noticia.excerpt || `Noticia "${noticia.title}" - Últimas noticias de VinylStation`);
+
+                    return (
+                      <>
+                        <article class="news-card">
+                          <div class="news-image">
+                            <img
+                              src={imagen}
+                              alt={noticia.featuredImage?.node?.altText || noticia.title}
+                              loading="lazy"
+                              onerror="this.src='/images/placeholder-news.jpg'"
+                            />
+                            <div class="news-overlay">
+                              <a href={`/noticias/${noticia.slug || noticia.id}`} class="news-link">
+                                Leer Noticia
+                              </a>
+                            </div>
+                            {categoriasNoticia.length > 0 && (
+                              <div class="news-categories">
+                                {categoriasNoticia.slice(0, 2).map((cat) => (
+                                  <span class="category-badge" key={cat.id}>{cat.name}</span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          <div class="news-info">
+                            <h3 class="news-title-card">{noticia.title}</h3>
+                            <p class="news-description">{descripcion}</p>
+                            <div class="news-meta">
+                              <time class="news-date">{fechaPublicacion}</time>
+                            </div>
+                          </div>
+                        </article>
+                        
+                        {/* Anuncio AdSense después de la 6ta noticia */}
+                        {index === 5 && (
+                          <div class="ad-in-grid">
+                            <AdSense 
+                              slot="SLOT_NOTICIAS_MIDDLE" 
+                              format="auto"
+                              className="ad-in-article"
+                              adType="in-feed"
+                            />
+                          </div>
+                        )}
+                      </>
+                    );
+                  })}
+                </div>
+
+                {/* Paginación */}
+                <nav class="pagination">
+                  <ul>
+                    <li>
+                      {prevUrl ? (
+                        <a href={prevUrl} class="pagination-link">Anterior</a>
+                      ) : (
+                        <span class="pagination-link disabled">Anterior</span>
+                      )}
+                    </li>
+                    {paginasVisibles.map((p) => (
+                      <li>
+                        {p === currentPage ? (
+                          <span class="pagination-link current">{p}</span>
+                        ) : (
+                          <a href={`/noticias/page/${p}/`} class="pagination-link">{p}</a>
+                        )}
+                      </li>
+                    ))}
+                    <li>
+                      {nextUrl ? (
+                        <a href={nextUrl} class="pagination-link">Siguiente</a>
+                      ) : (
+                        <span class="pagination-link disabled">Siguiente</span>
+                      )}
+                    </li>
+                  </ul>
+                </nav>
+              </>
+            ) : (
+              <div class="no-news">
+                <div class="no-news-icon">📰</div>
+                <h3>No hay noticias disponibles</h3>
+                <p>Las noticias aparecerán aquí cuando sean publicadas en WordPress.</p>
+              </div>
+            )}
+          </div>
+        </section>
+      </>
+    )}
+  </div>
+</MainLayout>
+
+<style>
+  /* ESTILOS LIMPIOS PARA NOTICIAS */
+  .main-content {
+    background: linear-gradient(135deg, var(--color-bg) 0%, rgba(0, 0, 0, 0.02) 100%);
+    min-height: 100vh;
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+  
+  /* === ESTILOS PARA ERROR === */
+  .error-container {
+    text-align: center;
+    padding: 2rem;
+    margin: 2rem auto;
+    background: var(--card-bg);
+    border-radius: 15px;
+    border: 2px solid var(--title-color);
+    max-width: 600px;
+  }
+  
+  .error-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+  
+  .error-title {
+    color: var(--title-color);
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+  
+  .error-message {
+    color: var(--text-color);
+    font-size: 1rem;
+    margin-bottom: 2rem;
+    background: rgba(0,0,0,0.3);
+    padding: 1rem;
+    border-radius: 8px;
+    font-family: monospace;
+  }
+  
+  .error-details {
+    text-align: left;
+    background: rgba(0,0,0,0.2);
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+  }
+  
+  .error-details h3 {
+    color: var(--title-color);
+    margin-bottom: 1rem;
+  }
+  
+  .error-details ul {
+    color: var(--text-color);
+    list-style-position: inside;
+  }
+  
+  .error-details li {
+    margin-bottom: 0.5rem;
+  }
+  
+  .error-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .news-section {
+    padding: 4rem 0;
+  }
+
+  .section-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .section-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .section-header h2 {
+    font-size: 3rem;
+    margin: 0;
+    color: var(--title-color);
+    font-weight: 700;
+  }
+
+  .news-stats {
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .stat-badge {
+    background: var(--card-bg);
+    border: 2px solid var(--title-color);
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 80px;
+  }
+  
+  .stat-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--title-color);
+    line-height: 1;
+  }
+  
+  .stat-label {
+    font-size: 0.8rem;
+    color: var(--text-color);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .section-header p {
+    font-size: 1.2rem;
+    color: var(--text-color);
+    max-width: 800px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  .news-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+
+  .news-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(197, 173, 123, 0.1);
+  }
+
+  .news-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(197, 173, 123, 0.3);
+  }
+
+  .news-image {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+  }
+
+  .news-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .news-card:hover .news-image img {
+    transform: scale(1.05);
+  }
+
+  .news-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .news-card:hover .news-overlay {
+    opacity: 1;
+  }
+
+  .news-link {
+    background: var(--title-color);
+    color: var(--color-bg);
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .news-link:hover {
+    background: #a8935e;
+  }
+
+  .news-categories {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    z-index: 2;
+  }
+
+  .category-badge {
+    background: var(--title-color);
+    color: var(--color-bg);
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .news-info {
+    padding: 1.5rem;
+  }
+
+  .news-title-card {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: var(--title-color);
+    margin: 0 0 0.8rem 0;
+    line-height: 1.4;
+  }
+
+  .news-description {
+    color: var(--text-color);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin: 0 0 1rem 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .news-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(197, 173, 123, 0.1);
+    font-size: 0.8rem;
+  }
+
+  .news-date {
+    color: var(--title-color);
+    font-weight: 600;
+  }
+
+  .no-news {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-color);
+  }
+
+  .no-news-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+
+  .no-news h3 {
+    color: var(--title-color);
+    margin-bottom: 0.5rem;
+  }
+
+  .pagination {
+    display: flex;
+    justify-content: center;
+    margin: 3rem 0;
+  }
+
+  .pagination ul {
+    list-style: none;
+    display: flex;
+    gap: 0.5rem;
+    padding: 0;
+    margin: 0;
+  }
+
+  .pagination-link {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    background: var(--card-bg);
+    color: var(--title-color);
+    border: 2px solid var(--title-color);
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.3s ease;
+  }
+
+  .pagination-link:hover:not(.disabled):not(.current) {
+    background: var(--title-color);
+    color: var(--color-bg);
+  }
+
+  .pagination-link.current {
+    background: var(--title-color);
+    color: var(--color-bg);
+  }
+
+  .pagination-link.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    border-color: #555;
+    color: #555;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    border: 2px solid;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .primary-btn {
+    background: var(--title-color);
+    color: var(--color-bg);
+    border-color: var(--title-color);
+  }
+
+  .primary-btn:hover {
+    background: #a8935e;
+    border-color: #a8935e;
+  }
+
+  .secondary-btn {
+    background: transparent;
+    color: var(--title-color);
+    border-color: var(--title-color);
+  }
+
+  .secondary-btn:hover {
+    background: var(--title-color);
+    color: var(--color-bg);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .section-title-row {
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+    
+    .section-header h2 {
+      font-size: 2rem;
+    }
+    
+    .news-grid {
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+    
+    .news-stats {
+      flex-direction: row;
+      justify-content: center;
+    }
+    
+    .error-actions {
+      flex-direction: column;
+      align-items: center;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .section-header h2 {
+      font-size: 1.8rem;
+    }
+    
+    .news-grid {
+      gap: 1rem;
+    }
+    
+    .pagination ul {
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+  }
+</style>

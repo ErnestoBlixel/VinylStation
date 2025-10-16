@@ -1,0 +1,399 @@
+---
+// src/components/WordPressComments.astro
+interface Props {
+  postId: number;
+  postTitle: string;
+}
+
+const { postId, postTitle } = Astro.props;
+
+// Importar función para obtener comentarios
+import { getCommentsByPost } from '../lib/wordpress-comments';
+
+// Obtener comentarios del post
+const comments = await getCommentsByPost(postId);
+const commentCount = comments?.length || 0;
+---
+
+<div class="comments-section">
+  <div class="comments-container">
+    <div class="comments-header">
+      <h3 class="comments-title">
+        💬 Comentarios ({commentCount})
+      </h3>
+      <p class="comments-subtitle">
+        {commentCount === 0 
+          ? "Sé el primero en comentar este artículo" 
+          : "Únete a la conversación"}
+      </p>
+    </div>
+
+    {commentCount > 0 && (
+      <div class="comments-list">
+        {comments.map((comment) => (
+          <div class="comment-item" key={comment.id}>
+            <div class="comment-header">
+              <div class="comment-author-info">
+                {comment.author?.avatar && (
+                  <img 
+                    src={comment.author.avatar} 
+                    alt={comment.author.name}
+                    class="comment-avatar"
+                  />
+                )}
+                <div class="comment-meta">
+                  <span class="comment-author">{comment.author?.name || 'Anónimo'}</span>
+                  <time class="comment-date">
+                    {new Date(comment.date).toLocaleDateString('es-ES', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric',
+                      hour: '2-digit',
+                      minute: '2-digit'
+                    })}
+                  </time>
+                </div>
+              </div>
+            </div>
+            <div class="comment-content" set:html={comment.content}></div>
+          </div>
+        ))}
+      </div>
+    )}
+
+    <!-- Formulario de comentarios -->
+    <div class="comment-form-container">
+      <h4 class="form-title">Deja un comentario</h4>
+      <form 
+        id="comment-form" 
+        class="comment-form"
+        data-post-id={postId}
+      >
+        <div class="form-row">
+          <div class="form-group">
+            <label for="author-name">Nombre *</label>
+            <input 
+              type="text" 
+              id="author-name" 
+              name="author-name" 
+              required
+              placeholder="Tu nombre"
+            />
+          </div>
+          <div class="form-group">
+            <label for="author-email">Email *</label>
+            <input 
+              type="email" 
+              id="author-email" 
+              name="author-email" 
+              required
+              placeholder="tu@email.com"
+            />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="comment-content">Comentario *</label>
+          <textarea 
+            id="comment-content" 
+            name="comment-content" 
+            rows="5" 
+            required
+            placeholder="Escribe tu comentario aquí..."
+          ></textarea>
+        </div>
+        <div class="form-actions">
+          <button type="submit" class="submit-btn">
+            Publicar Comentario
+          </button>
+        </div>
+      </form>
+      <div id="form-message" class="form-message"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const form = document.getElementById('comment-form') as HTMLFormElement;
+    const messageDiv = document.getElementById('form-message');
+    
+    if (!form || !messageDiv) return;
+    
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(form);
+      const postId = form.dataset.postId;
+      
+      const data = {
+        postId: parseInt(postId || '0'),
+        authorName: formData.get('author-name'),
+        authorEmail: formData.get('author-email'),
+        content: formData.get('comment-content')
+      };
+      
+      messageDiv.textContent = 'Enviando comentario...';
+      messageDiv.className = 'form-message loading';
+      
+      try {
+        const response = await fetch('/api/submit-comment', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (response.ok) {
+          messageDiv.textContent = '✅ ¡Comentario enviado! Estará visible tras moderación.';
+          messageDiv.className = 'form-message success';
+          form.reset();
+          
+          // Recargar página después de 3 segundos
+          setTimeout(() => {
+            window.location.reload();
+          }, 3000);
+        } else {
+          throw new Error(result.message || 'Error al enviar comentario');
+        }
+      } catch (error) {
+        messageDiv.textContent = `❌ Error: ${error instanceof Error ? error.message : 'Error desconocido'}`;
+        messageDiv.className = 'form-message error';
+      }
+    });
+  });
+</script>
+
+<style>
+  .comments-section {
+    margin: 4rem 0;
+    padding: 3rem 0;
+    border-top: 2px solid rgba(255, 51, 51, 0.2);
+    animation: fadeInUp 0.8s ease-out;
+  }
+
+  .comments-container {
+    background: var(--color-card-bg, #1a1a1a);
+    border-radius: 20px;
+    padding: 3rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 51, 51, 0.1);
+  }
+
+  .comments-header {
+    margin-bottom: 2rem;
+  }
+
+  .comments-title {
+    font-size: 2rem;
+    color: var(--color-text, #ffffff);
+    margin-bottom: 0.5rem;
+    font-weight: 800;
+  }
+
+  .comments-subtitle {
+    color: var(--color-text-secondary, #b0b0b0);
+    font-size: 1rem;
+    opacity: 0.8;
+  }
+
+  .comments-list {
+    margin: 2rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .comment-item {
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 15px;
+    padding: 1.5rem;
+    border-left: 3px solid var(--color-primary, #ff3333);
+  }
+
+  .comment-header {
+    margin-bottom: 1rem;
+  }
+
+  .comment-author-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .comment-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid var(--color-primary, #ff3333);
+  }
+
+  .comment-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+  }
+
+  .comment-author {
+    color: var(--color-text, #ffffff);
+    font-weight: 700;
+    font-size: 1rem;
+  }
+
+  .comment-date {
+    color: var(--color-text-secondary, #b0b0b0);
+    font-size: 0.85rem;
+  }
+
+  .comment-content {
+    color: var(--color-text, #ffffff);
+    line-height: 1.6;
+    font-size: 1rem;
+  }
+
+  .comment-form-container {
+    margin-top: 3rem;
+    padding-top: 2rem;
+    border-top: 1px solid rgba(255, 51, 51, 0.2);
+  }
+
+  .form-title {
+    font-size: 1.5rem;
+    color: var(--color-text, #ffffff);
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+  }
+
+  .comment-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .form-group label {
+    color: var(--color-text, #ffffff);
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    padding: 1rem;
+    border: 2px solid rgba(255, 51, 51, 0.3);
+    border-radius: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    color: var(--color-text, #ffffff);
+    font-size: 1rem;
+    font-family: inherit;
+    transition: all 0.3s ease;
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--color-primary, #ff3333);
+    box-shadow: 0 0 0 3px rgba(255, 51, 51, 0.1);
+  }
+
+  .form-group textarea {
+    resize: vertical;
+    min-height: 120px;
+  }
+
+  .form-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  .submit-btn {
+    padding: 1rem 2.5rem;
+    background: var(--color-primary, #ff3333);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    font-weight: 700;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 51, 51, 0.3);
+  }
+
+  .submit-btn:hover {
+    background: var(--color-secondary, #bb2424);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 51, 51, 0.4);
+  }
+
+  .form-message {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 10px;
+    text-align: center;
+    font-weight: 600;
+    display: none;
+  }
+
+  .form-message.loading,
+  .form-message.success,
+  .form-message.error {
+    display: block;
+  }
+
+  .form-message.loading {
+    background: rgba(255, 193, 7, 0.2);
+    color: #ffc107;
+    border: 1px solid #ffc107;
+  }
+
+  .form-message.success {
+    background: rgba(76, 175, 80, 0.2);
+    color: #4caf50;
+    border: 1px solid #4caf50;
+  }
+
+  .form-message.error {
+    background: rgba(244, 67, 54, 0.2);
+    color: #f44336;
+    border: 1px solid #f44336;
+  }
+
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (max-width: 768px) {
+    .comments-container {
+      padding: 2rem 1.5rem;
+    }
+
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+
+    .comments-title {
+      font-size: 1.5rem;
+    }
+  }
+</style>

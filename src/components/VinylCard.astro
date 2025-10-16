@@ -1,0 +1,70 @@
+---
+interface Props {
+  title: string;
+  imgSrc: string;
+  artist: string;
+  year: string;
+}
+
+const { title, imgSrc, artist, year } = Astro.props;
+---
+
+<div class="vinyl-card">
+  <div class="vinyl-image">
+    <img src={imgSrc} alt={`${title} - ${artist}`} />
+  </div>
+  <div class="vinyl-info">
+    <h3>{title}</h3>
+    <p class="artist">{artist}</p>
+    <p class="year">{year}</p>
+  </div>
+</div>
+
+<style>
+  .vinyl-card {
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    background-color: white;
+  }
+  
+  .vinyl-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .vinyl-image {
+    height: 200px;
+    overflow: hidden;
+  }
+  
+  .vinyl-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+  
+  .vinyl-card:hover .vinyl-image img {
+    transform: scale(1.05);
+  }
+  
+  .vinyl-info {
+    padding: 1rem;
+  }
+  
+  h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.2rem;
+  }
+  
+  .artist {
+    color: #555;
+    margin-bottom: 0.25rem;
+  }
+  
+  .year {
+    color: #888;
+    font-size: 0.9rem;
+  }
+</style>
