@@ -1,0 +1,850 @@
+---
+// components/ProgramSchedule.astro
+// Componente actualizado con campos GraphQL reales
+
+import { organizarProgramasPorDia, getDiaActual } from '../lib/wordpress-programas.js';
+
+export interface Props {
+  programas: Array<{
+    id: string;
+    title: string;
+    slug: string;
+    excerpt?: string;
+    featuredImage?: {
+      node?: {
+        sourceUrl: string;
+        altText: string;
+      }
+    };
+    imagenACF?: {
+      sourceUrl: string;
+      altText: string;
+    };
+    camposPrograma?: {
+      vsDescripcion?: string;
+      vsCabecera?: string;
+      vsHorarioLunes1?: { horaInicio: string; horaFin: string };
+      vsHorarioMartes1?: { horaInicio: string; horaFin: string };
+      vsHorarioMiercoles1?: { horaInicio: string; horaFin: string };
+      vsHorarioJueves1?: { horaInicio: string; horaFin: string };
+      vsHorarioViernes1?: { horaInicio: string; horaFin: string };
+      vsHorarioSabado1?: { horaInicio: string; horaFin: string };
+      vsHorarioDomingo1?: { horaInicio: string; horaFin: string };
+    };
+  }>;
+}
+
+const { programas } = Astro.props;
+
+// Debug: mostrar información en la consola del servidor
+console.log(`📻 ProgramSchedule: Recibidos ${programas.length} programas`);
+
+// Días de la semana
+const diasSemana = [
+  { id: 'lunes', nombre: 'Lunes', abrev: 'LUN' },
+  { id: 'martes', nombre: 'Martes', abrev: 'MAR' },
+  { id: 'miercoles', nombre: 'Miércoles', abrev: 'MIE' },
+  { id: 'jueves', nombre: 'Jueves', abrev: 'JUE' },
+  { id: 'viernes', nombre: 'Viernes', abrev: 'VIE' },
+  { id: 'sabado', nombre: 'Sábado', abrev: 'SAB' },
+  { id: 'domingo', nombre: 'Domingo', abrev: 'DOM' }
+];
+
+// Organizar programas por día usando los horarios reales
+const programasPorDia = organizarProgramasPorDia(programas);
+const diaActual = getDiaActual();
+
+// Contar programas con horarios reales
+const totalProgramasConHorarios = Object.values(programasPorDia).reduce((total, dia) => total + dia.length, 0);
+
+console.log(`📅 Día actual: ${diaActual}`);
+console.log(`✅ ${totalProgramasConHorarios} programas con horarios reales distribuidos`);
+
+// Verificar si tenemos datos reales o si es modo demo
+const tieneHorariosReales = totalProgramasConHorarios > 0;
+---
+
+<div class="program-schedule">
+  <div class="schedule-header">
+    <h2>Programación VinylStation Radio</h2>
+    <p class="schedule-subtitle">Descubre nuestra programación semanal especializada en música vinilo</p>
+    <div class="schedule-stats">
+      <span class="stat">Total programas: <strong>{programas.length}</strong></span>
+      <span class="stat">Con horarios: <strong>{totalProgramasConHorarios}</strong></span>
+      <span class="stat">Día actual: <strong>{diasSemana.find(d => d.id === diaActual)?.nombre}</strong></span>
+      {!tieneHorariosReales && <span class="demo-badge">CONFIGURA HORARIOS</span>}
+    </div>
+  </div>
+
+  <!-- Tabs de días -->
+  <div class="schedule-tabs">
+    {diasSemana.map((dia) => {
+      const programasDelDia = programasPorDia[dia.id] || [];
+      return (
+        <button 
+          class={`tab-button ${dia.id === diaActual ? 'active' : ''}`}
+          data-tab={dia.id}
+        >
+          <span class="tab-day">{dia.abrev}</span>
+          <span class="tab-full">{dia.nombre}</span>
+          {programasDelDia.length > 0 && (
+            <span class="program-count-badge">{programasDelDia.length}</span>
+          )}
+        </button>
+      );
+    })}
+  </div>
+
+  <!-- Contenido de tabs -->
+  <div class="schedule-content">
+    {diasSemana.map(dia => {
+      const programasDelDia = programasPorDia[dia.id] || [];
+      
+      return (
+        <div 
+          class={`tab-content ${dia.id === diaActual ? 'active' : ''}`}
+          data-content={dia.id}
+        >
+          <div class="day-header">
+            <h3>{dia.nombre}</h3>
+            <div class="day-indicator">
+              {dia.id === diaActual && <span class="today-badge">HOY</span>}
+              <span class="program-count">
+                {programasDelDia.length} programa{programasDelDia.length !== 1 ? 's' : ''}
+              </span>
+            </div>
+          </div>
+
+          {programasDelDia.length > 0 ? (
+            <div class="schedule-grid">
+              {programasDelDia.map(programa => {
+                // Obtener la mejor imagen disponible
+                const imagen = programa.imagenACF?.sourceUrl || 
+                              programa.featuredImage?.node?.sourceUrl || 
+                              '/images/placeholder-radio.jpg';
+                              
+                const altText = programa.imagenACF?.altText || 
+                               programa.featuredImage?.node?.altText || 
+                               programa.title;
+                
+                const descripcion = programa.camposPrograma?.vsDescripcion || 
+                                   programa.excerpt || 
+                                   `Programa "${programa.title}" - Música especializada en vinilo`;
+                
+                return (
+                  <div class="program-slot">
+                    <div class="time-label">
+                      <div class="time-start">{programa.horario.horaInicio}</div>
+                      <div class="time-separator">-</div>
+                      <div class="time-end">{programa.horario.horaFin}</div>
+                    </div>
+                    
+                    <div class="program-card">
+                      <div class="program-info">
+                        <div class="program-image">
+                          <img 
+                            src={imagen} 
+                            alt={altText}
+                            loading="lazy"
+                            onerror="this.src='/images/placeholder-radio.jpg'"
+                          />
+                        </div>
+                        
+                        <div class="program-details">
+                          <h4 class="program-title">{programa.title}</h4>
+                          <p class="program-description">{descripcion}</p>
+                          <div class="program-time">
+                            {dia.nombre} de {programa.horario.horaInicio} a {programa.horario.horaFin}
+                          </div>
+                        </div>
+                        
+                        <div class="program-actions">
+                          <a href={`/programas/${programa.slug}`} class="program-link">
+                            Ver Programa
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div class="no-programs">
+              <div class="no-programs-icon">🎵</div>
+              <h4>Sin programación específica para {dia.nombre}</h4>
+              <p>Música continua las 24 horas sin interrupciones.</p>
+              <div class="add-program-hint">
+                <p><strong>💡 Para agregar programas:</strong></p>
+                <ol>
+                  <li>Ve a WordPress Admin → Programas</li>
+                  <li>Edita un programa existente</li>
+                  <li>Completa los horarios para {dia.nombre}</li>
+                  <li>Sube una imagen en "Cabecera (Imagen)"</li>
+                </ol>
+              </div>
+            </div>
+          )}
+        </div>
+      );
+    })}
+  </div>
+
+  {/* Aviso de configuración solo si no hay horarios */}
+  {!tieneHorariosReales && (
+    <div class="config-notice">
+      <div class="notice-icon">⚙️</div>
+      <div class="notice-content">
+        <h4>Completa tu Parrilla de Programación</h4>
+        <p>Para mostrar los horarios reales de tus programas:</p>
+        <ol>
+          <li><strong>Edita tus programas</strong> en WordPress Admin</li>
+          <li><strong>Completa los horarios</strong> para cada día de la semana</li>
+          <li><strong>Sube imágenes</strong> en el campo "Cabecera (Imagen)"</li>
+          <li><strong>Añade descripciones</strong> atractivas para cada programa</li>
+        </ol>
+        <p><em>Los campos GraphQL están funcionando correctamente. Solo necesitas completar la información.</em></p>
+      </div>
+    </div>
+  )}
+</div>
+
+<script>
+  // Funcionalidad de tabs
+  document.addEventListener('DOMContentLoaded', function() {
+    const tabButtons = document.querySelectorAll('.tab-button');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const tabId = button.getAttribute('data-tab');
+        
+        // Remover clase active de todos los tabs y contenidos
+        tabButtons.forEach(btn => btn.classList.remove('active'));
+        tabContents.forEach(content => content.classList.remove('active'));
+        
+        // Agregar clase active al tab y contenido seleccionado
+        button.classList.add('active');
+        const targetContent = document.querySelector(`[data-content="${tabId}"]`);
+        if (targetContent) {
+          targetContent.classList.add('active');
+        }
+      });
+    });
+
+    // Actualizar indicador de "HOY" cada día
+    function updateTodayIndicator() {
+      const today = new Date();
+      const dayOfWeek = today.getDay();
+      const daysMap = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+      const todayId = daysMap[dayOfWeek];
+      
+      // Remover todos los badges existentes
+      document.querySelectorAll('.today-badge').forEach(badge => badge.remove());
+      
+      // Agregar badge al día actual
+      const todayContent = document.querySelector(`[data-content="${todayId}"]`);
+      if (todayContent) {
+        const dayIndicator = todayContent.querySelector('.day-indicator');
+        if (dayIndicator && !dayIndicator.querySelector('.today-badge')) {
+          const badge = document.createElement('span');
+          badge.className = 'today-badge';
+          badge.textContent = 'HOY';
+          dayIndicator.insertBefore(badge, dayIndicator.firstChild);
+        }
+      }
+      
+      // Activar tab del día actual
+      const todayTab = document.querySelector(`[data-tab="${todayId}"]`);
+      if (todayTab && !todayTab.classList.contains('active')) {
+        todayTab.click();
+      }
+    }
+
+    // Ejecutar al cargar y cada hora
+    updateTodayIndicator();
+    setInterval(updateTodayIndicator, 3600000); // 1 hora
+  });
+</script>
+
+<style>
+  .program-schedule {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+  }
+
+  .schedule-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .schedule-header h2 {
+    font-size: 2.5rem;
+    color: var(--color-primary, #ff3333);
+    margin-bottom: 1rem;
+    font-weight: 700;
+  }
+
+  .schedule-subtitle {
+    font-size: 1.2rem;
+    color: #666;
+    max-width: 600px;
+    margin: 0 auto 2rem;
+    line-height: 1.6;
+  }
+
+  .schedule-stats {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 1.5rem;
+    flex-wrap: wrap;
+  }
+
+  .stat {
+    background: rgba(255, 51, 51, 0.1);
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    color: #666;
+  }
+
+  .stat strong {
+    color: var(--color-primary, #ff3333);
+    font-weight: 700;
+  }
+
+  .demo-badge {
+    background: linear-gradient(45deg, #ff6b35, #f7931e);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    animation: pulse-demo 2s infinite;
+  }
+
+  @keyframes pulse-demo {
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(247, 147, 30, 0.7); }
+    70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(247, 147, 30, 0); }
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(247, 147, 30, 0); }
+  }
+
+  /* Tabs */
+  .schedule-tabs {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    background: rgba(255, 51, 51, 0.05);
+    padding: 1rem;
+    border-radius: 15px;
+  }
+
+  .tab-button {
+    background: white;
+    border: 2px solid #eee;
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem;
+    min-width: 80px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .tab-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    transition: left 0.5s ease;
+  }
+
+  .tab-button:hover::before {
+    left: 100%;
+  }
+
+  .tab-button:hover {
+    border-color: var(--color-primary, #ff3333);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 51, 51, 0.2);
+  }
+
+  .tab-button.active {
+    background: var(--color-primary, #ff3333);
+    color: white;
+    border-color: var(--color-primary, #ff3333);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 51, 51, 0.4);
+  }
+
+  .tab-day {
+    font-weight: 700;
+    font-size: 0.9rem;
+  }
+
+  .tab-full {
+    font-size: 0.8rem;
+    opacity: 0.8;
+  }
+
+  .program-count-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: var(--color-primary, #ff3333);
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid white;
+  }
+
+  .tab-button.active .program-count-badge {
+    background: #fff;
+    color: var(--color-primary, #ff3333);
+  }
+
+  /* Contenido */
+  .tab-content {
+    display: none;
+    animation: fadeIn 0.5s ease;
+  }
+
+  .tab-content.active {
+    display: block;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .day-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: linear-gradient(135deg, #f8f9fa, #e9ecef);
+    border-radius: 15px;
+    border-left: 4px solid var(--color-primary, #ff3333);
+  }
+
+  .day-header h3 {
+    font-size: 2rem;
+    color: #333;
+    margin: 0;
+  }
+
+  .day-indicator {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+
+  .program-count {
+    background: rgba(255, 51, 51, 0.1);
+    color: var(--color-primary, #ff3333);
+    padding: 0.2rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 600;
+  }
+
+  .today-badge {
+    background: var(--color-primary, #ff3333);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+  }
+
+  /* Parrilla de horarios */
+  .schedule-grid {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .program-slot {
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    gap: 1.5rem;
+    align-items: center;
+  }
+
+  .time-label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.2rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, var(--color-primary, #ff3333), #ff6b6b);
+    color: white;
+    border-radius: 12px;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(255, 51, 51, 0.3);
+  }
+
+  .time-start, .time-end {
+    font-size: 1rem;
+  }
+
+  .time-separator {
+    font-size: 0.8rem;
+    opacity: 0.8;
+  }
+
+  .program-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    border: 1px solid #eee;
+  }
+
+  .program-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  .program-info {
+    display: grid;
+    grid-template-columns: 80px 1fr auto;
+    gap: 1rem;
+    padding: 1.2rem;
+    align-items: center;
+  }
+
+  .program-image {
+    width: 80px;
+    height: 80px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  .program-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .program-card:hover .program-image img {
+    transform: scale(1.05);
+  }
+
+  .program-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 0.5rem 0;
+  }
+
+  .program-description {
+    font-size: 0.9rem;
+    color: #666;
+    margin: 0 0 0.5rem 0;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .program-time {
+    font-size: 0.8rem;
+    color: var(--color-primary, #ff3333);
+    font-weight: 600;
+  }
+
+  .program-link {
+    background: var(--color-primary, #ff3333);
+    color: white;
+    padding: 0.7rem 1.2rem;
+    border-radius: 25px;
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+  }
+
+  .program-link:hover {
+    background: #cc2929;
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(255, 51, 51, 0.4);
+  }
+
+  /* Estados sin contenido */
+  .no-programs {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    border: 2px dashed #ddd;
+  }
+
+  .no-programs-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+
+  .no-programs h4 {
+    font-size: 1.3rem;
+    color: #666;
+    margin-bottom: 0.5rem;
+  }
+
+  .no-programs p {
+    color: #999;
+    font-size: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .add-program-hint {
+    background: rgba(255, 51, 51, 0.05);
+    padding: 1.5rem;
+    border-radius: 10px;
+    border-left: 4px solid var(--color-primary, #ff3333);
+    text-align: left;
+    max-width: 500px;
+    margin: 0 auto;
+  }
+
+  .add-program-hint strong {
+    color: var(--color-primary, #ff3333);
+  }
+
+  .add-program-hint ol {
+    color: #666;
+    margin: 1rem 0 0 1rem;
+  }
+
+  .add-program-hint li {
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+  }
+
+  /* Config notice */
+  .config-notice {
+    margin-top: 3rem;
+    background: linear-gradient(135deg, #fff3cd, #fff3cd);
+    border: 2px solid #ffeaa7;
+    border-radius: 12px;
+    padding: 2rem;
+    display: flex;
+    gap: 1.5rem;
+    align-items: flex-start;
+  }
+
+  .notice-icon {
+    font-size: 2rem;
+    flex-shrink: 0;
+  }
+
+  .notice-content h4 {
+    color: #d68910;
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .notice-content p {
+    color: #856404;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+  }
+
+  .notice-content ol {
+    color: #856404;
+    margin-left: 1.5rem;
+  }
+
+  .notice-content li {
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+  }
+
+  .notice-content strong {
+    color: #d68910;
+  }
+
+  .notice-content em {
+    color: #28a745;
+    font-weight: 600;
+  }
+
+  /* Responsive */
+  @media (max-width: 1024px) {
+    .program-info {
+      grid-template-columns: 70px 1fr;
+      grid-template-rows: auto auto;
+      gap: 1rem;
+    }
+
+    .program-actions {
+      grid-column: 1 / -1;
+      text-align: center;
+      margin-top: 0.5rem;
+    }
+
+    .program-image {
+      width: 70px;
+      height: 70px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .schedule-tabs {
+      gap: 0.3rem;
+      padding: 0.8rem;
+    }
+
+    .tab-button {
+      padding: 0.8rem 1rem;
+      min-width: 60px;
+    }
+
+    .tab-full {
+      display: none;
+    }
+
+    .program-slot {
+      grid-template-columns: 90px 1fr;
+      gap: 1rem;
+    }
+
+    .time-label {
+      padding: 0.8rem;
+      font-size: 0.9rem;
+    }
+
+    .program-info {
+      grid-template-columns: 1fr;
+      text-align: center;
+      gap: 1rem;
+      padding: 1rem;
+    }
+
+    .program-image {
+      width: 60px;
+      height: 60px;
+      margin: 0 auto;
+    }
+
+    .day-header {
+      flex-direction: column;
+      gap: 1rem;
+      text-align: center;
+    }
+
+    .day-header h3 {
+      font-size: 1.5rem;
+    }
+
+    .day-indicator {
+      justify-content: center;
+    }
+
+    .schedule-stats {
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: center;
+    }
+
+    .demo-badge {
+      font-size: 0.7rem;
+      padding: 0.2rem 0.6rem;
+    }
+
+    .config-notice,
+    .add-program-hint {
+      flex-direction: column;
+      gap: 1rem;
+      padding: 1.5rem;
+      text-align: center;
+    }
+
+    .notice-content h4 {
+      font-size: 1.1rem;
+    }
+
+    .notice-content p {
+      font-size: 0.9rem;
+    }
+
+    .no-programs {
+      padding: 2rem 1rem;
+    }
+
+    .no-programs-icon {
+      font-size: 3rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .program-schedule {
+      padding: 1rem 0.5rem;
+    }
+
+    .schedule-header h2 {
+      font-size: 2rem;
+    }
+
+    .schedule-subtitle {
+      font-size: 1rem;
+    }
+
+    .schedule-grid {
+      gap: 1rem;
+    }
+
+    .program-card {
+      padding: 0.8rem;
+    }
+
+    .program-slot {
+      grid-template-columns: 1fr;
+      gap: 0.8rem;
+    }
+
+    .time-label {
+      grid-row: 2;
+      padding: 0.6rem;
+      font-size: 0.8rem;
+    }
+
+    .no-programs h4 {
+      font-size: 1.1rem;
+    }
+  }
+</style>

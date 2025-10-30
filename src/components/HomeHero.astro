@@ -1,0 +1,463 @@
+---
+// src/components/HomeHero.astro - Hero especial para la página principal
+import { getSiteInfo, getEmisora } from '../lib/wordpress';
+
+// Props del componente
+export interface Props {
+  title?: string;
+  description?: string;
+}
+
+const { 
+  title: customTitle, 
+  description: customDescription 
+} = Astro.props;
+
+// Obtener información del sitio y emisora desde WordPress
+const siteInfo = await getSiteInfo();
+const emisoraData = await getEmisora();
+const streamUrl = emisoraData?.camposEmisora?.vsUrlCompleta || 'https://stream.zeno.fm/4g7qxnxrloluv';
+
+// Usar título y descripción personalizados o los del sitio
+const heroTitle = customTitle || siteInfo?.title || 'VinylStation Radio';
+const heroDescription = customDescription || siteInfo?.description || "Una emisora nueva donde queremos conocerte y escuchar tu opinión";
+---
+
+<section class="hero">
+  <div class="container">
+    <div class="hero-content">
+      <img src="/images/logos/logo vinylstation.png" alt="VinylStation Radio" class="hero-logo" />
+      <h1>{heroTitle}</h1>
+      <p class="hero-subtitle">{heroDescription}</p>
+      
+      <!-- Reproductor con diseño del header -->
+      <div class="radio-player-hero desktop-only">
+        <audio id="radio-stream-hero" preload="none" data-stream-url={streamUrl}></audio>
+        
+        <div class="player-controls">
+          <button id="play-pause-hero" class="play-button" aria-label="Reproducir/Pausar">
+            <svg id="play-icon-hero" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polygon points="5,3 19,12 5,21"></polygon>
+            </svg>
+            <svg id="pause-icon-hero" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+              <rect x="6" y="4" width="4" height="16"></rect>
+              <rect x="14" y="4" width="4" height="16"></rect>
+            </svg>
+          </button>
+          
+          <div class="status-info">
+            <span id="status-text-hero">Radio en vivo</span>
+            <div id="loading-indicator-hero" class="loading-dot" style="display: none;"></div>
+          </div>
+          
+          <div class="volume-control">
+            <button id="volume-toggle-hero" class="volume-button" aria-label="Silenciar/Activar sonido">
+              <svg id="volume-on-hero" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="11,5 6,9 2,9 2,15 6,15 11,19"></polygon>
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+              </svg>
+              <svg id="volume-off-hero" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                <polygon points="11,5 6,9 2,9 2,15 6,15 11,19"></polygon>
+                <line x1="23" y1="9" x2="17" y2="15"></line>
+                <line x1="17" y1="9" x2="23" y2="15"></line>
+              </svg>
+            </button>
+            <input type="range" id="volume-slider-hero" class="volume-slider" min="0" max="1" step="0.1" value="0.7">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    // === REPRODUCTOR DE RADIO SIMPLE (HERO) - Solo desktop ===
+    class HeroRadioPlayer {
+      constructor() {
+        // Solo inicializar si estamos en desktop
+        if (window.innerWidth < 768) return;
+        
+        this.audio = document.getElementById('radio-stream-hero');
+        this.playPauseBtn = document.getElementById('play-pause-hero');
+        this.playIcon = document.getElementById('play-icon-hero');
+        this.pauseIcon = document.getElementById('pause-icon-hero');
+        this.statusText = document.getElementById('status-text-hero');
+        this.loadingIndicator = document.getElementById('loading-indicator-hero');
+        this.volumeToggle = document.getElementById('volume-toggle-hero');
+        this.volumeOnIcon = document.getElementById('volume-on-hero');
+        this.volumeOffIcon = document.getElementById('volume-off-hero');
+        this.volumeSlider = document.getElementById('volume-slider-hero');
+        
+        this.isPlaying = false;
+        this.isLoading = false;
+        
+        this.init();
+      }
+      
+      init() {
+        if (!this.audio) return;
+        const streamUrl = this.audio.getAttribute('data-stream-url');
+        this.audio.src = streamUrl;
+        this.audio.volume = parseFloat(this.volumeSlider?.value || 0.7);
+        
+        this.bindEvents();
+      }
+      
+      bindEvents() {
+        // Play/Pause
+        this.playPauseBtn?.addEventListener('click', () => this.togglePlayPause());
+        
+        // Volume
+        this.volumeToggle?.addEventListener('click', () => this.toggleMute());
+        this.volumeSlider?.addEventListener('input', (e) => this.updateVolume(e.target.value));
+        
+        // Audio events
+        this.audio?.addEventListener('loadstart', () => this.setLoading(true));
+        this.audio?.addEventListener('canplay', () => this.setLoading(false));
+        this.audio?.addEventListener('play', () => this.setPlaying(true));
+        this.audio?.addEventListener('pause', () => this.setPlaying(false));
+        this.audio?.addEventListener('error', () => this.handleError());
+        this.audio?.addEventListener('stalled', () => this.setLoading(true));
+        this.audio?.addEventListener('waiting', () => this.setLoading(true));
+        this.audio?.addEventListener('playing', () => this.setLoading(false));
+      }
+      
+      togglePlayPause() {
+        if (!this.audio) return;
+        
+        // Sincronizar con el RadioStateManager si existe
+        if (window.radioStateManager) {
+          window.radioStateManager.togglePlayPause();
+        } else {
+          // Reproducción local si no hay state manager
+          if (this.isPlaying) {
+            this.audio.pause();
+          } else {
+            this.audio.play().catch(() => this.handleError());
+          }
+        }
+      }
+      
+      setPlaying(playing) {
+        this.isPlaying = playing;
+        
+        if (playing) {
+          if (this.playIcon) this.playIcon.style.display = 'none';
+          if (this.pauseIcon) this.pauseIcon.style.display = 'block';
+          if (this.statusText) this.statusText.textContent = 'En vivo';
+          this.playPauseBtn?.classList.add('playing');
+        } else {
+          if (this.playIcon) this.playIcon.style.display = 'block';
+          if (this.pauseIcon) this.pauseIcon.style.display = 'none';
+          if (this.statusText) this.statusText.textContent = 'Radio en vivo';
+          this.playPauseBtn?.classList.remove('playing');
+        }
+      }
+      
+      setLoading(loading) {
+        this.isLoading = loading;
+        
+        if (loading) {
+          if (this.loadingIndicator) this.loadingIndicator.style.display = 'block';
+          if (this.statusText) this.statusText.textContent = 'Conectando...';
+        } else {
+          if (this.loadingIndicator) this.loadingIndicator.style.display = 'none';
+          if (this.isPlaying && this.statusText) {
+            this.statusText.textContent = 'En vivo';
+          }
+        }
+      }
+      
+      toggleMute() {
+        if (!this.audio) return;
+        this.audio.muted = !this.audio.muted;
+        
+        if (this.audio.muted) {
+          if (this.volumeOnIcon) this.volumeOnIcon.style.display = 'none';
+          if (this.volumeOffIcon) this.volumeOffIcon.style.display = 'block';
+        } else {
+          if (this.volumeOnIcon) this.volumeOnIcon.style.display = 'block';
+          if (this.volumeOffIcon) this.volumeOffIcon.style.display = 'none';
+        }
+      }
+      
+      updateVolume(value) {
+        if (!this.audio) return;
+        this.audio.volume = parseFloat(value);
+        this.audio.muted = value == 0;
+        
+        if (value == 0) {
+          if (this.volumeOnIcon) this.volumeOnIcon.style.display = 'none';
+          if (this.volumeOffIcon) this.volumeOffIcon.style.display = 'block';
+        } else {
+          if (this.volumeOnIcon) this.volumeOnIcon.style.display = 'block';
+          if (this.volumeOffIcon) this.volumeOffIcon.style.display = 'none';
+        }
+      }
+      
+      handleError() {
+        this.setLoading(false);
+        this.setPlaying(false);
+        if (this.statusText) this.statusText.textContent = 'Error de conexión';
+        
+        // Reintentar después de 3 segundos
+        setTimeout(() => {
+          if (this.statusText) this.statusText.textContent = 'Radio en vivo';
+        }, 3000);
+      }
+    }
+    
+    // Inicializar reproductor
+    new HeroRadioPlayer();
+  });
+</script>
+
+<style>
+  /* Variables para el hero principal */
+  :root {
+    --hero-primary: var(--title-color);
+    --hero-primary-dark: #a8935e;
+  }
+  
+  .desktop-only {
+    display: block;
+  }
+  
+  @media (max-width: 768px) {
+    .desktop-only {
+      display: none !important;
+    }
+  }
+  
+  /* ===== HERO SECTION ===== */
+  .hero {
+    padding: 8rem 0 6rem;
+    text-align: center;
+    position: relative;
+    background: linear-gradient(135deg, rgba(255, 51, 51, 0.05) 0%, transparent 50%);
+  }
+  
+  .hero-content {
+    max-width: 800px;
+    margin: 0 auto;
+  }
+  
+  .hero-logo {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 2rem;
+    display: block;
+    filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+    animation: pulse 3s infinite ease-in-out;
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255, 51, 51, 0.5)); }
+    50% { transform: scale(1.05); filter: drop-shadow(0 0 8px rgba(255, 51, 51, 0.8)); }
+    100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255, 51, 51, 0.5)); }
+  }
+  
+  .hero h1 {
+    font-size: 4rem;
+    margin: 0 0 1rem;
+    font-weight: 700;
+    color: var(--title-color);
+  }
+  
+  .hero-subtitle {
+    font-size: 1.5rem;
+    color: #888;
+    margin: 0 0 3rem;
+    line-height: 1.6;
+  }
+  
+  .radio-player-hero {
+    max-width: 320px;
+    margin: 0 auto;
+    background: linear-gradient(135deg, rgba(197, 173, 123, 0.15) 0%, rgba(197, 173, 123, 0.08) 100%);
+    backdrop-filter: blur(10px);
+    border: 2px solid rgba(197, 173, 123, 0.4);
+    border-radius: 12px;
+    padding: 16px 20px;
+    box-shadow: 0 8px 25px rgba(197, 173, 123, 0.3);
+  }
+  
+  .player-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .play-button {
+    background: var(--hero-primary);
+    border: none;
+    border-radius: 50%;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: white;
+  }
+  
+  .play-button:hover {
+    background: var(--hero-primary-dark);
+    transform: scale(1.05);
+  }
+  
+  .play-button.playing {
+    background: var(--hero-primary-dark);
+  }
+  
+  .status-info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+  }
+  
+  #status-text-hero {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--title-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  }
+  
+  .loading-dot {
+    width: 6px;
+    height: 6px;
+    background: var(--hero-primary);
+    border-radius: 50%;
+    animation: loadingPulse 1.5s infinite;
+  }
+  
+  @keyframes loadingPulse {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.2); }
+  }
+  
+  .volume-control {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  
+  .volume-button {
+    background: none;
+    border: none;
+    color: var(--title-color);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    opacity: 0.9;
+  }
+  
+  .volume-button:hover {
+    opacity: 1;
+    background: rgba(197, 173, 123, 0.2);
+    color: var(--title-color);
+  }
+  
+  .volume-slider {
+    width: 60px;
+    height: 4px;
+    background: rgba(197, 173, 123, 0.4);
+    border-radius: 2px;
+    outline: none;
+    cursor: pointer;
+    -webkit-appearance: none;
+  }
+  
+  .volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    background: var(--hero-primary);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+  
+  .volume-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+  }
+  
+  .volume-slider::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: var(--hero-primary);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .hero {
+      padding: 6rem 0 4rem;
+    }
+    
+    .hero-content {
+      padding: 0 1rem;
+      max-width: 100%;
+    }
+    
+    .hero h1 {
+      font-size: 2.5rem;
+      margin: 0 0 1rem;
+      line-height: 1.2;
+      word-wrap: break-word;
+    }
+    
+    .hero-subtitle {
+      font-size: 1.2rem;
+      margin: 0 0 2rem;
+      line-height: 1.4;
+      padding: 0 0.5rem;
+    }
+    
+    .hero-logo {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 1.5rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .hero {
+      padding: 5rem 0 3rem;
+    }
+    
+    .hero-content {
+      padding: 0 0.5rem;
+    }
+    
+    .hero h1 {
+      font-size: 2rem;
+      margin: 0 0 0.8rem;
+      line-height: 1.1;
+      padding: 0 0.25rem;
+    }
+    
+    .hero-subtitle {
+      font-size: 1rem;
+      margin: 0 0 1.5rem;
+      line-height: 1.3;
+      padding: 0 0.25rem;
+    }
+    
+    .hero-logo {
+      width: 60px;
+      height: 60px;
+      margin: 0 auto 1rem;
+    }
+  }
+</style>

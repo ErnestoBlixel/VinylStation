@@ -1,0 +1,18 @@
+<!-- Placeholder para programas de radio -->
+<svg width="300" height="200" viewBox="0 0 300 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo -->
+  <rect width="300" height="200" fill="#2d1810"/>
+  
+  <!-- Ondas de radio -->
+  <circle cx="150" cy="100" r="40" fill="none" stroke="#ff3333" stroke-width="3" opacity="0.8"/>
+  <circle cx="150" cy="100" r="60" fill="none" stroke="#ff3333" stroke-width="2" opacity="0.6"/>
+  <circle cx="150" cy="100" r="80" fill="none" stroke="#ff3333" stroke-width="1" opacity="0.4"/>
+  
+  <!-- Micrófono central -->
+  <rect x="140" y="85" width="20" height="30" rx="10" fill="#ff3333"/>
+  <rect x="145" y="115" width="10" height="20" fill="#666"/>
+  <circle cx="150" cy="140" r="15" fill="#333"/>
+  
+  <!-- Texto -->
+  <text x="150" y="170" text-anchor="middle" fill="#ff3333" font-size="14" font-family="Arial, sans-serif" font-weight="bold">PROGRAMA</text>
+</svg>

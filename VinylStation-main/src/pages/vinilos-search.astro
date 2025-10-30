@@ -1,0 +1,970 @@
+---
+import MainLayout from '../layouts/MainLayout.astro';
+import { getSiteInfo, getPageData, getTodosLosVinilos } from '../lib/wordpress.js';
+
+// Helper para quitar HTML de la descripción
+const stripHtml = (html) =>
+  html?.replace?.(/<[^>]*>/g, '').trim() || '';
+
+// Configuración
+const itemsPerPage = 32;
+const url = new URL(Astro.request.url);
+const page = Math.max(1, parseInt(url.searchParams.get('p') || '1', 10));
+const searchQuery = url.searchParams.get('search') || '';
+
+// Inicializa variables
+let hasError = false;
+let errorMessage = '';
+let siteInfo = null;
+let pageData = null;
+let vinilosData = null;
+
+try {
+  siteInfo = await getSiteInfo();
+  pageData = await getPageData('vinilos');
+  
+  // Cargar TODOS los vinilos para búsqueda
+  console.log(`🔍 Cargando todos los vinilos para búsqueda`);
+  const todosLosVinilosData = await getTodosLosVinilos();
+  console.log(`✅ Total de vinilos cargados: ${todosLosVinilosData.total}`);
+  
+  vinilosData = {
+    vinilos: todosLosVinilosData.vinilos,
+    pageInfo: {
+      total: todosLosVinilosData.total,
+      totalVinilos: todosLosVinilosData.total,
+      totalPages: Math.ceil(todosLosVinilosData.total / itemsPerPage),
+      currentPage: page,
+      hasNext: false,
+      hasPrevious: false
+    }
+  };
+  
+  if (!siteInfo || !siteInfo.title) throw new Error('No se pudo obtener el título del sitio desde WordPress');
+} catch (error) {
+  hasError = true;
+  errorMessage = `Error conectando con WordPress: ${error.message}`;
+}
+
+// Listas de vinilos y paginación
+let vinilos = hasError ? [] : (vinilosData?.vinilos || []);
+let totalVinilosOriginales = vinilos.length;
+let pageInfo = vinilosData?.pageInfo || {};
+let totalPages = pageInfo.totalPages || 1;
+
+// FILTRAR POR BÚSQUEDA si hay término de búsqueda
+if (searchQuery && searchQuery.trim() !== '') {
+  const searchTerm = searchQuery.toLowerCase().trim();
+  vinilos = vinilos.filter(vinilo => {
+    const title = (vinilo.title || '').toLowerCase();
+    const artist = (vinilo.camposVinilo?.vsArtista || '').toLowerCase();
+    const album = (vinilo.camposVinilo?.vsAlbum || '').toLowerCase();
+    
+    return title.includes(searchTerm) || 
+           artist.includes(searchTerm) || 
+           album.includes(searchTerm);
+  });
+  console.log(`🔍 Búsqueda '${searchQuery}': ${vinilos.length} vinilos encontrados de ${totalVinilosOriginales} totales`);
+  
+  // Paginación del lado del cliente para resultados de búsqueda
+  const totalResultados = vinilos.length;
+  const totalPagesSearch = Math.ceil(totalResultados / itemsPerPage);
+  const startIndex = (page - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  
+  // Aplicar paginación a los resultados filtrados
+  vinilos = vinilos.slice(startIndex, endIndex);
+  
+  // Sobrescribir pageInfo para resultados de búsqueda
+  pageInfo = {
+    totalPages: totalPagesSearch,
+    currentPage: page,
+    total: totalResultados,
+    totalVinilos: totalResultados,
+    hasNext: page < totalPagesSearch,
+    hasPrevious: page > 1
+  };
+  
+  // Actualizar totalPages
+  totalPages = totalPagesSearch;
+}
+
+const totalVinilosGlobal = totalVinilosOriginales;
+const totalVinilos = searchQuery ? pageInfo.total : totalVinilosGlobal;
+
+const heroTitle = hasError ? null : "Buscar Vinilos";
+const heroDescription = hasError ? null : "Busca en nuestra colección completa de vinilos por título, artista o álbum.";
+const pageTitle = hasError ? 'Error - Buscar Vinilos' : `Buscar Vinilos${searchQuery ? ` - "${searchQuery}"` : ''} - VinylStation`;
+const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.metaDesc || heroDescription);
+
+// Helpers para paginación visible (máximo 3 botones)
+let paginasVisibles = [];
+if (totalPages <= 3) {
+  paginasVisibles = Array.from({ length: totalPages }, (_, i) => i + 1);
+} else {
+  if (page === 1) {
+    paginasVisibles = [1, 2, 3];
+  } else if (page === totalPages) {
+    paginasVisibles = [totalPages - 2, totalPages - 1, totalPages];
+  } else {
+    paginasVisibles = [page - 1, page, page + 1];
+  }
+  paginasVisibles = paginasVisibles.filter(p => p >= 1 && p <= totalPages);
+}
+
+// Función para construir URLs con parámetros de búsqueda
+const buildSearchUrl = (pageNum, search = searchQuery) => {
+  const params = new URLSearchParams();
+  if (pageNum > 1) params.set('p', pageNum);
+  if (search && search.trim() !== '') params.set('search', search);
+  const queryString = params.toString();
+  return queryString ? `/vinilos-search?${queryString}` : '/vinilos-search';
+};
+---
+<MainLayout title={pageTitle} description={pageDescription}>
+  <div class="main-content">
+    {hasError ? (
+      <div class="container hero-container">
+        <div class="error-container">
+          <div class="error-icon">📀</div>
+          <h1 class="error-title">Error Cargando Vinilos</h1>
+          <p class="error-message">{errorMessage}</p>
+          <div class="error-actions">
+            <button onclick="window.location.reload()" class="btn primary-btn">
+              🔄 Reintentar
+            </button>
+            <a href="/" class="btn secondary-btn">← Volver al inicio</a>
+          </div>
+        </div>
+      </div>
+    ) : (
+      <>
+        {/* HERO */}
+        <div class="container hero-container">
+          <header class="page-header">
+            <div class="site-icon-container">
+              <img src="/images/logos/logo vinylstation.png" alt="VinylStation Logo" class="site-icon" />
+            </div>
+            <h1>{heroTitle}</h1>
+            <p class="page-description">{heroDescription}</p>
+            <div class="vinyl-stats">
+              <div class="stat-card">
+                <span class="stat-number">{totalVinilosGlobal}</span>
+                <span class="stat-label">Total Vinilos</span>
+              </div>
+              {searchQuery && (
+                <div class="stat-card highlight">
+                  <span class="stat-number">{totalVinilos}</span>
+                  <span class="stat-label">Encontrados</span>
+                </div>
+              )}
+              <div class="stat-card">
+                <span class="stat-number">🔍</span>
+                <span class="stat-label">Búsqueda</span>
+              </div>
+            </div>
+            <div class="hero-actions">
+              <a href="/vinilos/page/1/" class="btn secondary-btn">Ver Todos los Vinilos</a>
+              <a href="#buscar" class="btn primary-btn">Buscar</a>
+            </div>
+          </header>
+        </div>
+
+        {/* BÚSQUEDA */}
+        <section id="buscar" class="vinyl-section">
+          <div class="container">
+            <div class="section-header">
+              <div class="section-title-row">
+                <h2>Buscar Vinilos</h2>
+              </div>
+              <form class="search-form-large" method="GET" action="/vinilos-search" id="searchForm">
+                <input type="hidden" name="p" value="1" />
+                <div class="search-input-group-large">
+                  <input 
+                    type="text" 
+                    name="search" 
+                    class="search-input-large"
+                    placeholder="Buscar por título, artista, álbum..."
+                    value={searchQuery}
+                    required
+                  />
+                  <button type="submit" class="search-button-large">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                      <path d="M21 21L16.514 16.506L21 21ZM19 10.5C19 15.194 15.194 19 10.5 19C5.806 19 2 15.194 2 10.5C2 5.806 5.806 2 10.5 2C15.194 2 19 5.806 19 10.5Z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Buscar
+                  </button>
+                  {searchQuery && (
+                    <a href="/vinilos-search" class="clear-search-large" title="Limpiar búsqueda">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                        <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                      </svg>
+                      Limpiar
+                    </a>
+                  )}
+                </div>
+              </form>
+              
+              {searchQuery && (
+                <p class="search-results-info">
+                  {vinilos.length > 0 ?
+                    `Se encontraron ${pageInfo.total} vinilos que coinciden con "${searchQuery}" de un total de ${totalVinilosOriginales} vinilos` :
+                    `No se encontraron vinilos que coincidan con "${searchQuery}". Se buscó entre ${totalVinilosOriginales} vinilos.`
+                  }
+                </p>
+              )}
+            </div>
+            
+            {searchQuery && vinilos.length > 0 ? (
+              <>
+                <div class="vinyl-grid">
+                  {vinilos.map((vinilo) => {
+                    const imagen =
+                      vinilo.imagenPrincipalUrl ||
+                      vinilo.imagenPrincipal?.sourceUrl ||
+                      '/images/placeholder-vinyl.jpg';
+
+                    return (
+                      <div class="vinyl-card">
+                        <div class="vinyl-image">
+                          <img
+                            src={imagen}
+                            alt={vinilo.imagenPrincipal?.altText || vinilo.title}
+                            loading="lazy"
+                            onerror="this.src='/images/placeholder-vinyl.jpg'"
+                          />
+                          <div class="vinyl-overlay">
+                            <a href={`/vinilos/${vinilo.slug || vinilo.databaseId}`} class="vinyl-link">
+                              Ver Detalles
+                            </a>
+                          </div>
+                        </div>
+                        <div class="vinyl-info">
+                          <h3 class="vinyl-title-card">{vinilo.title}</h3>
+                          {vinilo.camposVinilo?.vsArtista && (
+                            <p class="vinyl-artist">{vinilo.camposVinilo.vsArtista}</p>
+                          )}
+                          {vinilo.camposVinilo?.vsCategoria && (
+                            <p class="vinyl-category">{vinilo.camposVinilo.vsCategoria}</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Paginación para resultados de búsqueda */}
+                {totalPages > 1 && (
+                  <nav class="pagination">
+                    <ul>
+                      <li>
+                        {page > 1 ? (
+                          <a href={buildSearchUrl(page - 1)} class="pagination-link">Anterior</a>
+                        ) : (
+                          <span class="pagination-link disabled">Anterior</span>
+                        )}
+                      </li>
+                      {paginasVisibles.map((p) => (
+                        <li>
+                          {p === page ? (
+                            <span class="pagination-link current">{p}</span>
+                          ) : (
+                            <a href={buildSearchUrl(p)} class="pagination-link">{p}</a>
+                          )}
+                        </li>
+                      ))}
+                      <li>
+                        {page < totalPages ? (
+                          <a href={buildSearchUrl(page + 1)} class="pagination-link">Siguiente</a>
+                        ) : (
+                          <span class="pagination-link disabled">Siguiente</span>
+                        )}
+                      </li>
+                    </ul>
+                  </nav>
+                )}
+              </>
+            ) : searchQuery && vinilos.length === 0 ? (
+              <div class="no-vinyl">
+                <div class="no-vinyl-icon">🔍</div>
+                <h3>No se encontraron resultados</h3>
+                <p>Intenta con términos diferentes o revisa la ortografía.</p>
+              </div>
+            ) : (
+              <div class="search-placeholder">
+                <div class="search-placeholder-icon">📀</div>
+                <h3>Introduce un término de búsqueda</h3>
+                <p>Busca por título del vinilo, nombre del artista o álbum.</p>
+                <div class="search-tips">
+                  <h4>Ejemplos de búsqueda:</h4>
+                  <ul>
+                    <li>"The Beatles" - Buscar por artista</li>
+                    <li>"Abbey Road" - Buscar por álbum</li>
+                    <li>"Come Together" - Buscar por canción</li>
+                  </ul>
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+      </>
+    )}
+  </div>
+</MainLayout>
+
+<style>
+  /* Usar estilos similares al archivo original pero optimizados para búsqueda */
+  .main-content {
+    background: linear-gradient(
+      135deg,
+      var(--color-bg) 0%,
+      rgba(0, 0, 0, 0.02) 50%,
+      var(--color-bg) 100%
+    );
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    position: relative;
+    z-index: 1;
+  }
+  
+  .hero-container {
+    padding: 4rem 1rem;
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+  }
+  
+  .page-header {
+    text-align: center;
+    width: 100%;
+  }
+  
+  .site-icon-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+  }
+  
+  .site-icon {
+    height: 120px;
+    width: auto;
+    animation: pulse 3s infinite ease-in-out;
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255, 51, 51, 0.5)); }
+    50% { transform: scale(1.05); filter: drop-shadow(0 0 8px rgba(255, 51, 51, 0.8)); }
+    100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255, 51, 51, 0.5)); }
+  }
+  
+  h1 {
+    font-size: 4rem;
+    margin: 0 0 1.5rem;
+    color: var(--title-color);
+    position: relative;
+    display: inline-block;
+    font-weight: 800;
+  }
+  
+  .page-description {
+    max-width: 800px;
+    margin: 2rem auto 1rem;
+    color: #777;
+    font-size: 1.3rem;
+    line-height: 1.6;
+  }
+
+  .vinyl-stats {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin: 2rem auto 0 auto;
+    flex-wrap: wrap;
+  }
+  
+  .stat-card {
+    background: linear-gradient(135deg, rgba(255,51,51,0.10), rgba(255,51,51,0.05));
+    border: 2px solid rgba(255, 51, 51, 0.2);
+    border-radius: 15px;
+    padding: 1.5rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 120px;
+    transition: all 0.3s ease;
+  }
+  
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
+    border-color: var(--title-color);
+  }
+  
+  .stat-card.highlight {
+    background: linear-gradient(135deg, rgba(255,51,51,0.20), rgba(255,51,51,0.10));
+    border-color: var(--title-color);
+    animation: pulseHighlight 2s ease-in-out infinite;
+  }
+  
+  @keyframes pulseHighlight {
+    0%, 100% { 
+      transform: scale(1);
+      box-shadow: 0 4px 15px rgba(255, 51, 51, 0.2);
+    }
+    50% { 
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(255, 51, 51, 0.4);
+    }
+  }
+  
+  .stat-number {
+    font-size: 2.1rem;
+    font-weight: 800;
+    color: var(--title-color);
+    line-height: 1;
+  }
+  
+  .stat-label {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 3rem;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    min-width: 180px;
+    text-align: center;
+    border: none;
+    cursor: pointer;
+  }
+
+  .primary-btn {
+    background: var(--color-primary, #ff3333);
+    color: #ffffff;
+    border: 2px solid var(--color-primary, #ff3333);
+  }
+
+  .primary-btn:hover {
+    background: var(--color-secondary, #bb2424);
+    border-color: var(--color-secondary, #bb2424);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
+  }
+
+  .secondary-btn {
+    background: transparent;
+    color: var(--color-primary, #ff3333);
+    border: 2px solid var(--color-primary, #ff3333);
+  }
+
+  .secondary-btn:hover {
+    background: var(--color-primary, #ff3333);
+    color: #ffffff;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
+  }
+
+  .vinyl-section {
+    padding: 0;
+    background: transparent;
+    position: relative;
+    z-index: 1;
+    margin-top: -2rem;
+  }
+
+  .vinyl-section .container {
+    padding: 4rem 1rem 6rem;
+  }
+
+  .section-header {
+    text-align: left;
+    margin-bottom: 3rem;
+    position: relative;
+  }
+
+  .section-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .section-header h2 {
+    font-size: 3.2rem;
+    margin: 0;
+    color: var(--title-color);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    position: relative;
+    display: inline-block;
+    animation: titleSlideIn 1s ease-out;
+  }
+
+  /* Formulario de búsqueda grande */
+  .search-form-large {
+    max-width: 600px;
+    margin: 2rem auto;
+  }
+
+  .search-input-group-large {
+    position: relative;
+    display: flex;
+    align-items: center;
+    background: var(--color-card-bg);
+    border: 3px solid rgba(255, 51, 51, 0.3);
+    border-radius: 30px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  }
+
+  .search-input-group-large:focus-within {
+    border-color: var(--title-color);
+    box-shadow: 0 0 0 4px rgba(255, 51, 51, 0.1), 0 8px 25px rgba(0, 0, 0, 0.15);
+  }
+
+  .search-input-large {
+    background: transparent;
+    border: none;
+    padding: 1.2rem 1.5rem;
+    color: #fff;
+    font-size: 1.2rem;
+    outline: none;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .search-input-large::placeholder {
+    color: #666;
+  }
+
+  .search-button-large {
+    background: var(--title-color);
+    border: none;
+    padding: 1.2rem 2rem;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  .search-button-large:hover {
+    background: #ff6b6b;
+    transform: scale(1.05);
+  }
+
+  .clear-search-large {
+    background: rgba(255, 51, 51, 0.2);
+    border: none;
+    padding: 1.2rem 1.5rem;
+    color: var(--title-color);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    border-left: 1px solid rgba(255, 51, 51, 0.2);
+    gap: 0.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .clear-search-large:hover {
+    background: rgba(255, 51, 51, 0.3);
+    color: #fff;
+  }
+
+  .search-results-info {
+    font-size: 1.3rem;
+    color: #777;
+    text-align: center;
+    margin: 2rem auto;
+    max-width: 800px;
+    line-height: 1.6;
+    background: rgba(255, 51, 51, 0.05);
+    padding: 1rem 2rem;
+    border-radius: 15px;
+    border: 1px solid rgba(255, 51, 51, 0.1);
+  }
+
+  .vinyl-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.5rem;
+    margin-top: 2rem;
+  }
+  
+  @media (max-width: 1200px) {
+    .vinyl-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  
+  @media (max-width: 900px) {
+    .vinyl-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  
+  @media (max-width: 600px) {
+    .vinyl-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+
+  .vinyl-card {
+    background: var(--color-card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    border: 1px solid rgba(255, 51, 51, 0.1);
+    animation: cardSlideIn 0.6s ease-out both;
+  }
+
+  .vinyl-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25), 0 0 15px rgba(255, 51, 51, 0.2);
+    border-color: rgba(255, 51, 51, 0.3);
+  }
+
+  .vinyl-image {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .vinyl-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .vinyl-card:hover .vinyl-image img {
+    transform: scale(1.05) rotate(2deg);
+  }
+
+  .vinyl-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.70);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .vinyl-card:hover .vinyl-overlay {
+    opacity: 1;
+  }
+
+  .vinyl-link {
+    background: linear-gradient(135deg, var(--title-color) 0%, #ff6b6b 100%);
+    color: white;
+    padding: 0.8rem 1.5rem;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: 600;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 51, 51, 0.4);
+  }
+
+  .vinyl-card:hover .vinyl-link {
+    transform: translateY(0);
+  }
+
+  .vinyl-info {
+    padding: 1rem;
+    text-align: center;
+  }
+
+  .vinyl-title-card {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--title-color);
+    margin: 0 0 0.5rem 0;
+    line-height: 1.3;
+    transition: color 0.3s ease;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .vinyl-artist {
+    font-size: 0.9rem;
+    color: #888;
+    margin: 0;
+    line-height: 1.2;
+  }
+
+  .vinyl-category {
+    font-size: 0.8rem;
+    color: var(--title-color);
+    margin: 0.3rem 0 0 0;
+    line-height: 1.2;
+    text-transform: uppercase;
+    font-weight: 600;
+    opacity: 0.8;
+  }
+
+  .vinyl-card:hover .vinyl-title-card {
+    color: #ff6b6b;
+  }
+
+  .no-vinyl {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #666;
+  }
+
+  .no-vinyl-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+
+  .no-vinyl h3 {
+    color: #fff;
+    margin-bottom: 0.5rem;
+  }
+
+  .search-placeholder {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #666;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+
+  .search-placeholder-icon {
+    font-size: 4rem;
+    margin-bottom: 2rem;
+    opacity: 0.7;
+  }
+
+  .search-placeholder h3 {
+    color: #fff;
+    margin-bottom: 1rem;
+    font-size: 2rem;
+  }
+
+  .search-placeholder p {
+    margin-bottom: 2rem;
+    font-size: 1.2rem;
+    line-height: 1.6;
+  }
+
+  .search-tips {
+    background: rgba(255, 51, 51, 0.05);
+    border: 1px solid rgba(255, 51, 51, 0.1);
+    border-radius: 15px;
+    padding: 2rem;
+    text-align: left;
+  }
+
+  .search-tips h4 {
+    color: var(--title-color);
+    margin-bottom: 1rem;
+    font-size: 1.3rem;
+  }
+
+  .search-tips ul {
+    list-style-position: inside;
+    color: #ccc;
+  }
+
+  .search-tips li {
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+  }
+
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    margin: 3rem 0 1.5rem 0;
+  }
+
+  .pagination ul {
+    list-style: none;
+    display: flex;
+    gap: 0.6rem;
+    padding: 0;
+    margin: 0;
+  }
+
+  .pagination li {
+    display: inline-block;
+  }
+
+  .pagination-link {
+    display: inline-block;
+    padding: 0.5rem 1.1rem;
+    border-radius: 20px;
+    background: var(--color-card-bg);
+    color: var(--title-color);
+    border: 2px solid var(--title-color);
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(255, 51, 51, 0.1);
+    cursor: pointer;
+  }
+
+  .pagination-link:hover:not(.disabled):not(.current) {
+    background: var(--title-color);
+    color: #fff;
+    border-color: var(--title-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 51, 51, 0.3);
+  }
+
+  .pagination-link.current {
+    background: var(--title-color);
+    color: #fff;
+    border-color: var(--title-color);
+    cursor: default;
+    pointer-events: none;
+  }
+
+  .pagination-link.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    color: #888;
+    border-color: #555;
+    background: #1a1a1a;
+    pointer-events: none;
+  }
+
+  @keyframes cardSlideIn {
+    0% { transform: translateY(30px) scale(0.9); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
+
+  @keyframes titleSlideIn {
+    0% { transform: translateX(-30px); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+  }
+
+  @media (max-width: 768px) {
+    .hero-container {
+      padding: 2rem 1rem;
+      min-height: 60vh;
+    }
+    
+    .search-form-large {
+      max-width: 100%;
+    }
+    
+    .search-input-large {
+      font-size: 1rem;
+      padding: 1rem 1.2rem;
+    }
+    
+    .search-button-large {
+      padding: 1rem 1.5rem;
+      font-size: 1rem;
+    }
+    
+    .clear-search-large {
+      padding: 1rem 1.2rem;
+      font-size: 0.9rem;
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+    }
+    
+    .page-description {
+      font-size: 1.1rem;
+    }
+    
+    .section-header h2 {
+      font-size: 2.5rem;
+    }
+    
+    .search-results-info {
+      font-size: 1.1rem;
+      padding: 1rem 1.5rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    h1 {
+      font-size: 2rem;
+    }
+    
+    .search-placeholder h3 {
+      font-size: 1.5rem;
+    }
+    
+    .search-placeholder p {
+      font-size: 1.1rem;
+    }
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const searchForm = document.getElementById('searchForm');
+    if (searchForm) {
+      searchForm.addEventListener('submit', (e) => {
+        const searchInput = searchForm.querySelector('.search-input-large');
+        if (searchInput && searchInput.value.trim()) {
+          searchForm.classList.add('loading');
+        }
+      });
+    }
+  });
+</script>

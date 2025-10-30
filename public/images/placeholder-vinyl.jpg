@@ -1,0 +1,20 @@
+<!-- Placeholder para vinilos -->
+<svg width="300" height="300" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo -->
+  <rect width="300" height="300" fill="#f3f4f6"/>
+  
+  <!-- Disco de vinilo grande -->
+  <circle cx="150" cy="150" r="120" fill="#1a1a1a" stroke="#ff3333" stroke-width="4"/>
+  
+  <!-- Círculos concéntricos -->
+  <circle cx="150" cy="150" r="100" fill="none" stroke="#333" stroke-width="1" opacity="0.3"/>
+  <circle cx="150" cy="150" r="80" fill="none" stroke="#333" stroke-width="1" opacity="0.3"/>
+  <circle cx="150" cy="150" r="60" fill="none" stroke="#333" stroke-width="1" opacity="0.3"/>
+  
+  <!-- Centro -->
+  <circle cx="150" cy="150" r="25" fill="#ff3333"/>
+  <circle cx="150" cy="150" r="8" fill="#1a1a1a"/>
+  
+  <!-- Texto -->
+  <text x="150" y="270" text-anchor="middle" fill="#666" font-size="16" font-family="Arial, sans-serif">Vinilo</text>
+</svg>

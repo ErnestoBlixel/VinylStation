@@ -1,0 +1,480 @@
+---
+// src/pages/podcast/[slug].astro
+import MainLayout from "../../layouts/MainLayout.astro";
+import HomeHero from "../../components/HomeHero.astro";
+import { getSiteInfo, getPodcastBySlug, getPodcasts } from "../../lib/wordpress";
+
+export async function getStaticPaths() {
+  const { podcasts } = await getPodcasts({ limit: 200 });
+  return podcasts.map((p) => ({ params: { slug: p.slug }, props: { podcast: p } }));
+}
+
+const { slug } = Astro.params;
+const { podcast } = Astro.props;
+
+const siteInfo = await getSiteInfo();
+const data = podcast || (await getPodcastBySlug(slug));
+if (!data) {
+  return Astro.redirect("/404");
+}
+
+const imagenPodcast =
+  data.imagenDestacadaUrl ||
+  data.featuredImage?.node?.sourceUrl ||
+  "/images/placeholder-podcast.jpg";
+
+const altImagen =
+  data.featuredImage?.node?.altText ||
+  data.title;
+
+const pageTitle = data.seo?.title || `${data.title} - VinylStation Podcasts`;
+const pageDescription =
+  data.seo?.metaDesc ||
+  data.excerpt ||
+  `Escucha "${data.title}", podcast en VinylStation Radio.`;
+
+// Obtener una descripción breve del podcast para el hero
+const heroDescription = data.excerpt 
+  ? data.excerpt
+  : `Podcast emitido el ${data.fechaEmisionFormateada}`;
+---
+<MainLayout title={`${pageTitle} | ${siteInfo.title}`} description={pageDescription}>
+  <!-- Contenedor principal unificado -->
+  <div class="main-content">
+    <!-- Hero del podcast con el título de la API -->
+    <HomeHero 
+      title={data.title}
+      description={heroDescription}
+    />
+
+    <!-- Breadcrumbs -->
+    <nav class="breadcrumbs">
+      <div class="container">
+        <a href="/">Inicio</a>
+        <span class="separator">›</span>
+        <a href="/podcast">Podcasts</a>
+        <span class="separator">›</span>
+        <span class="current">{data.title}</span>
+      </div>
+    </nav>
+
+    <section class="podcast-details">
+      <div class="container">
+        <div class="podcast-layout">
+          <div class="podcast-image-section">
+            <div class="main-image">
+              <img
+                src={imagenPodcast}
+                alt={altImagen}
+                loading="lazy"
+                onerror="this.onerror=null;this.src='/images/placeholder-podcast.jpg';"
+              />
+              <div class="podcast-badge">PODCAST</div>
+            </div>
+            
+            <!-- Fecha de emisión destacada -->
+            <div class="podcast-date-card">
+              <div class="date-icon">📅</div>
+              <div class="date-info">
+                <span class="date-label">Fecha de emisión</span>
+                <span class="date-value">{data.fechaEmisionFormateada}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="podcast-info-section">
+            <!-- Descripción del podcast -->
+            {data.content && (
+              <div class="podcast-description">
+                <div class="content" set:html={data.content}></div>
+              </div>
+            )}
+
+            <!-- Enlaces a plataformas -->
+            <div class="podcast-platforms">
+              <h3>Escuchar en:</h3>
+              <div class="platform-links">
+                {data.camposPodcast?.vsSoundcloud && (
+                  <a 
+                    href={data.camposPodcast.vsSoundcloud}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="platform-link soundcloud"
+                  >
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                      <path d="M1.175 12.225c-.051 0-.094.046-.101.115l-.233 2.154.233 2.121c.007.069.05.116.101.116.05 0 .09-.047.099-.116l.255-2.121-.27-2.154c-.009-.069-.05-.115-.101-.115zm-.899.828c-.06 0-.091.037-.104.094L0 14.479l.165 1.308c.014.057.045.094.09.094s.089-.037.099-.094l.19-1.308-.21-1.334c-.01-.057-.045-.09-.09-.09zm1.83-1.229c-.061 0-.121.051-.127.132l-.209 2.563.209 2.458c.006.08.066.131.127.131.06 0 .12-.051.126-.131l.239-2.458-.239-2.563c-.006-.081-.066-.132-.126-.132zm.915-.636c-.075 0-.135.065-.142.155l-.193 3.177.193 3.08c.007.09.067.154.142.154.074 0 .135-.064.142-.154l.219-3.08-.219-3.177c-.007-.09-.068-.155-.142-.155zm.991-.38c-.089 0-.165.08-.172.185l-.176 3.544.176 3.353c.007.104.083.184.172.184.089 0 .165-.08.172-.184l.201-3.353-.201-3.544c-.007-.105-.083-.185-.172-.185zm1.031-.613c-.104 0-.194.094-.202.213l-.158 4.136.158 3.821c.008.12.098.214.202.214.104 0 .194-.094.202-.214l.18-3.821-.18-4.136c-.008-.12-.098-.213-.202-.213zm1.047-.6c-.119 0-.224.109-.231.244l-.141 4.738.141 3.629c.007.135.112.243.231.243.118 0 .223-.108.231-.243l.16-3.629-.16-4.738c-.008-.135-.113-.244-.231-.244zm1.063-.252c-.133 0-.253.124-.261.274l-.123 4.99.123 3.397c.008.15.128.273.261.273.134 0 .253-.123.261-.273l.14-3.397-.14-4.99c-.008-.15-.127-.274-.261-.274zm6.556 1.057a3.77 3.77 0 00-.802.084c-.165-1.89-1.739-3.372-3.669-3.372-.471 0-.871.095-1.123.202-.089.037-.112.073-.112.145v6.661c0 .075.024.138.088.156.004.001 6.595.001 6.618.001 1.318 0 2.386-1.068 2.386-2.386s-1.068-2.386-2.386-2.386zm-5.493-.844c-.148 0-.283.138-.291.302l-.105 5.079.105 3.305c.008.164.143.301.291.301.148 0 .282-.137.291-.301l.12-3.305-.12-5.079c-.009-.164-.143-.302-.291-.302zm1.078-.215c-.163 0-.312.152-.321.331l-.089 5.295.089 3.184c.009.178.158.33.321.33.162 0 .312-.152.32-.33l.101-3.184-.101-5.295c-.008-.179-.158-.331-.32-.331zm1.094.063c-.178 0-.342.167-.35.361l-.071 4.932.071 3.121c.008.193.172.36.35.36.178 0 .342-.167.35-.36l.082-3.121-.082-4.932c-.008-.194-.172-.361-.35-.361zm1.095.203c-.193 0-.371.181-.38.39l-.054 4.591.054 3.044c.009.208.187.389.38.389.192 0 .371-.181.379-.389l.061-3.044-.061-4.591c-.008-.209-.187-.39-.379-.39z"/>
+                    </svg>
+                    <span class="platform-name">SoundCloud</span>
+                  </a>
+                )}
+                {data.camposPodcast?.vsYoutube && (
+                  <a 
+                    href={data.camposPodcast.vsYoutube}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class="platform-link youtube"
+                  >
+                    <svg viewBox="0 0 24 24" fill="currentColor" width="24" height="24">
+                      <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                    </svg>
+                    <span class="platform-name">YouTube</span>
+                  </a>
+                )}
+              </div>
+            </div>
+
+            <div class="podcast-actions">
+              <a href="/podcast" class="btn primary-btn">
+                ← Volver a todos los podcasts
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</MainLayout>
+
+<style>
+  /* === CONTENEDOR PRINCIPAL UNIFICADO === */
+  .main-content {
+    background: linear-gradient(
+      135deg,
+      var(--color-bg) 0%,
+      rgba(0, 0, 0, 0.02) 50%,
+      var(--color-bg) 100%
+    );
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .main-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -50%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(
+      45deg, 
+      transparent 30%, 
+      rgba(139, 92, 246, 0.02) 50%, 
+      transparent 70%
+    );
+    animation: backgroundShimmer 20s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  @keyframes backgroundShimmer {
+    0%, 100% { transform: translateX(-100%) rotate(0deg); opacity: 0.3; }
+    50% { transform: translateX(0%) rotate(1deg); opacity: 0.7; }
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* === BREADCRUMBS === */
+  .breadcrumbs {
+    background: var(--color-card-bg);
+    padding: 1rem 0;
+    border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+    position: relative;
+    z-index: 2;
+  }
+
+  .breadcrumbs .container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .breadcrumbs a {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    transition: color 0.3s ease;
+  }
+
+  .breadcrumbs a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumbs .separator {
+    color: var(--color-text-secondary);
+    opacity: 0.5;
+  }
+
+  .breadcrumbs .current {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  /* === GRID PRINCIPAL === */
+  .podcast-details {
+    position: relative;
+    z-index: 1;
+    padding: 3rem 0 6rem;
+  }
+  
+  .podcast-details .container {
+    margin: 0 auto;
+  }
+  
+  .podcast-layout {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 4rem;
+    align-items: start;
+  }
+  
+  @media (max-width: 968px) {
+    .podcast-layout {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+  }
+
+  /* === IMAGEN 16:9 === */
+  .podcast-image-section {
+    position: sticky;
+    top: 2rem;
+    animation: fadeInUp 0.8s ease-out;
+  }
+  
+  .podcast-image-section .main-image {
+    position: relative;
+    aspect-ratio: 16/9;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(139, 92, 246, 0.1);
+    transition: transform 0.3s ease;
+    margin-bottom: 1.5rem;
+  }
+  
+  .podcast-image-section .main-image:hover {
+    transform: scale(1.02);
+  }
+  
+  .podcast-image-section .main-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  /* === BADGE === */
+  .podcast-badge {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    background: linear-gradient(135deg, #8B5CF6 0%, #a78bfa 100%);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.3);
+    backdrop-filter: blur(10px);
+  }
+
+  /* === TARJETA DE FECHA === */
+  .podcast-date-card {
+    background: var(--color-card-bg);
+    border: 2px solid #8B5CF6;
+    border-radius: 15px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 4px 15px rgba(139, 92, 246, 0.2);
+  }
+
+  .date-icon {
+    font-size: 2rem;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  }
+
+  .date-info {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .date-label {
+    font-size: 0.85rem;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+
+  .date-value {
+    font-size: 1.1rem;
+    color: #8B5CF6;
+    font-weight: 700;
+  }
+
+  /* === SECCIÓN DE INFO === */
+  .podcast-info-section {
+    background: var(--color-card-bg);
+    padding: 2.5rem;
+    border-radius: 20px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(139, 92, 246, 0.1);
+    animation: fadeInUp 0.8s ease-out 0.2s both;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  /* === DESCRIPCIÓN === */
+  .podcast-description {
+    margin-bottom: 1rem;
+  }
+  
+  .content,
+  .podcast-description p {
+    color: var(--color-text);
+    line-height: 1.7;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+
+  /* === PLATAFORMAS === */
+  .podcast-platforms h3 {
+    color: var(--title-color);
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+    font-weight: 700;
+  }
+
+  .platform-links {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .platform-link {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.2rem 1.5rem;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    border: 2px solid;
+  }
+
+  .platform-link.soundcloud {
+    background: rgba(255, 85, 0, 0.1);
+    border-color: #ff5500;
+    color: #ff5500;
+  }
+
+  .platform-link.soundcloud:hover {
+    background: #ff5500;
+    color: white;
+    transform: translateX(5px);
+  }
+
+  .platform-link.youtube {
+    background: rgba(255, 0, 0, 0.1);
+    border-color: #ff0000;
+    color: #ff0000;
+  }
+
+  .platform-link.youtube:hover {
+    background: #ff0000;
+    color: white;
+    transform: translateX(5px);
+  }
+
+  .platform-name {
+    flex: 1;
+  }
+
+  /* === BOTÓN "VOLVER" === */
+  .podcast-actions {
+    text-align: center;
+    padding-top: 2rem;
+    border-top: 1px solid var(--color-text-secondary);
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    min-width: 220px;
+    text-align: center;
+    border: none;
+    cursor: pointer;
+  }
+
+  .primary-btn {
+    background: #8B5CF6;
+    color: #ffffff;
+    border: 2px solid #8B5CF6;
+  }
+
+  .primary-btn:hover {
+    background: #7c3aed;
+    border-color: #7c3aed;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(139, 92, 246, 0.3);
+  }
+
+  /* === ANIMACIONES === */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    .podcast-details {
+      padding: 2rem 0 4rem;
+    }
+    
+    .podcast-info-section {
+      padding: 2rem;
+    }
+    
+    .breadcrumbs .current {
+      display: none;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .podcast-info-section {
+      padding: 1.5rem;
+    }
+  }
+  
+  /* === SMOOTH SCROLL === */
+  html {
+    scroll-behavior: smooth;
+  }
+</style>

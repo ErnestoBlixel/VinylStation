@@ -1,0 +1,865 @@
+---
+// Renderizar del lado del servidor para validaciones dinámicas
+// export const prerender = false; // Comentado temporalmente
+
+// src/pages/vinilos/[slug].astro
+import MainLayout from "../../layouts/MainLayout.astro";
+import { getSiteInfo, getViniloBySlug, getTodosLosVinilos } from "../../lib/wordpress.js";
+
+// ESTRATEGIA HÍBRIDA: Generar solo TOP 500 vinilos estáticos
+export async function getStaticPaths() {
+  console.log('🎯 ESTRATEGIA HÍBRIDA: Generando páginas estáticas para TOP 500 vinilos...');
+  
+  try {
+    // Usar la función que ya existe en wordpress.js
+    const todosLosVinilosData = await getTodosLosVinilos();
+    
+    if (!todosLosVinilosData || !todosLosVinilosData.vinilos) {
+      console.error('❌ No se pudieron cargar los vinilos para getStaticPaths');
+      return [];
+    }
+
+    console.log(`📊 Total vinilos disponibles: ${todosLosVinilosData.vinilos.length}`);
+
+    // 🔥 LÍMITE: Solo generar los primeros 500 vinilos (más recientes/populares)
+    const LIMITE_ESTATICOS = 500;
+    const vinilosParaGenerar = todosLosVinilosData.vinilos.slice(0, LIMITE_ESTATICOS);
+    
+    console.log(`✅ Generando ${vinilosParaGenerar.length} páginas ESTÁTICAS (de ${todosLosVinilosData.vinilos.length} totales)`);
+    console.log(`📄 Resto (${todosLosVinilosData.vinilos.length - vinilosParaGenerar.length}) se cargarán DINÁMICAMENTE`);
+
+    // Generar una página estática solo para los TOP vinilos
+    const staticPaths = vinilosParaGenerar.map(vinilo => ({
+      params: { slug: vinilo.slug }
+    }));
+    
+    console.log(`🚀 BUILD OPTIMIZADO: ${staticPaths.length} páginas estáticas`);
+    console.log(`📀 Ejemplos estáticos: ${staticPaths.slice(0, 3).map(p => p.params.slug).join(', ')}...`);
+    
+    return staticPaths;
+    
+  } catch (error) {
+    console.error('💥 Error en getStaticPaths de vinilos:', error);
+    // Fallback: generar solo los 2 de ejemplo si hay error
+    console.log('🔄 Usando fallback: solo 2 vinilos de ejemplo');
+    return [
+      { params: { slug: 'apostrophe' }},
+      { params: { slug: 'dark-side-moon' }},
+    ];
+  }
+}
+
+const { slug } = Astro.params;
+
+// 🔧 DEBUG: Log del slug recibido
+console.log(`🎯 [DEBUG] Procesando vinilo con slug: "${slug}"`);
+
+// 🔧 VALIDACIÓN: Si el slug es un número, redirigir a la paginación
+if (slug && /^\d+$/.test(slug)) {
+  console.log(`🔄 Slug numérico detectado: ${slug}, redirigiendo a /vinilos/page/${slug}/`);
+  return Astro.redirect(`/vinilos/page/${slug}/`, 301);
+}
+
+const siteInfo = await getSiteInfo();
+console.log(`🔍 [DEBUG] Buscando vinilo "${slug}" en WordPress...`);
+const data = await getViniloBySlug(slug);
+
+if (!data) {
+  console.error(`❌ [DEBUG] No se encontró vinilo "${slug}" en WordPress`);
+  console.error(`❌ [DEBUG] getViniloBySlug devolvió:`, data);
+  return Astro.redirect("/404");
+}
+
+console.log(`✅ [DEBUG] Vinilo "${slug}" encontrado:`, data.title);
+
+const imagenVinilo =
+  data.imagenPrincipalUrl ||
+  data.imagenPrincipal?.sourceUrl ||
+  data.featuredImage?.node?.sourceUrl ||
+  "/images/placeholder-vinyl.jpg";
+
+const altImagen =
+  data.imagenPrincipal?.altText ||
+  data.featuredImage?.node?.altText ||
+  data.title;
+
+const pageTitle = data.seo?.title || `${data.title} - VinylStation`;
+const pageDescription =
+  data.seo?.metaDesc ||
+  data.excerpt ||
+  `Descubre "${data.title}" en VinylStation.`;
+---
+<MainLayout title={`${pageTitle} | ${siteInfo.title}`} description={pageDescription}>
+  <!-- Contenedor principal unificado -->
+  <div class="main-content">
+    <!-- Breadcrumbs -->
+    <nav class="breadcrumbs">
+      <div class="container">
+        <a href="/">Inicio</a>
+        <span class="separator">›</span>
+        <a href="/vinilos">Vinilos</a>
+        <span class="separator">›</span>
+        <span class="current">{data.title}</span>
+      </div>
+    </nav>
+
+    <section class="vinilo-details">
+      <div class="container">
+        <div class="vinilo-layout">
+          <div class="vinilo-image-section">
+            <div class="main-image">
+              <img
+                src={imagenVinilo}
+                alt={altImagen}
+                loading="lazy"
+                onerror="this.onerror=null;this.src='/images/placeholder-vinyl.jpg';"
+              />
+              <div class="vinilo-badge">VINILO</div>
+            </div>
+          </div>
+
+          <div class="vinilo-info-section">
+            <header class="vinilo-header">
+              <h1>{data.title}</h1>
+            </header>
+
+            {data.content && (
+              <div class="vinilo-description">
+                <h4>Descripción</h4>
+                <div class="content" set:html={data.content}></div>
+              </div>
+            )}
+
+            <div class="vinilo-meta">
+              <h4>Información del Vinilo</h4>
+              <div class="meta-grid">
+                {data.camposVinilo?.vsArtista && (
+                  <div class="meta-item">
+                    <strong>Artista:</strong>
+                    <span>{data.camposVinilo.vsArtista}</span>
+                  </div>
+                )}
+                {data.camposVinilo?.vsAlbum && (
+                  <div class="meta-item">
+                    <strong>Álbum:</strong>
+                    <span>{data.camposVinilo.vsAlbum}</span>
+                  </div>
+                )}
+                {data.camposVinilo?.vsPrecio && (
+                  <div class="meta-item">
+                    <strong>Precio:</strong>
+                    <span>{data.camposVinilo.vsPrecio}€</span>
+                  </div>
+                )}
+                {data.categoriasVinilo?.nodes?.length > 0 && (
+                  <div class="meta-item">
+                    <strong>Categoría:</strong>
+                    <span>{data.categoriasVinilo.nodes.map(cat => cat.name).join(', ')}</span>
+                  </div>
+                )}
+
+              </div>
+            </div>
+
+            <div class="vinilo-actions">
+              <div class="action-buttons">
+                {data.camposVinilo?.vsLinkAmazon ? (
+                  <a 
+                    href={data.camposVinilo.vsLinkAmazon} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    class="btn amazon-btn"
+                    title={`Comprar ${data.title} en Amazon`}
+                  >
+                    🛒 Comprar en Amazon - {data.camposVinilo?.vsPrecio ? `${data.camposVinilo.vsPrecio}€` : 'Ver precio'}
+                  </a>
+                ) : (
+                  <span class="btn disabled-btn" title="Este vinilo no está disponible en Amazon">
+                    🚫 No disponible en Amazon
+                  </span>
+                )}
+                <a href="/vinilos" class="btn secondary-btn">
+                  ← Volver a todos los vinilos
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Información de Afiliación Amazon -->
+    <section class="amazon-affiliate-info">
+      <div class="container">
+        <div class="affiliate-card">
+          <div class="affiliate-icon">🤝</div>
+          <div class="affiliate-content">
+            <h3>Apoya a VinylStation Radio</h3>
+            <p>
+              Somos afiliados de Amazon. Cuando compras a través de nuestros enlaces, 
+              recibes el mismo precio pero nosotros obtenemos una pequeña comisión que 
+              nos ayuda a mantener la emisora funcionando y a seguir compartiendo 
+              la mejor música en vinilo contigo.
+            </p>
+            <p class="affiliate-thanks">
+              ¡Gracias por apoyar a nuestra comunidad musical! 🎵
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {data.content && (
+      <section class="vinilo-content">
+        <div class="container">
+          <h2 class="content-title">Contenido Completo</h2>
+          <div class="content-body" set:html={data.content}></div>
+        </div>
+      </section>
+    )}
+  </div>
+</MainLayout>
+
+<style>
+  /* === CONTENEDOR PRINCIPAL UNIFICADO === */
+  .main-content {
+    background: linear-gradient(
+      135deg,
+      var(--color-bg) 0%,
+      rgba(0, 0, 0, 0.02) 50%,
+      var(--color-bg) 100%
+    );
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .main-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -50%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(
+      45deg, 
+      transparent 30%, 
+      rgba(255, 51, 51, 0.02) 50%, 
+      transparent 70%
+    );
+    animation: backgroundShimmer 20s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  @keyframes backgroundShimmer {
+    0%, 100% { transform: translateX(-100%) rotate(0deg); opacity: 0.3; }
+    50% { transform: translateX(0%) rotate(1deg); opacity: 0.7; }
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* === BREADCRUMBS === */
+  .breadcrumbs {
+    background: var(--color-card-bg);
+    padding: 1rem 0;
+    border-bottom: 1px solid rgba(255, 51, 51, 0.1);
+    position: relative;
+    z-index: 2;
+  }
+
+  .breadcrumbs .container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .breadcrumbs a {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    transition: color 0.3s ease;
+  }
+
+  .breadcrumbs a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumbs .separator {
+    color: var(--color-text-secondary);
+    opacity: 0.5;
+  }
+
+  .breadcrumbs .current {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  /* === GRID PRINCIPAL === */
+  .vinilo-details {
+    position: relative;
+    z-index: 1;
+    padding: 3rem 0 6rem;
+  }
+  
+  .vinilo-details .container {
+    margin: 0 auto;
+  }
+  
+  .vinilo-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: stretch;
+    min-height: 700px;
+  }
+  
+  @media (max-width: 968px) {
+    .vinilo-layout {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      min-height: auto;
+    }
+    
+    .vinilo-image-section {
+      height: auto;
+    }
+    
+    .vinilo-info-section {
+      height: auto;
+      overflow-y: visible;
+    }
+  }
+
+  /* === IMAGEN 1:1 === */
+  .vinilo-image-section {
+    position: sticky;
+    top: 2rem;
+    animation: fadeInUp 0.8s ease-out;
+    height: 100%;
+    display: flex;
+    align-items: stretch;
+  }
+  
+  .vinilo-image-section .main-image {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 51, 51, 0.1);
+    transition: transform 0.3s ease;
+  }
+  
+  .vinilo-image-section .main-image:hover {
+    transform: scale(1.02);
+  }
+  
+  .vinilo-image-section .main-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  /* === BADGE === */
+  .vinilo-badge {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    background: linear-gradient(135deg, var(--title-color) 0%, #ff6b6b 100%);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(255, 51, 51, 0.3);
+    backdrop-filter: blur(10px);
+  }
+
+  /* === SECCIÓN DE INFO === */
+  .vinilo-info-section {
+    background: var(--color-card-bg);
+    padding: 2.5rem;
+    border-radius: 20px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 51, 51, 0.1);
+    animation: fadeInUp 0.8s ease-out 0.2s both;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: 100%;
+    overflow-y: auto;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* Internet Explorer 10+ */
+  }
+  
+  /* Ocultar scrollbar en Webkit browsers (Chrome, Safari, Edge) */
+  .vinilo-info-section::-webkit-scrollbar {
+    display: none;
+  }
+  
+  .vinilo-header h1 {
+    font-size: 2.2rem;
+    color: var(--title-color);
+    margin-bottom: 1.5rem;
+    line-height: 1.2;
+    font-weight: 800;
+    position: relative;
+  }
+  
+  .vinilo-header h1::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 0;
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(90deg, 
+      var(--title-color),
+      transparent);
+    border-radius: 2px;
+  }
+  
+  @media (max-width: 480px) {
+    .vinilo-header h1 {
+      font-size: 2.2rem;
+    }
+  }
+
+  /* === DESCRIPCIÓN === */
+  .vinilo-description {
+    margin-bottom: 2.5rem;
+  }
+  
+  .vinilo-description h4 {
+    font-size: 1.4rem;
+    color: var(--title-color);
+    margin-bottom: 1rem;
+    font-weight: 700;
+  }
+  
+  .content,
+  .vinilo-description p {
+    color: var(--color-text);
+    line-height: 1.7;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+
+  /* === META === */
+  .vinilo-meta {
+    margin-bottom: 2.5rem;
+    flex-grow: 1;
+  }
+  
+  .vinilo-meta h4 {
+    font-size: 1.4rem;
+    color: var(--title-color);
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+  }
+  
+  .meta-grid {
+    display: grid;
+    gap: 1rem;
+    background: rgba(0, 0, 0, 0.05);
+    padding: 1.5rem;
+    border-radius: 15px;
+    border-left: 4px solid var(--title-color);
+  }
+  
+  .meta-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid var(--color-text-secondary);
+    opacity: 0.9;
+  }
+  
+  .meta-item:last-child {
+    border-bottom: none;
+  }
+  
+  .meta-item strong {
+    color: var(--color-text);
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  
+  .meta-item span {
+    color: var(--color-text-secondary);
+    font-weight: 500;
+  }
+
+  /* === BOTONES === */
+  .vinilo-actions {
+    padding-top: 2rem;
+    border-top: 1px solid var(--color-text-secondary);
+  }
+  
+  .action-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 1rem 1.5rem;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    flex: 1;
+    text-align: center;
+    border: none;
+    cursor: pointer;
+    min-width: 200px;
+  }
+
+  .amazon-btn {
+    background: linear-gradient(135deg, #ff9900 0%, #ff7700 100%);
+    color: white;
+    border: 2px solid #ff9900;
+    font-size: 0.95rem;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(255, 153, 0, 0.3);
+  }
+
+  .amazon-btn:hover {
+    background: linear-gradient(135deg, #ff7700 0%, #ff5500 100%);
+    border-color: #ff7700;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(255, 153, 0, 0.4);
+    color: white;
+  }
+
+  .disabled-btn {
+    background: #666;
+    color: #999;
+    border: 2px solid #666;
+    cursor: not-allowed;
+  }
+
+  .disabled-btn:hover {
+    transform: none;
+    box-shadow: none;
+  }
+
+  .secondary-btn {
+    background: transparent;
+    color: var(--color-text);
+    border: 2px solid var(--color-text-secondary);
+  }
+
+  .secondary-btn:hover {
+    background: var(--color-text-secondary);
+    color: var(--color-bg);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  }
+
+  /* === CONTENIDO COMPLETO === */
+  .vinilo-content {
+    padding: 4rem 0;
+    position: relative;
+    z-index: 1;
+    animation: fadeInUp 0.8s ease-out 0.4s both;
+  }
+  
+  .content-title {
+    color: var(--title-color);
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 2rem;
+    font-weight: 800;
+    position: relative;
+  }
+  
+  .content-title::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 4px;
+    background: linear-gradient(90deg, 
+      var(--title-color),
+      transparent);
+    border-radius: 2px;
+  }
+  
+  .content-body {
+    max-width: 900px;
+    margin: 0 auto;
+    background: var(--color-card-bg);
+    padding: 3rem;
+    border-radius: 20px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 51, 51, 0.1);
+  }
+  
+  .content-body p {
+    color: var(--color-text);
+    line-height: 1.7;
+    margin-bottom: 1.5rem;
+    font-size: 1.1rem;
+  }
+  
+  .content-body h1,
+  .content-body h2,
+  .content-body h3,
+  .content-body h4,
+  .content-body h5,
+  .content-body h6 {
+    color: var(--color-text);
+    margin-top: 2.5rem;
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+  }
+  
+  .content-body h2 {
+    font-size: 2rem;
+    border-bottom: 2px solid var(--color-text-secondary);
+    padding-bottom: 0.5rem;
+  }
+  
+  .content-body h3 {
+    font-size: 1.6rem;
+    position: relative;
+    padding-left: 1rem;
+  }
+  
+  .content-body h3::before {
+    content: '▎';
+    position: absolute;
+    left: 0;
+    top: 0;
+    color: var(--color-text-secondary);
+  }
+  
+  .content-body img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 15px;
+    margin: 2rem 0;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 51, 51, 0.1);
+  }
+  
+  .content-body ul,
+  .content-body ol {
+    color: var(--color-text);
+    padding-left: 2rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.7;
+  }
+  
+  .content-body blockquote {
+    border-left: 4px solid var(--color-text-secondary);
+    padding-left: 1.5rem;
+    margin: 2rem 0;
+    font-style: italic;
+    color: var(--color-text-secondary);
+    background: rgba(0, 0, 0, 0.05);
+    padding: 1.5rem;
+    border-radius: 0 15px 15px 0;
+  }
+
+  /* === MENSAJE SIN CONTENIDO === */
+  .no-content {
+    text-align: center;
+    color: var(--color-text-secondary);
+    font-style: italic;
+    padding: 4rem;
+    background: var(--color-card-bg);
+    border-radius: 15px;
+    border: 2px dashed rgba(255, 51, 51, 0.2);
+  }
+
+  /* === ANIMACIONES === */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    .vinilo-details {
+      padding: 2rem 0 4rem;
+    }
+    
+    .vinilo-info-section {
+      padding: 2rem;
+      height: auto;
+    }
+    
+    .action-buttons {
+      flex-direction: column;
+    }
+    
+    .btn {
+      min-width: auto;
+      margin: 0.25rem 0;
+    }
+    
+    .content-body {
+      padding: 2rem;
+      margin: 0 1rem;
+    }
+    
+    .content-title {
+      font-size: 2rem;
+    }
+    
+    .meta-grid {
+      padding: 1rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .vinilo-info-section {
+      padding: 1.5rem;
+      height: auto;
+    }
+    
+    .amazon-btn {
+      font-size: 0.9rem;
+      padding: 0.8rem 1.2rem;
+    }
+    
+    .content-body {
+      padding: 1.5rem;
+    }
+    
+    .breadcrumbs .current {
+      display: none;
+    }
+  }
+  
+  /* === SMOOTH SCROLL === */
+  /* === SECCIÓN AFILIACIÓN AMAZON === */
+  .amazon-affiliate-info {
+    background: linear-gradient(135deg, rgba(255, 153, 0, 0.05) 0%, rgba(255, 119, 0, 0.02) 100%);
+    padding: 3rem 0;
+    border-top: 1px solid rgba(255, 153, 0, 0.1);
+    position: relative;
+    z-index: 1;
+  }
+  
+  .affiliate-card {
+    background: var(--color-card-bg);
+    border: 2px solid rgba(255, 153, 0, 0.2);
+    border-radius: 20px;
+    padding: 2.5rem;
+    max-width: 800px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    animation: fadeInUp 0.8s ease-out 0.6s both;
+  }
+  
+  .affiliate-card:hover {
+    border-color: rgba(255, 153, 0, 0.4);
+    box-shadow: 0 12px 30px rgba(255, 153, 0, 0.1);
+    transform: translateY(-2px);
+  }
+  
+  .affiliate-icon {
+    font-size: 3rem;
+    background: linear-gradient(135deg, #ff9900 0%, #ff7700 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    flex-shrink: 0;
+  }
+  
+  .affiliate-content {
+    flex: 1;
+  }
+  
+  .affiliate-content h3 {
+    color: var(--title-color);
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    font-weight: 700;
+  }
+  
+  .affiliate-content p {
+    color: var(--color-text);
+    line-height: 1.6;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+  }
+  
+  .affiliate-thanks {
+    color: #ff9900;
+    font-weight: 600;
+    font-size: 1.2rem;
+    margin-bottom: 0;
+  }
+  
+  @media (max-width: 768px) {
+    .amazon-affiliate-info {
+      padding: 2rem 0;
+    }
+    
+    .affiliate-card {
+      flex-direction: column;
+      text-align: center;
+      padding: 2rem;
+      gap: 1.5rem;
+    }
+    
+    .affiliate-icon {
+      font-size: 2.5rem;
+    }
+    
+    .affiliate-content h3 {
+      font-size: 1.5rem;
+    }
+    
+    .affiliate-content p {
+      font-size: 1rem;
+    }
+    
+    .affiliate-thanks {
+      font-size: 1.1rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .affiliate-card {
+      padding: 1.5rem;
+      margin: 0 1rem;
+    }
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+</style>

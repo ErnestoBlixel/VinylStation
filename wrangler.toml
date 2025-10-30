@@ -1,0 +1,9 @@
+name = "vinylstation"
+compatibility_date = "2024-12-01"
+pages_build_output_dir = "dist"
+
+[vars]
+PUBLIC_WORDPRESS_API_URL = "https://cms.vinylstation.es/wp-json"
+PUBLIC_WORDPRESS_GRAPHQL_URL = "https://cms.vinylstation.es/graphql"
+PUBLIC_GA4_MEASUREMENT_ID = "G-BQLS42B2L1"
+PUBLIC_ENABLE_ANALYTICS_DEV = "false"
