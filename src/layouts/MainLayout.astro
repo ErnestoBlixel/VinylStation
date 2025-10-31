@@ -67,9 +67,15 @@ const fullTitle = title.includes(siteInfo.title) ? title : `${title} | ${siteInf
     <!-- Google Analytics 4 -->
     <GoogleAnalytics />
 
-    <!-- Google AdSense -->
+    <!-- Google AdSense Auto Ads -->
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6260623796240430"
          crossorigin="anonymous"></script>
+    <script>
+      (adsbygoogle = window.adsbygoogle || []).push({
+        google_ad_client: "ca-pub-6260623796240430",
+        enable_page_level_ads: true
+      });
+    </script>
 
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
