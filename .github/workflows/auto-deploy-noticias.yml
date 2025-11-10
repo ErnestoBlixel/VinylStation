@@ -1,4 +1,5 @@
 name: 🚀 Auto Deploy - Nuevas Noticias
+
 on:
   repository_dispatch:
     types: [wordpress-noticia-nueva]
@@ -6,13 +7,12 @@ on:
 
 permissions:
   contents: read
-  pages: write        # AÑADIDO - necesario para Cloudflare Pages
-  id-token: write     # AÑADIDO - necesario para autenticación
-  deployments: write  # AÑADIDO - necesario para crear deployments
+  pages: write
+  id-token: write
+  deployments: write
 
 env:
   NODE_ENV: production
-  # ⬇ Ajustad estos nombres a vuestro proyecto / .env.example
   WORDPRESS_URL: ${{ vars.WORDPRESS_URL }}
   WP_USER: ${{ secrets.WP_USER }}
   WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
@@ -21,14 +21,17 @@ jobs:
   deploy-noticias:
     name: 📰 Deploy con nueva noticia
     runs-on: ubuntu-latest
+    
     steps:
       - name: 📥 Checkout repository
         uses: actions/checkout@v4
+
       - name: 🔧 Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
+
       - name: 🧾 Context & env check
         run: |
           echo "event: ${{ github.event_name }} / action: ${{ github.event.action }}"
@@ -38,14 +41,23 @@ jobs:
             if [ -n "${!v}" ]; then echo "  ✓ $v"; else echo "  ✗ $v (VACÍO)"; fi
           done
           ls -la
+
+      - name: 🗑 Clear build cache
+        run: |
+          rm -rf dist/
+          rm -rf .astro/
+          rm -rf node_modules/.vite/
+
       - name: 📦 Install dependencies
         run: npm ci --no-audit --no-fund
+
       - name: 🔨 Build project with new content
         env:
-          CI: false   # evita fallos por warnings en React/Next
+          CI: false
         run: |
           set -euxo pipefail
           npm run build
+
       - name: 🗂 Detect dist folder
         id: dist
         run: |
@@ -53,14 +65,17 @@ jobs:
             if [ -d "$d" ]; then echo "dir=$d" >> $GITHUB_OUTPUT; exit 0; fi
           done
           echo "❌ No encuentro carpeta de salida"; exit 1
+
       - name: 🚀 Deploy to Cloudflare Pages
         uses: cloudflare/pages-action@v1
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: vinylstation     # ← poned el nombre real del proyecto en CF
+          projectName: vinylstation
           directory: ${{ steps.dist.outputs.dir }}
           gitHubToken: ${{ secrets.GITHUB_TOKEN }}
+          branch: main  # ← FIX: Deploy a producción, no preview
+
       - name: 🧩 Upload npm log on failure
         if: failure()
         uses: actions/upload-artifact@v4
