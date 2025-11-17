@@ -1,0 +1,2183 @@
+---
+// Página de inicio - SOLO datos reales desde WordPress
+import MainLayout from '../layouts/MainLayout.astro';
+import HomeHero from '../components/HomeHero.astro';
+import { getSiteInfo, getPageData, getProgramas, getNoticiasPaginadas } from '../lib/wordpress';
+
+// Helper para convertir "<p>Hola</p>" → "Hola"
+const stripHtml = (html) => {
+  if (!html) return '';
+  return html.replace(/<[^>]*>/g, '').trim();
+};
+
+// Variables para controlar errores
+let hasError = false;
+let errorMessage = '';
+let siteInfo = null;
+let pageData = null;
+let programasData = null;
+let noticiasData = null;
+
+try {
+  // Obtener información del sitio
+  siteInfo = await getSiteInfo();
+  // Obtener datos de la página home
+  pageData = await getPageData('home');
+  // Obtener todos los programas para el grid
+  programasData = await getProgramas({ limit: 50 });
+  // Obtener noticias recientes para el slider
+  noticiasData = await getNoticiasPaginadas({ page: 1, itemsPerPage: 20 });
+  // Verificar que tenemos los datos mínimos necesarios
+  if (!siteInfo || !siteInfo.title) throw new Error('No se pudo obtener el título del sitio desde WordPress');
+  if (!siteInfo.description) throw new Error('No se pudo obtener la descripción del sitio desde WordPress');
+} catch (error) {
+  hasError = true;
+  errorMessage = `Error conectando con WordPress: ${error.message}`;
+}
+
+// Obtener programas y noticias del resultado
+const programas = hasError ? [] : (programasData?.programas || []);
+const noticias = hasError ? [] : (noticiasData?.noticias || []);
+
+// Helper para formatear fecha
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
+
+// Estas variables SIEMPRE existen
+const heroTitle = hasError ? 'VinylStation Radio' : (siteInfo?.title || 'VinylStation Radio');
+const heroDescription = hasError ? 'Una emisora nueva donde queremos conocerte y escuchar tu opinión' : (siteInfo?.description || 'Una emisora nueva donde queremos conocerte y escuchar tu opinión');
+const logoImage = hasError ? null : (siteInfo?.logo?.url || pageData?.featuredImage?.url || '');
+const logoAlt = hasError ? '' : (siteInfo?.logo?.altText || pageData?.featuredImage?.altText || 'Logo');
+
+// SEO usando datos reales
+const pageTitle = hasError ? 'Error - VinylStation' : (pageData?.seo?.title || 'VinylStation Radio - Emisora Online desde Fuensalida, Toledo');
+const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.metaDesc || 'VinylStation Radio es una emisora online dedicada a la diversidad musical y el talento emergente desde Fuensalida, Toledo. Pronto también en FM.');
+---
+
+<MainLayout title={pageTitle} description={pageDescription}>
+  {hasError ? (
+    <!-- Vista de ERROR -->
+    <div class="error-page">
+      <div class="container">
+        <div class="error-content">
+          <h1>Error de Conexión</h1>
+          <p>{errorMessage}</p>
+          <button onclick="window.location.reload()" class="btn btn-primary">
+            Reintentar
+          </button>
+        </div>
+      </div>
+    </div>
+  ) : (
+    <!-- Vista NORMAL -->
+    <div class="main-content">
+      <!-- USAR COMPONENTE HOMEHERO -->
+      <HomeHero 
+        title={heroTitle}
+        description={heroDescription}
+      />
+
+      <!-- Sobre Nosotros Section -->
+      <section class="about">
+        <div class="container">
+          <div class="about-grid">
+            <div class="about-content">
+              <h2>Somos VinylStation Radio</h2>
+              <p>Una <strong>emisora nueva desde Fuensalida, Toledo</strong>, donde queremos conocerte y apoyar nuevos grupos junto a la música de siempre. Actualmente <strong>online petándolo</strong>, pero pronto también <strong>en FM</strong>.</p>
+              <div class="contact-button">
+                <a href="#gravity-form-container" class="btn btn-primary contact-btn" onclick="document.getElementById('gravity-form-container').scrollIntoView({behavior: 'smooth', block: 'center'});">Contáctanos</a>
+              </div>
+            </div>
+            <div class="about-image">
+              <img 
+                src="https://cms.vinylstation.es/wp-content/uploads/2025/06/vinylstation.webp" 
+                alt="Estudio de VinylStation Radio en Fuensalida" 
+                class="studio-image"
+                loading="lazy"
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Banner de próximamente con merchandising -->
+      <section class="upcoming-banner merchandising-banner">
+        <div class="container">
+          <div class="feature-banner-wide">
+            <div class="banner-content-box">
+              <h3>Próximamente: Tienda VinylStation</h3>
+              <p>¡Prepárate para mostrar tu <strong>pasión por la música</strong>! Muy pronto podrás conseguir <strong>camisetas exclusivas, gorras, vinilos coleccionables, tazas personalizadas</strong> y mucho más merchandising oficial. Únete a nuestra <strong>comunidad musical</strong> y apoya a los <strong>artistas emergentes</strong>. ¡Forma parte de la <strong>familia VinylStation</strong>!</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Programas Section con Marquee -->
+      <section class="programs">
+        <div class="container">
+          <div class="section-header">
+            <h2>Nuestros Programas</h2>
+            <p>Descubre nuestra <strong>programación especializada en música vinilo</strong> y cultura musical contemporánea. Combinamos <strong>clásicos atemporales</strong> con las últimas tendencias, incluyendo espacios para <strong>artistas emergentes locales y nacionales</strong>.</p>
+          </div>
+          
+          <div class="programs-marquee">
+            <div class="marquee-container">
+              <div class="marquee-track" id="programsMarquee">
+                {programas.length > 0 ? (
+                  programas.concat(programas).map((programa, index) => {
+                    const imagen = programa.imagenPrincipalUrl || 
+                                  programa.imagenPrincipal?.sourceUrl || 
+                                  '/images/placeholder-radio.jpg';
+                    
+                    return (
+                      <div class="program-card" key={`programa-${index}`}>
+                        <div class="program-image">
+                          <img 
+                            src={imagen} 
+                            alt={programa.title}
+                            onerror="this.src='/images/placeholder-radio.jpg'"
+                          />
+                          <div class="program-overlay">
+                            <button class="view-btn" title="Ver programa">
+                              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M9 18l6-6-6-6"></path>
+                              </svg>
+                            </button>
+                          </div>
+                        </div>
+                        <h3>{programa.title}</h3>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div class="no-content">
+                    <p>No hay programas disponibles</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+          
+          <div class="section-footer">
+            <a href="/programas" class="btn btn-primary">Ver Todos los Programas</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Banner "En Breve" con eventos -->
+      <section class="coming-soon-banner events-banner">
+        <div class="container">
+          <div class="feature-banner-wide">
+            <div class="banner-content-box">
+              <h3>En Breve: Tu Ticketera Musical</h3>
+              <p>VinylStation Radio será tu <strong>puerta de entrada exclusiva</strong> a los mejores conciertos y eventos de la región. Compra entradas para <strong>showcases exclusivos, conciertos emergentes, festivales de vinilo</strong> y eventos especiales. Acceso prioritario a <strong>descuentos especiales y experiencias VIP</strong>. ¡Prepárate para <strong>vivir la música</strong> como nunca!</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Noticias Section con doble marquee -->
+      <section class="news">
+        <div class="container">
+          <div class="section-header">
+            <h2>Últimas Noticias</h2>
+            <p>Mantente al día con <strong>noticias de música, actualidad cultural</strong> y eventos de Toledo y provincia. Cobertura de <strong>salud, deporte</strong> y todo lo que acontece en <strong>Castilla-La Mancha</strong>. Tu fuente de <strong>información 24h desde Fuensalida</strong>.</p>
+          </div>
+          
+          <div class="news-marquee-container">
+            <!-- Primera fila - derecha -->
+            <div class="news-marquee">
+              <div class="marquee-track" id="newsMarquee1">
+                {noticias.length > 0 ? (
+                  noticias.slice(0, Math.min(10, Math.floor(noticias.length / 2))).concat(noticias.slice(0, Math.min(10, Math.floor(noticias.length / 2)))).map((noticia, index) => {
+                    const imagen = noticia.imagenDestacadaUrl || 
+                                  noticia.featuredImage?.node?.sourceUrl || 
+                                  '/images/placeholder-news.jpg';
+                    const descripcion = stripHtml(noticia.excerpt || '');
+                    const fecha = formatDate(noticia.date);
+                    
+                    return (
+                      <div class="news-card" key={`news1-${index}`}>
+                        <div class="news-image">
+                          <img 
+                            src={imagen} 
+                            alt={noticia.title}
+                            onerror="this.src='/images/placeholder-news.jpg'"
+                          />
+                        </div>
+                        <div class="news-content">
+                          <span class="news-date">{fecha}</span>
+                          <h4>{noticia.title}</h4>
+                          <p>{descripcion.substring(0, 100)}...</p>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div class="no-content">
+                    <p>No hay noticias disponibles</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <!-- Segunda fila - izquierda (solo si hay suficientes noticias) -->
+            {noticias.length > 10 && (
+              <div class="news-marquee reverse">
+                <div class="marquee-track" id="newsMarquee2">
+                  {noticias.slice(Math.floor(noticias.length / 2), noticias.length).concat(noticias.slice(Math.floor(noticias.length / 2), noticias.length)).map((noticia, index) => {
+                    const imagen = noticia.imagenDestacadaUrl || 
+                                  noticia.featuredImage?.node?.sourceUrl || 
+                                  '/images/placeholder-news.jpg';
+                    const descripcion = stripHtml(noticia.excerpt || '');
+                    const fecha = formatDate(noticia.date);
+                    
+                    return (
+                      <div class="news-card" key={`news2-${index}`}>
+                        <div class="news-image">
+                          <img 
+                            src={imagen} 
+                            alt={noticia.title}
+                            onerror="this.src='/images/placeholder-news.jpg'"
+                          />
+                        </div>
+                        <div class="news-content">
+                          <span class="news-date">{fecha}</span>
+                          <h4>{noticia.title}</h4>
+                          <p>{descripcion.substring(0, 100)}...</p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+          
+          <div class="section-footer">
+            <a href="/noticias" class="btn btn-primary">Ver Todas las Noticias</a>
+          </div>
+        </div>
+      </section>
+
+      <!-- Contacto Layout Horizontal -->
+      <section class="horizontal-contact">
+        <div class="container">
+          <!-- Encabezado General -->
+          <div class="contact-header">
+            <h2>Contáctanos</h2>
+            <p>Queremos escucharte y conocer tu opinión. Ya seas oyente, artista emergente o simplemente quieras formar parte de nuestra comunidad musical, estamos <strong>deseando conectar contigo</strong>.</p>
+          </div>
+          
+          <div class="contact-layout">
+            <!-- Columna Izquierda - Textos -->
+            <div class="contact-text-column">
+              <div class="text-section">
+                <h2>¿Qué contenido te gustaría escuchar?</h2>
+                <p>Comenta y danos tu opinión, estamos <strong>deseando oírte</strong>. Tu voz es importante para crear la <strong>programación perfecta</strong>. Queremos conocer tus <strong>gustos musicales, artistas favoritos</strong> y qué tipo de contenido te emociona más.</p>
+              </div>
+              
+              <div class="text-section">
+                <h2>¿Quieres sonar en VinylStation?</h2>
+                <p>Si eres <strong>banda emergente o artista</strong>, este es tu momento. Queremos <strong>apoyar el talento musical</strong> y darle la difusión que merece. Envíanos tu <strong>propuesta musical, demos</strong> o cuéntanos tu proyecto. ¡Juntos haremos que tu <strong>música llegue a todos</strong>!</p>
+              </div>
+            </div>
+            
+            <!-- Columna Derecha - Formulario -->
+            <div class="contact-form-column">
+              <h3>Contáctanos</h3>
+              <div class="contact-form-container compact">
+                <div id="gravity-form-container" class="form-loading">
+                  <div class="loading-message">
+                    <svg class="spinner" viewBox="0 0 50 50">
+                      <circle class="path" cx="25" cy="25" r="20" fill="none" stroke-width="5"></circle>
+                    </svg>
+                    <p>Cargando formulario de contacto...</p>
+                  </div>
+                  <div class="error-message" style="display: none;">
+                    <p class="error-text">Error al cargar el formulario.</p>
+                    <p>Por favor, contáctanos directamente:</p>
+                    <p><strong>Email:</strong> <a href="mailto:hola@vinylstation.com">hola@vinylstation.com</a></p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  )}
+</MainLayout>
+
+<!-- Scripts -->
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    
+    // === MARQUEE DE PROGRAMAS ===
+    const programsMarquee = document.getElementById('programsMarquee');
+    if (programsMarquee) {
+      // CSS ya maneja la animación
+      
+      // Añadir funcionalidad a los botones de ver programa
+      const viewButtons = document.querySelectorAll('.view-btn');
+      viewButtons.forEach((button, index) => {
+        button.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // Navegar a la página de programas
+          window.location.href = '/programas';
+        });
+      });
+    }
+    
+    // === CARGAR FORMULARIO DE CONTACTO ===
+    loadContactForm();
+  });
+  
+  // Función para cargar formulario (mejorada como contacto.astro)
+  async function loadContactForm() {
+    console.log('🚀 [HOME] Iniciando carga del formulario...');
+    
+    const container = document.getElementById('gravity-form-container');
+    const loadingMessage = container?.querySelector('.loading-message');
+    const errorMessage = container?.querySelector('.error-message');
+    
+    // Configuración de la API
+    const API_BASE = 'https://cms.vinylstation.es/wp-json/gf/v2';
+    const PUBLIC_KEY = '60fa0813d4';
+    const PRIVATE_KEY = '17a5d6a599a532d';
+    const FORM_ID = 1;
+    
+    try {
+      console.log('📡 [HOME] Solicitando estructura del formulario...');
+      
+      // 1. Obtener la estructura del formulario desde el proxy local
+      const formResponse = await fetch('/api/gravity-form', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+      
+      console.log('📊 [HOME] Status respuesta:', formResponse.status);
+      
+      if (!formResponse.ok) {
+        throw new Error(`Error ${formResponse.status}: ${formResponse.statusText}`);
+      }
+      
+      const formData = await formResponse.json();
+      console.log('✅ [HOME] Formulario cargado:', formData);
+      
+      if (!formData || !formData.fields || !Array.isArray(formData.fields)) {
+        throw new Error('Estructura de formulario inválida');
+      }
+      
+      // 2. Construir el formulario dinámicamente
+      const form = document.createElement('form');
+      form.id = 'gravityForm';
+      form.className = 'contact-form';
+      
+      // Agregar campos con animación escalonada
+      formData.fields.forEach((field, index) => {
+        const fieldGroup = document.createElement('div');
+        fieldGroup.className = 'form-group';
+        fieldGroup.style.opacity = '0';
+        fieldGroup.style.transform = 'translateY(20px)';
+        
+        const label = document.createElement('label');
+        label.htmlFor = `input_${field.id}`;
+        label.textContent = field.label + (field.required ? ' *' : '');
+        fieldGroup.appendChild(label);
+        
+        if (field.type === 'text' || field.type === 'name') {
+          const input = document.createElement('input');
+          input.type = 'text';
+          input.id = `input_${field.id}`;
+          input.name = `input_${field.id}`;
+          input.placeholder = field.placeholder || '';
+          input.required = field.isRequired || false;
+          fieldGroup.appendChild(input);
+        } else if (field.type === 'email') {
+          const input = document.createElement('input');
+          input.type = 'email';
+          input.id = `input_${field.id}`;
+          input.name = `input_${field.id}`;
+          input.placeholder = field.placeholder || '';
+          input.required = field.isRequired || false;
+          fieldGroup.appendChild(input);
+        } else if (field.type === 'phone') {
+          const input = document.createElement('input');
+          input.type = 'tel';
+          input.id = `input_${field.id}`;
+          input.name = `input_${field.id}`;
+          input.placeholder = field.placeholder || '';
+          input.required = field.isRequired || false;
+          fieldGroup.appendChild(input);
+        } else if (field.type === 'textarea') {
+          const textarea = document.createElement('textarea');
+          textarea.id = `input_${field.id}`;
+          textarea.name = `input_${field.id}`;
+          textarea.placeholder = field.placeholder || '';
+          textarea.required = field.isRequired || false;
+          textarea.rows = 4; // Más compacto para home
+          fieldGroup.appendChild(textarea);
+        } else if (field.type === 'select' && field.choices) {
+          const select = document.createElement('select');
+          select.id = `input_${field.id}`;
+          select.name = `input_${field.id}`;
+          select.required = field.isRequired || false;
+          
+          // Opción vacía
+          const emptyOption = document.createElement('option');
+          emptyOption.value = '';
+          emptyOption.textContent = field.placeholder || 'Selecciona una opción';
+          select.appendChild(emptyOption);
+          
+          // Agregar opciones
+          field.choices.forEach(choice => {
+            const option = document.createElement('option');
+            option.value = choice.value;
+            option.textContent = choice.text;
+            select.appendChild(option);
+          });
+          
+          fieldGroup.appendChild(select);
+        }
+        
+        form.appendChild(fieldGroup);
+        
+        // Animar entrada del campo
+        setTimeout(() => {
+          fieldGroup.style.transition = 'all 0.5s ease-out';
+          fieldGroup.style.opacity = '1';
+          fieldGroup.style.transform = 'translateY(0)';
+        }, 100 + (index * 100));
+      });
+      
+      // Botón de envío
+      const submitDiv = document.createElement('div');
+      submitDiv.className = 'form-actions';
+      submitDiv.style.opacity = '0';
+      submitDiv.style.transform = 'translateY(20px)';
+      
+      const submitButton = document.createElement('button');
+      submitButton.type = 'submit';
+      submitButton.className = 'btn primary-btn';
+      submitButton.innerHTML = `<span>${formData.button?.text || 'Enviar mensaje'}</span>`;
+      submitDiv.appendChild(submitButton);
+      form.appendChild(submitDiv);
+      
+      // Animar botón
+      setTimeout(() => {
+        submitDiv.style.transition = 'all 0.5s ease-out';
+        submitDiv.style.opacity = '1';
+        submitDiv.style.transform = 'translateY(0)';
+      }, 600);
+      
+      // Mensaje de resultado
+      const formMessage = document.createElement('div');
+      formMessage.id = 'formMessage';
+      formMessage.className = 'form-message';
+      formMessage.style.display = 'none';
+      
+      // 3. Manejar envío del formulario
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        console.log('📝 [HOME] Enviando formulario...');
+        
+        // Animación del botón
+        submitButton.innerHTML = '<span class="spinner-small"></span> Enviando...';
+        submitButton.disabled = true;
+        submitButton.classList.add('loading');
+        
+        const formDataToSend = new FormData(form);
+        const inputValues = {};
+        
+        // ✅ EXTRAER VALORES CORRECTAMENTE
+        for (let [key, value] of formDataToSend.entries()) {
+          if (value && value.toString().trim()) {
+            const fieldId = key.replace('input_', '');
+            inputValues[fieldId] = value.toString().trim();
+          }
+        }
+        
+        console.log('📋 [HOME] Datos preparados:', inputValues);
+        
+        try {
+          // ✅ ESTRUCTURA CORRECTA para el servidor
+          const payload = {
+            input_values: inputValues
+          };
+          
+          console.log('🚀 [HOME] Enviando payload:', JSON.stringify(payload, null, 2));
+          // Enviar a través del proxy local
+          const submitResponse = await fetch('/api/gravity-form', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify(payload)
+          });
+          
+          console.log('📡 [HOME] Status envío:', submitResponse.status);
+          
+          const responseText = await submitResponse.text();
+          console.log('📄 [HOME] Respuesta del servidor:', responseText);
+          
+          let responseData;
+          try {
+            responseData = JSON.parse(responseText);
+          } catch {
+            responseData = { message: responseText };
+          }
+          
+          if (!submitResponse.ok) {
+            throw new Error(responseData.details || responseData.message || `Error ${submitResponse.status}`);
+          }
+          
+          console.log('✅ [HOME] Formulario enviado correctamente');
+          
+          // Éxito - animar mensaje
+          formMessage.className = 'form-message success';
+          formMessage.innerHTML = `
+            <div class="success-icon">✓</div>
+            <p><strong>¡Mensaje enviado correctamente!</strong></p>
+            <p>Te responderemos pronto. Si eres una banda emergente, estaremos encantados de escuchar tu propuesta.</p>
+          `;
+          formMessage.style.display = 'block';
+          form.reset();
+          formMessage.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          
+          // Ocultar formulario con animación
+          form.style.transition = 'all 0.5s ease-out';
+          form.style.opacity = '0.5';
+          form.style.transform = 'scale(0.98)';
+          
+        } catch (error) {
+          console.error('❌ [HOME] Error enviando formulario:', error);
+          formMessage.className = 'form-message error';
+          formMessage.innerHTML = `
+            <div class="error-icon">✕</div>
+            <p><strong>No se pudo enviar el formulario</strong></p>
+            <p class="error-details">${error.message}</p>
+            <hr>
+            <p><strong>Contacto alternativo:</strong></p>
+            <p>📧 <a href="mailto:hola@vinylstation.com">hola@vinylstation.com</a></p>
+          `;
+          formMessage.style.display = 'block';
+        } finally {
+          submitButton.innerHTML = `<span>${formData.button?.text || 'Enviar mensaje'}</span>`;
+          submitButton.disabled = false;
+          submitButton.classList.remove('loading');
+        }
+      });
+      
+      // Reemplazar contenido del contenedor
+      container.innerHTML = '';
+      container.appendChild(form);
+      container.appendChild(formMessage);
+      container.classList.remove('form-loading');
+      
+      console.log('✅ [HOME] Formulario renderizado correctamente');
+      
+    } catch (error) {
+      console.error('Error cargando formulario:', error);
+      if (loadingMessage) loadingMessage.style.display = 'none';
+      if (errorMessage) errorMessage.style.display = 'block';
+    }
+  }
+</script>
+
+<style>
+  /* ===== VARIABLES Y BASE ===== */
+  :root {
+    --primary-color: var(--title-color); /* Cambio de rojo a dorado */
+    --primary-dark: #a8935e; /* Dorado más oscuro */
+    --background: var(--color-bg);
+    --text-color: var(--color-text);
+    --card-bg: var(--color-card-bg);
+    --border-color: rgba(197, 173, 123, 0.1); /* Dorado con transparencia */
+    --section-padding: 6rem 0;
+    --container-padding: 0 2rem;
+  }
+  
+  .main-content {
+    background: linear-gradient(135deg, var(--background) 0%, rgba(0, 0, 0, 0.02) 100%);
+    min-height: 100vh;
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--container-padding);
+  }
+  
+  /* Mejoras específicas para móvil */
+  @media (max-width: 768px) {
+    .container {
+      padding: 0 1rem; /* Padding consistente */
+    }
+  }
+  
+  @media (max-width: 480px) {
+    .container {
+      padding: 0 0.75rem; /* Padding más ajustado para móviles pequeños */
+    }
+  }
+  
+  .desktop-only {
+    display: block;
+  }
+  
+  @media (max-width: 768px) {
+    .desktop-only {
+      display: none !important;
+    }
+    :root {
+      --section-padding: 4rem 0;
+      --container-padding: 0 1rem;
+    }
+  }
+  
+  
+  /* ===== SOBRE NOSOTROS ===== */
+  .about {
+    padding: var(--section-padding);
+  }
+  
+  /* Solo en modo claro se aplican estilos de fondo diferenciados */
+  :root[data-theme="light"] .about {
+    background: rgba(255, 51, 51, 0.02);
+  }
+  
+  .about-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4rem;
+    align-items: center;
+  }
+  
+  .about-content h2 {
+    font-size: 3rem;
+    margin: 0 0 2rem;
+    color: var(--title-color);
+    font-weight: 700;
+  }
+  
+  .about-content p {
+    font-size: 1.2rem;
+    line-height: 1.6; /* Ajustado para consistencia */
+    margin: 0 0 1.5rem;
+    color: var(--text-color);
+  }
+  
+  .contact-button {
+    margin-top: 2rem;
+    text-align: center;
+  }
+  
+  .contact-btn {
+    display: inline-block;
+    padding: 1rem 2rem;
+    background: var(--primary-color);
+    color: var(--color-bg); /* Texto en color de fondo para contraste */
+    text-decoration: none;
+    border-radius: 8px; /* Botón cuadrado */
+    font-weight: 600;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(197, 173, 123, 0.3); /* Sombra dorada */
+  }
+  
+  .contact-btn:hover {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(197, 173, 123, 0.4); /* Sombra dorada */
+  }
+  
+  .studio-image {
+    width: 100%;
+    height: 400px;
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* ===== BANNERS CONTENIDOS ===== */
+  .upcoming-banner, .coming-soon-banner {
+    padding: var(--section-padding);
+    position: relative;
+  }
+  
+  /* Banner Merchandising - contenido */
+  .merchandising-banner .feature-banner-wide {
+    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5)), url('/images/merchandaising.png');
+    background-size: cover;
+    background-position: center;
+  }
+  
+  /* Banner Eventos - contenido */
+  .events-banner .feature-banner-wide {
+    background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.5)), url('/images/eventos.png');
+    background-size: cover;
+    background-position: center;
+  }
+  
+  /* Solo en modo claro se destacan más */
+  :root[data-theme="light"] .upcoming-banner,
+  :root[data-theme="light"] .coming-soon-banner {
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  }
+  
+  .feature-banner-wide {
+    background: linear-gradient(135deg, var(--card-bg) 0%, rgba(197, 173, 123, 0.05) 100%); /* Dorado */
+    padding: 4rem 2rem; /* Más alto */
+    border-radius: 12px;
+    border: 1px solid rgba(197, 173, 123, 0.1); /* Dorado */
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    backdrop-filter: blur(10px);
+    max-width: 1200px; /* Banners aún más anchos */
+    margin: 0 auto;
+    min-height: 300px; /* Altura mínima */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Cuadrado difuminado para el contenido */
+  .banner-content-box {
+    background: rgba(0, 0, 0, 0.6); /* Fondo moderadamente oscuro */
+    backdrop-filter: blur(15px);
+    border-radius: 16px;
+    padding: 2.5rem 3rem;
+    border: 1px solid rgba(197, 173, 123, 0.3);
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    max-width: 900px;
+    width: 100%;
+    position: relative;
+  }
+  
+  /* Fondo equilibrado en modo día */
+  :root[data-theme="light"] .banner-content-box {
+    background: rgba(0, 0, 0, 0.75); /* Fondo oscuro pero equilibrado */
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    backdrop-filter: blur(20px);
+    box-shadow: 
+      0 8px 32px rgba(0, 0, 0, 0.5),
+      inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  }
+  
+  .feature-banner-wide::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(197, 173, 123, 0.1), transparent); /* Dorado */
+    animation: shimmer 3s ease-in-out infinite;
+  }
+  
+  @keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 100%; }
+  }
+  
+  .banner-content-box h3 {
+    font-size: 2.2rem;
+    margin: 0 0 1.5rem;
+    color: #f5f5f5; /* Blanco suave, no tan intenso */
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.7); /* Sombra moderada */
+  }
+  
+  /* Texto legible en modo día */
+  :root[data-theme="light"] .banner-content-box h3 {
+    color: #f5f5f5; /* Mismo color suave */
+    text-shadow: 0 2px 6px rgba(0, 0, 0, 0.8);
+  }
+  
+  .banner-content-box p {
+    font-size: 1.1rem;
+    color: #e8e8e8; /* Gris claro legible, no tan blanco */
+    margin: 0;
+    line-height: 1.6; /* Reducido para textos más compactos */
+    text-align: center; /* Centrado para mejor presentación */
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6); /* Sombra suave */
+    width: 100%; /* Usar todo el ancho disponible */
+  }
+  
+  /* Texto legible en modo día */
+  :root[data-theme="light"] .banner-content-box p {
+    color: #e8e8e8; /* Mismo gris claro */
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
+  }
+  
+  /* ===== SECCIONES COMUNES ===== */
+  .section-header {
+    text-align: center;
+    margin-bottom: 4rem;
+  }
+  
+  .section-header h2 {
+    font-size: 3rem;
+    margin: 0 0 1rem;
+    color: var(--title-color);
+    font-weight: 700;
+  }
+  
+  .section-header p {
+    font-size: 1.1rem;
+    color: #888;
+    max-width: 900px; /* Más ancho para mejor distribución */
+    margin: 0 auto;
+    line-height: 1.6; /* Reducido para textos más compactos */
+    text-align: center; /* Centrado como los banners */
+  }
+  
+  /* Estilos para negritas en párrafos */
+  .section-header p strong,
+  .about-content p strong,
+  .text-section p strong {
+    color: var(--title-color); /* Dorado para resaltar */
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  }
+  
+  /* Negritas en banners con color suave */
+  .banner-content-box p strong {
+    color: #f0f0f0; /* Blanco suave para negritas en banners */
+    font-weight: 700;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7); /* Sombra moderada */
+  }
+  
+  .section-footer {
+    text-align: center;
+    margin-top: 3rem;
+  }
+  
+  /* ===== BOTONES ===== */
+  .btn {
+    display: inline-block;
+    padding: 1rem 2rem;
+    border-radius: 8px; /* Botones cuadrados */
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    border: 2px solid;
+    cursor: pointer;
+    text-align: center;
+  }
+  
+  .btn-primary, .primary-btn {
+    background: var(--primary-color);
+    color: var(--color-bg); /* Texto en color de fondo para contraste */
+    border-color: var(--primary-color);
+  }
+  
+  .btn-primary:hover, .primary-btn:hover {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(197, 173, 123, 0.3); /* Sombra dorada */
+  }
+  
+  /* ===== PROGRAMAS SECTION ===== */
+  .programs {
+    padding: var(--section-padding);
+  }
+  
+  /* Solo en modo claro se aplican estilos de fondo diferenciados */
+  :root[data-theme="light"] .programs {
+    background: rgba(255, 51, 51, 0.01);
+  }
+  
+  .programs-marquee {
+    overflow: hidden;
+    position: relative;
+    margin: 2rem 0;
+  }
+  
+  .marquee-container {
+    position: relative;
+  }
+  
+  .marquee-track {
+    display: flex;
+    gap: 2rem;
+    animation: marqueeScroll 30s linear infinite;
+    width: fit-content;
+  }
+  
+  @keyframes marqueeScroll {
+    0% { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+  
+  .program-card {
+    flex: 0 0 280px;
+    background: var(--card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+  }
+  
+  .program-card:hover {
+    transform: translateY(-5px);
+  }
+  
+  .program-image {
+    position: relative;
+    width: 100%;
+    height: 280px; /* Hacer las imágenes cuadradas 1:1 */
+    overflow: hidden;
+  }
+  
+  .program-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+  
+  .program-card:hover .program-image img {
+    transform: scale(1.1);
+  }
+  
+  .program-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  .program-card:hover .program-overlay {
+    opacity: 1;
+  }
+  
+  .view-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+  
+  .view-btn:hover {
+    background: var(--primary-dark);
+    transform: scale(1.1);
+  }
+  
+  .view-btn svg {
+    transition: transform 0.2s ease;
+  }
+  
+  .view-btn:hover svg {
+    transform: translateX(2px);
+  }
+  
+  .program-card h3 {
+    padding: 1.5rem;
+    margin: 0;
+    font-size: 1.1rem;
+    color: var(--title-color);
+    font-weight: 600;
+    text-align: center;
+  }
+  
+  /* ===== NOTICIAS SECTION ===== */
+  .news {
+    padding: var(--section-padding);
+  }
+  
+  /* Solo en modo claro se aplican estilos de fondo diferenciados */
+  :root[data-theme="light"] .news {
+    background: rgba(255, 51, 51, 0.02);
+  }
+  
+  .news-marquee-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    margin: 2rem 0;
+  }
+  
+  .news-marquee {
+    overflow: hidden;
+    position: relative;
+  }
+  
+  .news-marquee .marquee-track {
+    animation: marqueeScroll 40s linear infinite;
+  }
+  
+  .news-marquee.reverse .marquee-track {
+    animation: marqueeScrollReverse 35s linear infinite;
+  }
+  
+  @keyframes marqueeScrollReverse {
+    0% { transform: translateX(-50%); }
+    100% { transform: translateX(0); }
+  }
+  
+  .news-card {
+    flex: 0 0 350px;
+    background: var(--card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease;
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .news-card:hover {
+    transform: translateY(-3px);
+  }
+  
+  .news-image {
+    flex: 0 0 120px;
+    height: 120px;
+  }
+  
+  .news-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  
+  .news-content {
+    flex: 1;
+    padding: 1rem 1rem 1rem 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  
+  .news-date {
+    font-size: 0.9rem;
+    color: var(--primary-color);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  
+  .news-content h4 {
+    font-size: 1rem;
+    margin: 0 0 0.5rem;
+    color: var(--title-color);
+    font-weight: 600;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .news-content p {
+    font-size: 0.9rem;
+    color: #888;
+    margin: 0;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  /* ===== CONTACTO HORIZONTAL ===== */
+  .horizontal-contact {
+    padding: 4rem 0; /* Reducido de 6rem a 4rem */
+    background: var(--background);
+  }
+  
+  /* Encabezado general de contacto */
+  .contact-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+  
+  .contact-header h2 {
+    font-size: 3rem;
+    margin: 0 0 1rem;
+    color: var(--title-color);
+    font-weight: 700;
+  }
+  
+  .contact-header p {
+    font-size: 1.2rem;
+    color: var(--text-color);
+    max-width: 800px;
+    margin: 0 auto;
+    line-height: 1.6;
+    text-align: center;
+  }
+  
+  .contact-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 2.5rem; /* Reducido de 4rem a 2.5rem */
+    align-items: start;
+  }
+  
+  /* Columna de textos (izquierda) */
+  .contact-text-column {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem; /* Reducido de 3rem a 2rem */
+    height: 100%;
+    justify-content: space-between;
+  }
+  
+  .text-section {
+    background: var(--card-bg);
+    padding: 2rem; /* Reducido de 2.5rem a 2rem */
+    border-radius: 12px;
+    border: 1px solid rgba(197, 173, 123, 0.1);
+    position: relative;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center; /* Centrar contenido verticalmente */
+    min-height: 180px; /* Altura mínima controlada */
+  }
+  
+  .text-section:first-child::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #4ade80 0%, #16a34a 100%);
+    border-radius: 12px 12px 0 0;
+  }
+  
+  .text-section:last-child::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color) 0%, var(--primary-dark) 100%);
+    border-radius: 12px 12px 0 0;
+  }
+  
+  .text-section h2 {
+    font-size: 1.8rem;
+    margin: 0 0 1rem;
+    color: var(--title-color);
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  
+  .text-section p {
+    font-size: 1rem;
+    color: var(--text-color);
+    margin: 0;
+    line-height: 1.6;
+  }
+  
+  /* Columna del formulario (derecha) */
+  .contact-form-column {
+    background: var(--card-bg);
+    padding: 2rem; /* Reducido de 2.5rem a 2rem */
+    border-radius: 12px;
+    border: 1px solid rgba(197, 173, 123, 0.2);
+    height: fit-content;
+    position: sticky;
+    top: 2rem;
+  }
+  
+  .contact-form-column h3 {
+    font-size: 2rem;
+    margin: 0 0 1.5rem; /* Reducido de 2rem a 1.5rem */
+    color: var(--title-color);
+    font-weight: 700;
+    text-align: center;
+  }
+  
+  /* ===== FORMULARIO ===== */
+  .contact-form-container {
+    max-width: 100%;
+    margin: 0;
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    border: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .contact-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    text-align: left;
+  }
+  
+  .form-group label {
+    font-weight: 600;
+    color: var(--title-color);
+    font-size: 1rem;
+  }
+  
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(197, 173, 123, 0.15); /* Dorado */
+    border-radius: 8px; /* Más cuadrado */
+    padding: 1rem;
+    color: var(--text-color);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    font-family: inherit;
+  }
+  
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--title-color); /* Dorado */
+    background: rgba(255, 255, 255, 0.08);
+    box-shadow: 0 0 0 4px rgba(197, 173, 123, 0.1); /* Dorado */
+  }
+  
+  .form-group select {
+    cursor: pointer;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg width='12' height='8' viewBox='0 0 12 8' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M1 1L6 6L11 1' stroke='%23c5ad7b' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E"); /* Dorado */
+    background-repeat: no-repeat;
+    background-position: right 1.2rem center;
+    padding-right: 3rem;
+  }
+  
+  .form-group select option {
+    background: #1a1a1a;
+    color: #fff;
+    padding: 0.5rem;
+  }
+  
+  .form-group input::placeholder,
+  .form-group textarea::placeholder {
+    color: #666;
+  }
+  
+  .form-actions {
+    text-align: center;
+    margin-top: 1rem;
+  }
+  
+  .form-message {
+    text-align: center;
+    padding: 2rem;
+    border-radius: 8px;
+    margin-top: 1.5rem;
+  }
+  
+  .form-message.success {
+    background: rgba(76, 175, 80, 0.1);
+    border: 2px solid #4caf50;
+    color: #4caf50;
+  }
+  
+  .form-message.error {
+    background: rgba(197, 173, 123, 0.1);
+    border: 2px solid var(--primary-color);
+    color: var(--primary-color);
+  }
+  
+  .success-icon, .error-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    display: block;
+  }
+  
+  .loading-message {
+    text-align: center;
+    padding: 2rem;
+    color: #888;
+  }
+  
+  .spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #333;
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+  }
+  
+  .spinner-small {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-right: 0.5rem;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  .error-message {
+    text-align: center;
+    padding: 2rem;
+    color: var(--title-color); /* Dorado */
+  }
+  
+  .error-message a {
+    color: var(--title-color); /* Dorado */
+    text-decoration: underline;
+  }
+  
+  .no-content {
+    flex: 0 0 300px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 2rem;
+    color: #888;
+  }
+  
+  /* ===== ERROR PAGE ===== */
+  .error-page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 2rem;
+  }
+  
+  .error-content h1 {
+    font-size: 3rem;
+    margin: 0 0 1rem;
+    color: var(--primary-color);
+  }
+  
+  .error-content p {
+    font-size: 1.2rem;
+    margin: 0 0 2rem;
+    color: var(--text-color);
+  }
+  
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 768px) {
+    
+    .about-grid {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+    
+    .about-content h2,
+    .section-header h2,
+    .contact-header h2 {
+      font-size: 2rem;
+    }
+    
+    .contact-header {
+      margin-bottom: 2rem;
+      padding: 0 0.5rem; /* Añadir padding para tablet/móvil */
+    }
+    
+    .contact-header h2 {
+      font-size: 2rem;
+    }
+    
+    .contact-header p {
+      font-size: 1rem;
+      line-height: 1.5; /* Mejor legibilidad */
+    }
+    
+    .contact-layout {
+      grid-template-columns: 1fr;
+      gap: 3rem;
+    }
+    
+    .contact-text-column {
+      gap: 2rem;
+    }
+    
+    .text-section {
+      padding: 2rem;
+    }
+    
+    .text-section h2 {
+      font-size: 1.6rem;
+    }
+    
+    .contact-form-column {
+      padding: 2rem;
+      position: static;
+    }
+    
+    .contact-form-column h3 {
+      font-size: 1.8rem;
+    }
+    
+    .about-content p,
+    .section-header p {
+      font-size: 1rem;
+    }
+    
+    .feature-banner-wide {
+      padding: 3rem 1.5rem;
+      min-height: 250px;
+      max-width: 100%;
+    }
+    
+    .banner-content-box {
+      padding: 2rem 1.5rem;
+      border-radius: 12px;
+    }
+    
+    .banner-content-box h3 {
+      font-size: 1.6rem;
+    }
+    
+    .banner-content-box p {
+      font-size: 1rem;
+      text-align: center; /* Mantener centrado en móvil */
+    }
+    
+    .section-header p {
+      max-width: 100%;
+      text-align: center; /* Centrado también en móvil */
+    }
+    
+    .program-card {
+      flex: 0 0 250px;
+    }
+    
+    .program-image {
+      height: 250px; /* Mantener 1:1 en móvil también */
+    }
+    
+    .news-card {
+      flex: 0 0 300px;
+      flex-direction: column;
+    }
+    
+    .news-image {
+      flex: none;
+      height: 150px;
+    }
+    
+    .news-content {
+      padding: 1rem;
+    }
+    
+    .studio-image {
+      height: 250px;
+    }
+    
+    .merchandising-banner,
+    .events-banner {
+      background-attachment: scroll;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    
+    .program-card {
+      flex: 0 0 200px;
+    }
+    
+    .program-image {
+      height: 200px; /* Mantener 1:1 */
+    }
+    
+    .news-card {
+      flex: 0 0 250px;
+    }
+    
+    .btn {
+      padding: 0.8rem 1.5rem;
+      font-size: 1rem;
+    }
+    
+    .feature-banner-wide {
+      padding: 2.5rem 1rem;
+      min-height: 200px;
+    }
+    
+    .banner-content-box {
+      padding: 1.5rem 1.2rem;
+      border-radius: 10px;
+    }
+    
+    .banner-content-box h3 {
+      font-size: 1.4rem;
+    }
+    
+    .banner-content-box p {
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    
+    .contact-header h2 {
+      font-size: 1.8rem;
+    }
+    
+    .contact-header {
+      margin-bottom: 1.5rem;
+      padding: 0 0.5rem; /* Añadir padding para móvil muy pequeño */
+    }
+    
+    .contact-header p {
+      font-size: 0.95rem;
+      padding: 0 0.25rem; /* Padding adicional para el texto */
+      line-height: 1.5; /* Mejor legibilidad */
+    }
+    
+    .text-section {
+      padding: 1.2rem;
+    }
+    
+    .text-section h2 {
+      font-size: 1.2rem;
+    }
+    
+    .text-section p {
+      font-size: 0.9rem;
+    }
+    
+    .contact-form-column {
+      padding: 1.2rem;
+    }
+    
+    .contact-form-column h3 {
+      font-size: 1.4rem;
+    }
+  }
+</style>
+
+<!-- Estilos avanzados para formulario compacto -->
+<style is:global>
+  /* ===============================================
+     GRAVITY FORMS ENHANCED STYLES - HOME COMPACT
+     =============================================== */
+
+  /* ===== VARIABLES CSS PARA FORMULARIO ===== */
+  :root {
+    --gf-primary: var(--title-color); /* Dorado */
+    --gf-primary-dark: #a8935e; /* Dorado más oscuro */
+    --gf-primary-light: rgba(197, 173, 123, 0.1);
+    --gf-secondary: #ffffff;
+    --gf-bg-card: rgba(255, 255, 255, 0.03);
+    --gf-bg-input: rgba(255, 255, 255, 0.05);
+    --gf-border: rgba(197, 173, 123, 0.15); /* Dorado con transparencia */
+    --gf-border-hover: rgba(197, 173, 123, 0.3);
+    --gf-border-focus: var(--gf-primary);
+    --gf-text: #ffffff;
+    --gf-text-muted: #888888;
+    --gf-text-placeholder: #555555;
+    --gf-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    --gf-shadow-hover: 0 12px 40px rgba(0, 0, 0, 0.4);
+    --gf-shadow-focus: 0 0 0 4px rgba(197, 173, 123, 0.1); /* Dorado con transparencia */
+    --gf-radius: 8px; /* Bordes cuadrados */
+    --gf-radius-large: 12px;
+    --gf-transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --gf-backdrop: blur(15px);
+  }
+
+  /* ===== FORMULARIO COMPACTO MEJORADO ===== */
+  .contact-form-container.compact {
+    max-width: 500px !important;
+    padding: 0 !important; /* Sin padding interno */
+    border-radius: 0 !important;
+    background: transparent !important; /* Sin fondo */
+    box-shadow: none !important; /* Sin sombra */
+    backdrop-filter: none !important; /* Sin blur */
+    position: relative !important;
+    overflow: hidden !important;
+    border: none !important; /* Sin borde */
+  }
+
+  /* ===== FORMULARIO COMPACTO ===== */
+  .contact-form-container.compact .contact-form {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+    position: relative !important;
+    z-index: 1 !important;
+  }
+
+  /* Grupos de campos compactos */
+  .contact-form-container.compact .form-group {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 0.6rem !important;
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+    animation: slideInForm 0.6s ease-out both !important;
+    position: relative !important;
+  }
+
+  .contact-form-container.compact .form-group:nth-child(1) { animation-delay: 0.1s !important; }
+  .contact-form-container.compact .form-group:nth-child(2) { animation-delay: 0.2s !important; }
+  .contact-form-container.compact .form-group:nth-child(3) { animation-delay: 0.3s !important; }
+  .contact-form-container.compact .form-group:nth-child(4) { animation-delay: 0.4s !important; }
+
+  @keyframes slideInForm {
+    0% {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* Etiquetas compactas */
+  .contact-form-container.compact .form-group label {
+    color: var(--gf-primary) !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+    letter-spacing: 0.5px !important;
+    text-transform: uppercase !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.5rem !important;
+    position: relative !important;
+    margin-bottom: 0.3rem !important;
+    text-align: left !important;
+  }
+
+  .contact-form-container.compact .form-group label::after {
+    content: '' !important;
+    height: 2px !important;
+    flex: 1 !important;
+    background: linear-gradient(90deg, var(--gf-primary) 0%, transparent 100%) !important;
+    opacity: 0.3 !important;
+  }
+
+  /* ===== CAMPOS COMPACTOS ===== */
+  .contact-form-container.compact .form-group input,
+  .contact-form-container.compact .form-group select,
+  .contact-form-container.compact .form-group textarea {
+    background: var(--gf-bg-input) !important;
+    border: 2px solid var(--gf-border) !important;
+    border-radius: var(--gf-radius) !important;
+    padding: 1rem 1.2rem !important;
+    color: var(--gf-text) !important;
+    font-size: 1rem !important;
+    font-family: inherit !important;
+    font-weight: 400 !important;
+    transition: var(--gf-transition) !important;
+    position: relative !important;
+    backdrop-filter: blur(10px) !important;
+    box-shadow: 
+      inset 0 2px 4px rgba(0, 0, 0, 0.1),
+      0 2px 8px rgba(0, 0, 0, 0.05) !important;
+  }
+
+  /* Efectos hover compactos */
+  .contact-form-container.compact .form-group input:hover,
+  .contact-form-container.compact .form-group select:hover,
+  .contact-form-container.compact .form-group textarea:hover {
+    border-color: var(--gf-border-hover) !important;
+    background: rgba(255, 255, 255, 0.08) !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 
+      inset 0 2px 4px rgba(0, 0, 0, 0.1),
+      0 6px 15px rgba(197, 173, 123, 0.1) !important; /* Dorado */
+  }
+
+  /* Efectos focus compactos */
+  .contact-form-container.compact .form-group input:focus,
+  .contact-form-container.compact .form-group select:focus,
+  .contact-form-container.compact .form-group textarea:focus {
+    outline: none !important;
+    border-color: var(--gf-border-focus) !important;
+    background: rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 
+      inset 0 2px 4px rgba(0, 0, 0, 0.1),
+      var(--gf-shadow-focus),
+      0 8px 20px rgba(197, 173, 123, 0.15) !important; /* Dorado */
+    transform: translateY(-2px) scale(1.01) !important;
+  }
+
+  /* Placeholders compactos */
+  .contact-form-container.compact .form-group input::placeholder,
+  .contact-form-container.compact .form-group textarea::placeholder {
+    color: var(--gf-text-placeholder) !important;
+    opacity: 0.8 !important;
+    font-style: italic !important;
+    font-weight: 300 !important;
+    transition: var(--gf-transition) !important;
+  }
+
+  .contact-form-container.compact .form-group input:focus::placeholder,
+  .contact-form-container.compact .form-group textarea:focus::placeholder {
+    opacity: 0.5 !important;
+    transform: translateX(3px) !important;
+  }
+
+  /* ===== SELECT COMPACTO ===== */
+  .contact-form-container.compact .form-group select {
+    cursor: pointer !important;
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    -moz-appearance: none !important;
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c5ad7b' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e") !important; /* Dorado */
+    background-repeat: no-repeat !important;
+    background-position: right 1rem center !important;
+    background-size: 1rem !important;
+    padding-right: 3rem !important;
+    position: relative !important;
+  }
+
+  .contact-form-container.compact .form-group select:focus {
+    background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e") !important;
+  }
+
+  .contact-form-container.compact .form-group select option {
+    background: #1a1a1a !important;
+    color: var(--gf-text) !important;
+    padding: 0.8rem !important;
+    border: none !important;
+    font-weight: 400 !important;
+  }
+
+  /* ===== TEXTAREA COMPACTO ===== */
+  .contact-form-container.compact .form-group textarea {
+    resize: vertical !important;
+    min-height: 100px !important;
+    line-height: 1.6 !important;
+    font-family: inherit !important;
+  }
+
+  .contact-form-container.compact .form-group textarea:focus {
+    min-height: 120px !important;
+  }
+
+  /* ===== BOTÓN COMPACTO ===== */
+  .contact-form-container.compact .form-actions {
+    margin-top: 1.5rem !important;
+    display: flex !important;
+    justify-content: center !important;
+    position: relative !important;
+    opacity: 1 !important;
+    transform: translateY(0) !important;
+    animation: slideInForm 0.6s ease-out 0.5s both !important;
+  }
+
+  .contact-form-container.compact .form-actions .btn {
+    min-width: 200px !important;
+    padding: 1.1rem 2.5rem !important;
+    font-size: 1.1rem !important;
+    font-weight: 800 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    position: relative !important;
+    overflow: hidden !important;
+    border: none !important;
+    cursor: pointer !important;
+    background: linear-gradient(
+      135deg, 
+      var(--gf-primary) 0%, 
+      var(--gf-primary-dark) 100%
+    ) !important;
+    color: var(--color-bg) !important; /* Texto en color de fondo para contraste */
+    border-radius: 8px !important; /* Botones cuadrados */
+    transition: var(--gf-transition) !important;
+  }
+
+  /* Efecto de ondas compacto */
+  .contact-form-container.compact .form-actions .btn::before {
+    content: '' !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    width: 0 !important;
+    height: 0 !important;
+    border-radius: 50% !important;
+    background: rgba(255, 255, 255, 0.2) !important;
+    transform: translate(-50%, -50%) !important;
+    transition: width 0.6s ease, height 0.6s ease !important;
+    z-index: 0 !important;
+  }
+
+  .contact-form-container.compact .form-actions .btn:hover::before {
+    width: 300px !important;
+    height: 300px !important;
+  }
+
+  /* Efecto de brillo compacto */
+  .contact-form-container.compact .form-actions .btn::after {
+    content: '' !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: -100% !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: linear-gradient(
+      90deg, 
+      transparent, 
+      rgba(255, 255, 255, 0.3), 
+      transparent
+    ) !important;
+    transition: left 0.6s ease !important;
+    z-index: 1 !important;
+  }
+
+  .contact-form-container.compact .form-actions .btn:hover::after {
+    left: 100% !important;
+  }
+
+  .contact-form-container.compact .form-actions .btn span {
+    position: relative !important;
+    z-index: 2 !important;
+    display: inline-block !important;
+    transition: var(--gf-transition) !important;
+  }
+
+  .contact-form-container.compact .form-actions .btn:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 
+      0 12px 30px rgba(197, 173, 123, 0.4), /* Dorado */
+      0 0 0 6px rgba(197, 173, 123, 0.1) !important;
+    background: linear-gradient(
+      135deg, 
+      #d4bb85 0%, /* Dorado más claro */
+      var(--gf-primary) 100%
+    ) !important;
+  }
+
+  .contact-form-container.compact .form-actions .btn:hover span {
+    transform: scale(1.05) !important;
+  }
+
+  .contact-form-container.compact .form-actions .btn:active {
+    transform: translateY(-1px) !important;
+    transition: transform 0.1s ease !important;
+  }
+
+  /* Estados del botón compacto */
+  .contact-form-container.compact .form-actions .btn:disabled {
+    opacity: 0.7 !important;
+    cursor: not-allowed !important;
+    transform: none !important;
+    background: #666 !important;
+  }
+
+  .contact-form-container.compact .form-actions .btn.loading {
+    pointer-events: none !important;
+    background: linear-gradient(
+      135deg, 
+      var(--gf-primary) 0%, 
+      var(--gf-primary-dark) 100%
+    ) !important;
+  }
+
+  /* ===== SPINNER COMPACTO ===== */
+  .contact-form-container.compact .spinner {
+    animation: rotate 2s linear infinite !important;
+    z-index: 2 !important;
+    width: 35px !important;
+    height: 35px !important;
+    margin: 0 auto 1rem !important;
+  }
+  
+  .contact-form-container.compact .spinner .path {
+    stroke: var(--title-color) !important; /* Dorado */
+    stroke-linecap: round !important;
+    animation: dash 1.5s ease-in-out infinite !important;
+  }
+  
+  @keyframes rotate {
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+  
+  @keyframes dash {
+    0% {
+      stroke-dasharray: 1, 150;
+      stroke-dashoffset: 0;
+    }
+    50% {
+      stroke-dasharray: 90, 150;
+      stroke-dashoffset: -35;
+    }
+    100% {
+      stroke-dasharray: 90, 150;
+      stroke-dashoffset: -124;
+    }
+  }
+
+  .contact-form-container.compact .spinner-small {
+    display: inline-block !important;
+    width: 16px !important;
+    height: 16px !important;
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+    border-top-color: white !important;
+    border-radius: 50% !important;
+    animation: spin 0.8s linear infinite !important;
+    margin-right: 0.5rem !important;
+  }
+
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+
+  /* ===== MENSAJES COMPACTOS ===== */
+  .contact-form-container.compact .form-message {
+    padding: 1.2rem 1.5rem !important;
+    border-radius: var(--gf-radius) !important;
+    margin-top: 1.5rem !important;
+    font-weight: 600 !important;
+    text-align: center !important;
+    animation: messageSlideIn 0.6s ease-out !important;
+    backdrop-filter: blur(10px) !important;
+    font-size: 1rem !important;
+    position: relative !important;
+    overflow: hidden !important;
+  }
+
+  @keyframes messageSlideIn {
+    from {
+      transform: translateY(-15px) scale(0.95);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+  }
+
+  .contact-form-container.compact .form-message.success {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.15), rgba(76, 175, 80, 0.05)) !important;
+    border: 2px solid #4caf50 !important;
+    color: #4caf50 !important;
+    box-shadow: 
+      0 6px 20px rgba(76, 175, 80, 0.2),
+      inset 0 1px 0 rgba(76, 175, 80, 0.2) !important;
+  }
+
+  .contact-form-container.compact .form-message.error {
+    background: linear-gradient(135deg, rgba(197, 173, 123, 0.15), rgba(197, 173, 123, 0.05)) !important;
+    border: 2px solid var(--gf-primary) !important;
+    color: var(--gf-primary) !important;
+    box-shadow: 
+      0 6px 20px rgba(197, 173, 123, 0.2),
+      inset 0 1px 0 rgba(197, 173, 123, 0.2) !important;
+  }
+
+  /* Iconos compactos */
+  .contact-form-container.compact .success-icon,
+  .contact-form-container.compact .error-icon {
+    font-size: 2.5rem !important;
+    margin-bottom: 0.8rem !important;
+    display: block !important;
+    animation: iconPop 0.5s ease-out !important;
+  }
+
+  @keyframes iconPop {
+    0% { transform: scale(0) rotate(-90deg); }
+    50% { transform: scale(1.1) rotate(-45deg); }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+
+  .contact-form-container.compact .success-icon {
+    color: #4caf50 !important;
+  }
+
+  .contact-form-container.compact .error-icon {
+    color: var(--gf-primary) !important;
+  }
+
+  /* Mensajes de carga compactos */
+  .contact-form-container.compact .loading-message {
+    text-align: center !important;
+    padding: 2rem !important;
+    color: #888 !important;
+  }
+  
+  .contact-form-container.compact .loading-message p {
+    color: #777 !important;
+    font-size: 1rem !important;
+  }
+
+  .contact-form-container.compact .error-message {
+    text-align: center !important;
+    padding: 1.5rem !important;
+  }
+  
+  .contact-form-container.compact .error-message .error-text {
+    color: var(--gf-primary) !important;
+    font-size: 1.1rem !important;
+    margin-bottom: 1rem !important;
+    font-weight: 600 !important;
+  }
+  
+  .contact-form-container.compact .error-message p {
+    color: #777 !important;
+    margin: 0.5rem 0 !important;
+    font-size: 0.9rem !important;
+  }
+  
+  .contact-form-container.compact .error-message a {
+    color: var(--gf-primary) !important;
+    text-decoration: none !important;
+  }
+  
+  .contact-form-container.compact .error-message a:hover {
+    text-decoration: underline !important;
+  }
+  
+  /* ✅ ESTILO PARA ERROR DETAILS */
+  .form-message .error-details {
+    font-size: 0.95rem !important;
+    opacity: 0.8 !important;
+    margin: 1rem 0 !important;
+    font-family: monospace !important;
+    background: rgba(0,0,0,0.2) !important;
+    padding: 0.5rem !important;
+    border-radius: 4px !important;
+  }
+
+  /* ===== RESPONSIVE COMPACTO ===== */
+  @media (max-width: 768px) {
+    .contact-form-container.compact {
+      padding: 0 !important;
+      border-radius: 0 !important;
+      max-width: 100% !important;
+    }
+    
+    .contact-form-container.compact .form-group {
+      gap: 0.5rem !important;
+    }
+    
+    .contact-form-container.compact .form-group label {
+      font-size: 0.9rem !important;
+    }
+    
+    .contact-form-container.compact .form-group input,
+    .contact-form-container.compact .form-group select,
+    .contact-form-container.compact .form-group textarea {
+      padding: 0.9rem 1rem !important;
+      font-size: 16px !important; /* Evita zoom en iOS */
+    }
+    
+    .contact-form-container.compact .form-actions .btn {
+      width: 100% !important;
+      min-width: unset !important;
+      font-size: 1rem !important;
+      padding: 1rem 2rem !important;
+    }
+    
+    .contact-form-container.compact .form-message {
+      padding: 1rem 1.2rem !important;
+      font-size: 0.95rem !important;
+    }
+    
+    .contact-form-container.compact .form-group textarea {
+      min-height: 80px !important;
+    }
+    
+    .contact-form-container.compact .form-group textarea:focus {
+      min-height: 100px !important;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .contact-form-container.compact {
+      padding: 0 !important;
+    }
+    
+    .contact-form-container.compact .form-group {
+      gap: 0.4rem !important;
+    }
+    
+    .contact-form-container.compact .form-group label {
+      font-size: 0.85rem !important;
+      letter-spacing: 0.3px !important;
+    }
+    
+    .contact-form-container.compact .form-actions .btn {
+      font-size: 0.95rem !important;
+      letter-spacing: 0.8px !important;
+      padding: 0.9rem 1.8rem !important;
+    }
+    
+    .contact-form-container.compact .success-icon,
+    .contact-form-container.compact .error-icon {
+      font-size: 2rem !important;
+    }
+  }
+
+  /* ===== MEJORAS DE ACCESIBILIDAD COMPACTAS ===== */
+  .contact-form-container.compact .form-group input:focus-visible,
+  .contact-form-container.compact .form-group select:focus-visible,
+  .contact-form-container.compact .form-group textarea:focus-visible {
+    outline: 2px solid var(--gf-primary) !important;
+    outline-offset: 2px !important;
+  }
+
+  .contact-form-container.compact .form-actions .btn:focus-visible {
+    outline: 2px solid rgba(197, 173, 123, 0.8) !important; /* Dorado */
+    outline-offset: 3px !important;
+  }
+
+  /* ===== REDUCIR MOVIMIENTO COMPACTO ===== */
+  @media (prefers-reduced-motion: reduce) {
+    .contact-form-container.compact *,
+    .contact-form-container.compact *::before,
+    .contact-form-container.compact *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+</style>

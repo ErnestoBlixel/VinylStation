@@ -1,0 +1,710 @@
+---
+// Componente de vinilos flotantes minimalista con efectos avanzados
+// 6 vinilos máximo, difuminados, huyen del cursor, explotan al tocarse
+---
+
+<div id="vinyl-particles" class="vinyl-particles-container">
+  <!-- Los vinilos se generarán dinámicamente con JavaScript -->
+</div>
+
+<script>
+class VinylParticles {
+  constructor() {
+    this.container = document.getElementById('vinyl-particles');
+    this.vinyls = [];
+    this.mouse = { x: 0, y: 0, isMoving: false };
+    this.animationId = null;
+    this.isVisible = true;
+    this.lastCollisionCheck = 0;
+    
+    // Configuración minimalista
+    this.config = {
+      count: 6, // Máximo 6 vinilos
+      maxCount: 6, // Límite absoluto
+      maxSize: 80,
+      minSize: 40,
+      speed: {
+        min: 0.05,
+        max: 0.3
+      },
+      rotationSpeed: {
+        min: 0.2,
+        max: 0.8
+      },
+      interactionRadius: 120,
+      fleeRadius: 100, // Radio para huir del cursor
+      fleeSpeed: 3, // Velocidad de huida
+      collisionRadius: 30, // Radio para detectar colisiones
+      interaction: {
+        enabled: true,
+        flee: true // Los vinilos huyen del cursor
+      }
+    };
+    
+    this.init();
+  }
+  
+  init() {
+    if (!this.container) return;
+    
+    // Detectar si estamos en una página individual de noticias, programas o vinilos
+    const currentPath = window.location.pathname;
+    const individualPages = ['/noticias/', '/programas/', '/vinilos/'];
+    const isIndividualPage = individualPages.some(path => 
+      currentPath.includes(path) && currentPath !== path && currentPath.split('/').length > 2
+    );
+    
+    if (isIndividualPage) {
+      console.log('🚫 VinylParticles desactivado en página individual:', currentPath);
+      this.container.style.display = 'none';
+      return;
+    }
+    
+    this.createVinyls();
+    this.bindEvents();
+    this.animate();
+    this.setupCollisionDetection();
+    
+    console.log('🎵 VinylParticles minimalista iniciado con', this.config.count, 'vinilos');
+  }
+  
+  createVinyls() {
+    // Limpiar vinilos existentes
+    this.container.innerHTML = '';
+    this.vinyls = [];
+    
+    for (let i = 0; i < this.config.count; i++) {
+      this.createVinyl();
+    }
+  }
+  
+  createVinyl(x = null, y = null, size = null) {
+    // Verificar límite máximo
+    if (this.vinyls.length >= this.config.maxCount) {
+      return null;
+    }
+    
+    const vinyl = document.createElement('div');
+    vinyl.className = 'vinyl-particle';
+    
+    // Propiedades aleatorias o específicas
+    const vinylSize = size || this.random(this.config.minSize, this.config.maxSize);
+    const color = this.getRandomColor();
+    
+    // Posición inicial (evitar footer y header)
+    const headerHeight = 60;
+    const footerHeight = 100;
+    const safeX = x !== null ? x : this.random(0, window.innerWidth - vinylSize);
+    const safeY = y !== null ? y : this.random(headerHeight, window.innerHeight - footerHeight - vinylSize);
+    
+    // Velocidad más suave
+    const velocityX = this.random(-this.config.speed.max, this.config.speed.max);
+    const velocityY = this.random(-this.config.speed.max, this.config.speed.max);
+    const rotationSpeed = this.random(this.config.rotationSpeed.min, this.config.rotationSpeed.max);
+    
+    // SVG del vinilo con efecto difuminado
+    vinyl.innerHTML = this.getVinylSVG(vinylSize, 1, color);
+    
+    // Estilos minimalistas
+    vinyl.style.cssText = `
+      position: fixed;
+      left: ${safeX}px;
+      top: ${safeY}px;
+      width: ${vinylSize}px;
+      height: ${vinylSize}px;
+      pointer-events: none;
+      z-index: -1;
+      opacity: 0;
+      transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      filter: blur(0.5px);
+      transform: scale(0.8);
+    `;
+    
+    // Guardar propiedades
+    vinyl.vinylData = {
+      x: safeX, 
+      y: safeY, 
+      size: vinylSize,
+      velocityX, velocityY,
+      rotationSpeed,
+      rotation: 0,
+      originalVelocityX: velocityX,
+      originalVelocityY: velocityY,
+      isFleeing: false,
+      fleeStartTime: 0,
+      id: Date.now() + Math.random() // ID único
+    };
+    
+    this.container.appendChild(vinyl);
+    this.vinyls.push(vinyl);
+    
+    // Animación de entrada suave
+    setTimeout(() => {
+      vinyl.style.opacity = '0.2';
+      vinyl.style.transform = 'scale(1)';
+    }, 100 + (this.vinyls.length * 200));
+    
+    return vinyl;
+  }
+  
+  getVinylSVG(size, type, color) {
+    const centerSize = size * 0.3;
+    const grooves = Math.floor(size / 20);
+    
+    let groovesHTML = '';
+    for (let i = 1; i <= grooves; i++) {
+      const radius = (size * 0.4) - (i * 4);
+      groovesHTML += `<circle cx="50%" cy="50%" r="${radius}" fill="none" stroke="rgba(0,0,0,0.05)" stroke-width="0.3"/>`;
+    }
+    
+    const gradientId = `vinylGradient${Date.now()}_${Math.random()}`;
+    const glowId = `glow${Date.now()}_${Math.random()}`;
+    
+    return `
+      <svg width="100%" height="100%" viewBox="0 0 ${size} ${size}" class="vinyl-svg">
+        <defs>
+          <radialGradient id="${gradientId}" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" style="stop-color:${color};stop-opacity:0.6"/>
+            <stop offset="30%" style="stop-color:${color};stop-opacity:0.4"/>
+            <stop offset="70%" style="stop-color:${this.darkenColor(color, 0.3)};stop-opacity:0.5"/>
+            <stop offset="100%" style="stop-color:${this.darkenColor(color, 0.5)};stop-opacity:0.6"/>
+          </radialGradient>
+          <filter id="${glowId}">
+            <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
+            <feMerge> 
+              <feMergeNode in="coloredBlur"/>
+              <feMergeNode in="SourceGraphic"/>
+            </feMerge>
+          </filter>
+        </defs>
+        
+        <!-- Disco principal -->
+        <circle cx="50%" cy="50%" r="${size * 0.45}" 
+                fill="url(#${gradientId})" 
+                filter="url(#${glowId})"
+                class="vinyl-disc"/>
+        
+        <!-- Surcos más sutiles -->
+        ${groovesHTML}
+        
+        <!-- Centro del vinilo -->
+        <circle cx="50%" cy="50%" r="${centerSize * 0.5}" 
+                fill="rgba(0,0,0,0.4)" 
+                class="vinyl-center"/>
+        
+        <!-- Etiqueta central -->
+        <circle cx="50%" cy="50%" r="${centerSize * 0.3}" 
+                fill="${color}" 
+                opacity="0.3"/>
+        
+        <!-- Agujero central -->
+        <circle cx="50%" cy="50%" r="${centerSize * 0.1}" 
+                fill="rgba(0,0,0,0.6)"/>
+        
+        <!-- Reflejo sutil -->
+        <ellipse cx="40%" cy="30%" rx="${size * 0.1}" ry="${size * 0.06}" 
+                 fill="rgba(255,255,255,0.05)" 
+                 class="vinyl-reflection"/>
+      </svg>
+    `;
+  }
+  
+  getRandomColor() {
+    const theme = document.documentElement.getAttribute('data-theme');
+    
+    if (theme === 'day') {
+      // Colores más sutiles para modo día
+      const dayColors = [
+        '#c5ad7b', // Dorado principal
+        '#8B7355', // Marrón suave
+        '#5D7B9D', // Azul grisáceo
+        '#A0522D', // Sienna
+        '#708090', // Gris pizarra
+      ];
+      return dayColors[Math.floor(Math.random() * dayColors.length)];
+    } else {
+      // Colores elegantes para modo noche
+      const nightColors = [
+        '#c5ad7b', // Dorado VinylStation
+        '#ff8a80', // Rojizo suave
+        '#80cbc4', // Turquesa suave
+        '#a5d6a7', // Verde suave
+        '#ffcc80', // Naranja suave
+        '#ce93d8'  // Púrpura suave
+      ];
+      return nightColors[Math.floor(Math.random() * nightColors.length)];
+    }
+  }
+  
+  darkenColor(color, factor) {
+    const hex = color.replace('#', '');
+    const r = Math.max(0, parseInt(hex.substr(0, 2), 16) * (1 - factor));
+    const g = Math.max(0, parseInt(hex.substr(2, 2), 16) * (1 - factor));
+    const b = Math.max(0, parseInt(hex.substr(4, 2), 16) * (1 - factor));
+    
+    return `rgb(${Math.floor(r)}, ${Math.floor(g)}, ${Math.floor(b)})`;
+  }
+  
+  bindEvents() {
+    // Seguimiento del mouse para efecto de huida
+    document.addEventListener('mousemove', (e) => {
+      this.mouse.x = e.clientX;
+      this.mouse.y = e.clientY;
+      this.mouse.isMoving = true;
+      
+      clearTimeout(this.mouseTimeout);
+      this.mouseTimeout = setTimeout(() => {
+        this.mouse.isMoving = false;
+      }, 200);
+    });
+    
+    // Click/touch para hacer huir los vinilos
+    document.addEventListener('click', (e) => {
+      this.mouse.x = e.clientX;
+      this.mouse.y = e.clientY;
+      this.triggerFlee();
+    });
+    
+    document.addEventListener('touchstart', (e) => {
+      if (e.touches.length > 0) {
+        this.mouse.x = e.touches[0].clientX;
+        this.mouse.y = e.touches[0].clientY;
+        this.triggerFlee();
+      }
+    });
+    
+    // Redimensionamiento de ventana
+    window.addEventListener('resize', () => {
+      this.handleResize();
+    });
+    
+    // Cambio de tema
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'data-theme') {
+          this.updateColorsForTheme();
+        }
+      });
+    });
+    
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['data-theme']
+    });
+    
+    // Visibilidad de la página
+    document.addEventListener('visibilitychange', () => {
+      this.isVisible = !document.hidden;
+      if (this.isVisible) {
+        this.animate();
+      } else {
+        cancelAnimationFrame(this.animationId);
+      }
+    });
+  }
+  
+  handleResize() {
+    // Reposicionar vinilos que están fuera de los límites
+    const headerHeight = 60;
+    const footerHeight = 100;
+    
+    this.vinyls.forEach(vinyl => {
+      const data = vinyl.vinylData;
+      if (data.x > window.innerWidth - data.size) {
+        data.x = window.innerWidth - data.size;
+        vinyl.style.left = data.x + 'px';
+      }
+      if (data.y > window.innerHeight - footerHeight - data.size) {
+        data.y = window.innerHeight - footerHeight - data.size;
+        vinyl.style.top = data.y + 'px';
+      }
+      if (data.y < headerHeight) {
+        data.y = headerHeight;
+        vinyl.style.top = data.y + 'px';
+      }
+    });
+  }
+  
+  updateColorsForTheme() {
+    // Regenerar vinilos con nuevos colores suavemente
+    this.vinyls.forEach(vinyl => {
+      const data = vinyl.vinylData;
+      const newColor = this.getRandomColor();
+      
+      // Transición suave de color
+      vinyl.style.transition = 'all 1s ease';
+      setTimeout(() => {
+        vinyl.innerHTML = this.getVinylSVG(data.size, 1, newColor);
+      }, Math.random() * 500);
+    });
+  }
+  
+  setupCollisionDetection() {
+    this.lastCollisionCheck = 0;
+  }
+  
+  checkCollisions() {
+    const now = Date.now();
+    
+    // Optimización: verificar colisiones cada 100ms
+    if (now - this.lastCollisionCheck < 100) return;
+    this.lastCollisionCheck = now;
+    
+    for (let i = 0; i < this.vinyls.length; i++) {
+      for (let j = i + 1; j < this.vinyls.length; j++) {
+        const vinyl1 = this.vinyls[i];
+        const vinyl2 = this.vinyls[j];
+        const data1 = vinyl1.vinylData;
+        const data2 = vinyl2.vinylData;
+        
+        const dx = (data1.x + data1.size/2) - (data2.x + data2.size/2);
+        const dy = (data1.y + data1.size/2) - (data2.y + data2.size/2);
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < this.config.collisionRadius) {
+          this.explodeVinyls(vinyl1, vinyl2, i, j);
+          return; // Solo una explosión por frame
+        }
+      }
+    }
+  }
+  
+  explodeVinyls(vinyl1, vinyl2, index1, index2) {
+    if (this.vinyls.length >= this.config.maxCount) return;
+    
+    console.log('💥 ¡Explosión de vinilos!');
+    
+    const data1 = vinyl1.vinylData;
+    const data2 = vinyl2.vinylData;
+    
+    // Crear efecto de explosión
+    this.createExplosionEffect(data1.x + data1.size/2, data1.y + data1.size/2);
+    
+    // Remover vinilos originales
+    this.removeVinyl(index1);
+    this.removeVinyl(index2 > index1 ? index2 - 1 : index2);
+    
+    // Crear 2 nuevos vinilos más pequeños si hay espacio
+    const newSize1 = Math.max(this.config.minSize, data1.size * 0.7);
+    const newSize2 = Math.max(this.config.minSize, data2.size * 0.7);
+    
+    setTimeout(() => {
+      if (this.vinyls.length < this.config.maxCount) {
+        this.createVinyl(data1.x, data1.y, newSize1);
+      }
+      if (this.vinyls.length < this.config.maxCount) {
+        this.createVinyl(data2.x, data2.y, newSize2);
+      }
+    }, 300);
+  }
+  
+  createExplosionEffect(x, y) {
+    const explosion = document.createElement('div');
+    explosion.className = 'vinyl-explosion';
+    explosion.style.cssText = `
+      position: fixed;
+      left: ${x - 30}px;
+      top: ${y - 30}px;
+      width: 60px;
+      height: 60px;
+      background: radial-gradient(circle, 
+        var(--color-accent) 0%, 
+        rgba(255, 107, 107, 0.6) 50%,
+        transparent 70%);
+      border-radius: 50%;
+      transform: scale(0);
+      opacity: 1;
+      z-index: 5;
+      pointer-events: none;
+      animation: explode 0.6s ease-out forwards;
+    `;
+    
+    this.container.appendChild(explosion);
+    
+    // Crear partículas adicionales
+    for (let i = 0; i < 3; i++) {
+      setTimeout(() => {
+        this.createSparkle(x, y);
+      }, i * 100);
+    }
+    
+    setTimeout(() => {
+      if (explosion.parentNode) {
+        explosion.remove();
+      }
+    }, 600);
+  }
+  
+  createSparkle(x, y) {
+    const sparkle = document.createElement('div');
+    const angle = Math.random() * Math.PI * 2;
+    const distance = 20 + Math.random() * 40;
+    const endX = x + Math.cos(angle) * distance;
+    const endY = y + Math.sin(angle) * distance;
+    
+    sparkle.style.cssText = `
+      position: fixed;
+      left: ${x}px;
+      top: ${y}px;
+      width: 4px;
+      height: 4px;
+      background: var(--color-accent);
+      border-radius: 50%;
+      opacity: 1;
+      z-index: 4;
+      pointer-events: none;
+      transition: all 0.8s ease-out;
+    `;
+    
+    this.container.appendChild(sparkle);
+    
+    setTimeout(() => {
+      sparkle.style.left = endX + 'px';
+      sparkle.style.top = endY + 'px';
+      sparkle.style.opacity = '0';
+      sparkle.style.transform = 'scale(0)';
+    }, 50);
+    
+    setTimeout(() => {
+      if (sparkle.parentNode) {
+        sparkle.remove();
+      }
+    }, 800);
+  }
+  
+  removeVinyl(index) {
+    if (index >= 0 && index < this.vinyls.length) {
+      const vinyl = this.vinyls[index];
+      vinyl.style.transition = 'all 0.3s ease-out';
+      vinyl.style.transform = 'scale(0) rotate(180deg)';
+      vinyl.style.opacity = '0';
+      
+      setTimeout(() => {
+        if (vinyl.parentNode) {
+          vinyl.parentNode.removeChild(vinyl);
+        }
+      }, 300);
+      
+      this.vinyls.splice(index, 1);
+    }
+  }
+  
+  triggerFlee() {
+    // Hacer que todos los vinilos huyan al hacer click
+    this.vinyls.forEach(vinyl => {
+      const data = vinyl.vinylData;
+      const dx = this.mouse.x - (data.x + data.size / 2);
+      const dy = this.mouse.y - (data.y + data.size / 2);
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance < this.config.fleeRadius * 2) {
+        const angle = Math.atan2(dy, dx);
+        data.velocityX -= Math.cos(angle) * this.config.fleeSpeed * 1.5;
+        data.velocityY -= Math.sin(angle) * this.config.fleeSpeed * 1.5;
+        
+        data.isFleeing = true;
+        data.fleeStartTime = Date.now();
+        
+        vinyl.style.filter = 'blur(2px) brightness(2)';
+        vinyl.style.opacity = '0.3';
+        vinyl.style.transform = `scale(1.2) rotate(${data.rotation}deg)`;
+      }
+    });
+  }
+  
+  animate() {
+    if (!this.isVisible) return;
+    
+    this.vinyls.forEach((vinyl, index) => {
+      const data = vinyl.vinylData;
+      const currentTime = Date.now();
+      
+      // Comportamiento de huida del cursor
+      if (this.mouse.isMoving && this.config.interaction.enabled) {
+        const dx = this.mouse.x - (data.x + data.size / 2);
+        const dy = this.mouse.y - (data.y + data.size / 2);
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        
+        if (distance < this.config.fleeRadius) {
+          // ¡Huir corriendo!
+          const angle = Math.atan2(dy, dx);
+          const fleeForce = (this.config.fleeRadius - distance) / this.config.fleeRadius;
+          
+          data.velocityX -= Math.cos(angle) * this.config.fleeSpeed * fleeForce;
+          data.velocityY -= Math.sin(angle) * this.config.fleeSpeed * fleeForce;
+          
+          // Marcar como huyendo
+          data.isFleeing = true;
+          data.fleeStartTime = currentTime;
+          
+          // Efecto visual de pánico
+          vinyl.style.filter = 'blur(1px) brightness(1.5)';
+          vinyl.style.opacity = '0.2';
+        }
+      }
+      
+      // Restaurar estado normal después de huir
+      if (data.isFleeing && currentTime - data.fleeStartTime > 2000) {
+        data.isFleeing = false;
+        vinyl.style.filter = 'blur(0.5px)';
+        vinyl.style.opacity = '0.2';
+        vinyl.style.transform = `scale(1) rotate(${data.rotation}deg)`;
+      }
+      
+      // Restaurar velocidades gradualmente
+      if (!data.isFleeing) {
+        data.velocityX += (data.originalVelocityX - data.velocityX) * 0.01;
+        data.velocityY += (data.originalVelocityY - data.velocityY) * 0.01;
+      }
+      
+      // Limitar velocidad
+      const maxVel = data.isFleeing ? this.config.fleeSpeed : this.config.speed.max;
+      data.velocityX = Math.max(-maxVel, Math.min(maxVel, data.velocityX));
+      data.velocityY = Math.max(-maxVel, Math.min(maxVel, data.velocityY));
+      
+      // Actualizar posición
+      data.x += data.velocityX;
+      data.y += data.velocityY;
+      
+      // Rebote en bordes con límites del footer/header
+      const headerHeight = 60;
+      const footerHeight = 100;
+      
+      if (data.x <= 0 || data.x >= window.innerWidth - data.size) {
+        data.velocityX *= -0.7;
+        data.originalVelocityX *= -1;
+        data.x = Math.max(0, Math.min(window.innerWidth - data.size, data.x));
+      }
+      
+      if (data.y <= headerHeight || data.y >= window.innerHeight - footerHeight - data.size) {
+        data.velocityY *= -0.7;
+        data.originalVelocityY *= -1;
+        data.y = Math.max(headerHeight, Math.min(window.innerHeight - footerHeight - data.size, data.y));
+      }
+      
+      // Rotación más suave
+      data.rotation += data.rotationSpeed;
+      
+      // Aplicar transformaciones
+      vinyl.style.left = data.x + 'px';
+      vinyl.style.top = data.y + 'px';
+      if (!data.isFleeing) {
+        vinyl.style.transform = `rotate(${data.rotation}deg)`;
+      }
+    });
+    
+    // Detectar colisiones
+    this.checkCollisions();
+    
+    this.animationId = requestAnimationFrame(() => this.animate());
+  }
+  
+  random(min, max) {
+    return Math.random() * (max - min) + min;
+  }
+  
+  // Métodos públicos para control externo
+  pause() {
+    cancelAnimationFrame(this.animationId);
+  }
+  
+  resume() {
+    if (this.isVisible) {
+      this.animate();
+    }
+  }
+  
+  destroy() {
+    cancelAnimationFrame(this.animationId);
+    this.container.innerHTML = '';
+    this.vinyls = [];
+  }
+}
+
+// Inicializar cuando el DOM esté listo
+document.addEventListener('DOMContentLoaded', () => {
+  // Pequeño delay para asegurar que todo esté cargado
+  setTimeout(() => {
+    window.vinylParticles = new VinylParticles();
+  }, 500);
+});
+</script>
+
+<style>
+.vinyl-particles-container {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -2; /* Muy atrás, detrás del contenido */
+  overflow: hidden;
+}
+
+.vinyl-particle {
+  will-change: transform, left, top, opacity;
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+.vinyl-svg {
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.05));
+  transition: filter 0.6s ease;
+}
+
+.vinyl-disc {
+  transition: all 0.6s ease;
+}
+
+/* Animación de explosión */
+@keyframes explode {
+  0% {
+    transform: scale(0) rotate(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(2) rotate(180deg);
+    opacity: 0.8;
+  }
+  100% {
+    transform: scale(4) rotate(360deg);
+    opacity: 0;
+  }
+}
+
+/* Optimizaciones de rendimiento */
+.vinyl-particles-container * {
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+
+/* Responsive - Más visible en móvil */
+@media (max-width: 768px) {
+  .vinyl-particles-container {
+    opacity: 0.15; /* Más visible en tablet */
+  }
+}
+
+@media (max-width: 480px) {
+  .vinyl-particles-container {
+    opacity: 0.1; /* Visible pero sutil en móvil */
+  }
+}
+
+/* Modo reducir movimiento */
+@media (prefers-reduced-motion: reduce) {
+  .vinyl-particles-container {
+    display: none;
+  }
+}
+
+/* Mejoras visuales para el tema día */
+[data-theme="day"] .vinyl-particles-container {
+  opacity: 0.3; /* Más visible en modo día */
+}
+
+[data-theme="day"] .vinyl-svg {
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.1));
+}
+</style>

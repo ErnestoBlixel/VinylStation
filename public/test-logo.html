@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Logo</title>
+    <style>
+        body {
+            background: #1a1a1a;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        
+        .hero-main-logo {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            margin-bottom: 1.5rem;
+            filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+            transition: all 0.3s ease;
+            animation: logoGlow 3s ease-in-out infinite alternate;
+        }
+
+        .hero-main-logo:hover {
+            transform: scale(1.05);
+        }
+
+        @keyframes logoGlow {
+            0% {
+                filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 10px rgba(255, 255, 255, 0.1));
+            }
+            100% {
+                filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
+            }
+        }
+
+        @media (min-width: 768px) {
+            .hero-main-logo {
+                width: 120px;
+                height: 120px;
+                margin-bottom: 2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <img src="/images/logos/logo vinylstation.png" alt="VinylStation Logo" class="hero-main-logo" />
+</body>
+</html>

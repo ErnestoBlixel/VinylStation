@@ -1,0 +1,1168 @@
+---
+import { getSiteInfo, getMenuNavegacion, getEmisora } from '../lib/wordpress';
+
+const siteInfo = await getSiteInfo();
+const emisoraData = await getEmisora();
+const streamUrl = emisoraData?.camposEmisora?.vsUrlCompleta || 'https://stream.zeno.fm/4g7qxnxrloluv';
+
+let menuItems = [];
+try {
+  const menuData = await getMenuNavegacion('Menu');
+  menuItems = menuData.items || [];
+  console.log('✅ Menú cargado dinámicamente:', menuItems.length, 'elementos');
+  
+  const hasContacto = menuItems.some(item => 
+    item.label?.toLowerCase() === 'contacto' || 
+    item.url?.includes('/contacto')
+  );
+  
+  if (!hasContacto) {
+    const noticiasIndex = menuItems.findIndex(item => 
+      item.label?.toLowerCase() === 'noticias' || 
+      item.url?.includes('/noticias')
+    );
+    
+    if (noticiasIndex !== -1) {
+      menuItems.splice(noticiasIndex + 1, 0, {
+        id: 'contacto-added',
+        label: 'Contacto',
+        url: '/contacto',
+        target: '_self'
+      });
+    } else {
+      menuItems.push({
+        id: 'contacto-added',
+        label: 'Contacto',
+        url: '/contacto',
+        target: '_self'
+      });
+    }
+    console.log('➕ Enlace de Contacto añadido al menú');
+  }
+} catch (error) {
+  console.error('❌ Error cargando menú dinámico:', error.message);
+  menuItems = [
+    { id: '1', label: 'Inicio', url: '/', target: '_self' },
+    { id: '2', label: 'Vinilos', url: '/vinilos', target: '_self' },
+    { id: '3', label: 'Programas', url: '/programas', target: '_self' },
+    { id: '4', label: 'Noticias', url: '/noticias', target: '_self' },
+    { id: '5', label: 'Contacto', url: '/contacto', target: '_self' }
+  ];
+}
+---
+
+<header class="header" id="header">
+  <div class="header-content">
+    <div class="header-left">
+      <div class="logo">
+        <a href="/">
+          <img src="/images/logos/logo vinylstation.png" alt="VinylStation Logo" class="logo-img" />
+          <span class="logo-text">VinylStation</span>
+        </a>
+      </div>
+    </div>
+    
+    <div class="mobile-controls">
+      <button class="mobile-play-btn" id="mobilePlayBtn" aria-label="Reproducir/Pausar Radio">
+        <svg id="mobile-play-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="5,3 19,12 5,21"></polygon>
+        </svg>
+        <svg id="mobile-pause-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+          <rect x="6" y="4" width="4" height="16"></rect>
+          <rect x="14" y="4" width="4" height="16"></rect>
+        </svg>
+      </button>
+      
+      <button class="mobile-theme-toggle-direct" id="mobileThemeToggleDirect" aria-label="Cambiar tema">
+        <span id="mobileThemeIconDirect">🌙</span>
+      </button>
+      
+      <button class="mobile-menu-toggle" id="mobileMenuToggle" aria-label="Abrir menú">
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
+      </button>
+    </div>
+    
+    <nav class="main-nav desktop-nav">
+      <ul>
+        {menuItems.map((item) => (
+          <li key={item.id}>
+            <a 
+              href={item.path || item.url} 
+              target={item.target || '_self'}
+              title={item.title || item.label}
+              class={Array.isArray(item.cssClasses) ? item.cssClasses.join(' ') : item.cssClasses || ''}
+            >
+              {item.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+    
+    <div class="header-right desktop-only">
+      <div class="radio-container">
+        <div class="header-radio-player">
+          <audio id="header-radio-stream" preload="none" src={streamUrl}></audio>
+          
+          <div class="player-controls">
+            <button id="header-play-pause" class="play-button" aria-label="Reproducir/Pausar">
+              <svg id="header-play-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="5,3 19,12 5,21"></polygon>
+              </svg>
+              <svg id="header-pause-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                <rect x="6" y="4" width="4" height="16"></rect>
+                <rect x="14" y="4" width="4" height="16"></rect>
+              </svg>
+            </button>
+            
+            <div class="status-info">
+              <span id="header-status-text">Radio en vivo</span>
+              <div id="header-loading-indicator" class="loading-dot" style="display: none;"></div>
+            </div>
+            
+            <div class="volume-control">
+              <button id="header-volume-toggle" class="volume-button" aria-label="Silenciar/Activar sonido">
+                <svg id="header-volume-on" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polygon points="11,5 6,9 2,9 2,15 6,15 11,19"></polygon>
+                  <path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                </svg>
+                <svg id="header-volume-off" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="display: none;">
+                  <polygon points="11,5 6,9 2,9 2,15 6,15 11,19"></polygon>
+                  <line x1="23" y1="9" x2="17" y2="15"></line>
+                  <line x1="17" y1="9" x2="23" y2="15"></line>
+                </svg>
+              </button>
+              <input type="range" id="header-volume-slider" class="volume-slider" min="0" max="1" step="0.1" value="0.7">
+            </div>
+          </div>
+        </div>
+      </div>
+      <button class="theme-toggle" id="themeToggle" aria-label="Cambiar tema">
+        <span id="themeIcon">🌙</span>
+      </button>
+    </div>
+  </div>
+  
+  <div class="mobile-menu" id="mobileMenu">
+    <nav class="mobile-nav">
+      <ul>
+        {menuItems.map((item) => (
+          <li key={`mobile-${item.id}`}>
+            <a 
+              href={item.path || item.url} 
+              target={item.target || '_self'}
+              title={item.title || item.label}
+              class="mobile-nav-link"
+            >
+              {item.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+      
+      <div class="mobile-theme-toggle">
+        <button class="mobile-theme-btn" id="mobileThemeToggle" aria-label="Cambiar tema">
+          <span id="mobileThemeIcon">🌙</span>
+          <span class="theme-label">Modo noche</span>
+        </button>
+      </div>
+    </nav>
+  </div>
+  
+  <div class="mobile-menu-overlay" id="mobileMenuOverlay"></div>
+  <audio id="mobileRadioAudio" preload="none" data-stream-url={streamUrl} style="display: none;"></audio>
+</header>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const header = document.getElementById('header');
+    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+    const mobileMenu = document.getElementById('mobileMenu');
+    const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+    const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
+    
+    let isMenuOpen = false;
+    
+    class MobileHeaderPlayer {
+      constructor() {
+        this.audio = document.getElementById('mobileRadioAudio');
+        this.playBtn = document.getElementById('mobilePlayBtn');
+        this.playIcon = document.getElementById('mobile-play-icon');
+        this.pauseIcon = document.getElementById('mobile-pause-icon');
+        this.isPlaying = false;
+        
+        this.init();
+      }
+      
+      init() {
+        if (!this.audio || !this.playBtn) return;
+        
+        const streamUrl = this.audio.getAttribute('data-stream-url');
+        this.audio.src = streamUrl;
+        this.audio.volume = 0.7;
+        
+        this.bindEvents();
+      }
+      
+      bindEvents() {
+        this.playBtn?.addEventListener('click', () => this.togglePlay());
+        this.audio?.addEventListener('play', () => this.setPlaying(true));
+        this.audio?.addEventListener('pause', () => this.setPlaying(false));
+        this.audio?.addEventListener('error', () => this.handleError());
+      }
+      
+      togglePlay() {
+        if (!this.audio) return;
+        
+        if (this.isPlaying) {
+          this.audio.pause();
+        } else {
+          this.audio.play().catch(() => this.handleError());
+        }
+      }
+      
+      setPlaying(playing) {
+        this.isPlaying = playing;
+        
+        if (playing) {
+          if (this.playIcon) this.playIcon.style.display = 'none';
+          if (this.pauseIcon) this.pauseIcon.style.display = 'block';
+          this.playBtn?.classList.add('playing');
+        } else {
+          if (this.playIcon) this.playIcon.style.display = 'block';
+          if (this.pauseIcon) this.pauseIcon.style.display = 'none';
+          this.playBtn?.classList.remove('playing');
+        }
+      }
+      
+      handleError() {
+        this.setPlaying(false);
+        console.error('Error reproduciendo radio móvil');
+      }
+    }
+    
+    new MobileHeaderPlayer();
+    
+    setTimeout(() => {
+      import('../lib/radioAnalytics.js')
+        .then(module => {
+          console.log('📊 Analytics de radio inicializado');
+        })
+        .catch(error => {
+          console.warn('⚠️ Error cargando analytics de radio:', error);
+        });
+    }, 1000);
+    
+    function initializeHeaderPlayer() {
+      const playButton = document.getElementById('header-play-pause');
+      const volumeSlider = document.getElementById('header-volume-slider');
+      const volumeToggle = document.getElementById('header-volume-toggle');
+      const statusText = document.getElementById('header-status-text');
+      const loadingIndicator = document.getElementById('header-loading-indicator');
+      const playIcon = document.getElementById('header-play-icon');
+      const pauseIcon = document.getElementById('header-pause-icon');
+      const volumeOnIcon = document.getElementById('header-volume-on');
+      const volumeOffIcon = document.getElementById('header-volume-off');
+      const audio = document.getElementById('header-radio-stream');
+      
+      let isPlaying = false;
+      let isLoading = false;
+      
+      if (!audio) return;
+      
+      audio.volume = parseFloat(volumeSlider?.value || 0.7);
+      
+      function setPlaying(playing) {
+        isPlaying = playing;
+        
+        if (playing) {
+          if (playIcon) playIcon.style.display = 'none';
+          if (pauseIcon) pauseIcon.style.display = 'block';
+          if (statusText) statusText.textContent = 'En vivo';
+          playButton?.classList.add('playing');
+        } else {
+          if (playIcon) playIcon.style.display = 'block';
+          if (pauseIcon) pauseIcon.style.display = 'none';
+          if (statusText) statusText.textContent = 'Radio en vivo';
+          playButton?.classList.remove('playing');
+        }
+      }
+      
+      function setLoading(loading) {
+        isLoading = loading;
+        
+        if (loading) {
+          if (loadingIndicator) loadingIndicator.style.display = 'block';
+          if (statusText) statusText.textContent = 'Conectando...';
+        } else {
+          if (loadingIndicator) loadingIndicator.style.display = 'none';
+          if (isPlaying && statusText) {
+            statusText.textContent = 'En vivo';
+          } else if (!isPlaying && statusText) {
+            statusText.textContent = 'Radio en vivo';
+          }
+        }
+      }
+      
+      function toggleMute() {
+        if (!audio) return;
+        audio.muted = !audio.muted;
+        
+        if (audio.muted) {
+          if (volumeOnIcon) volumeOnIcon.style.display = 'none';
+          if (volumeOffIcon) volumeOffIcon.style.display = 'block';
+        } else {
+          if (volumeOnIcon) volumeOnIcon.style.display = 'block';
+          if (volumeOffIcon) volumeOffIcon.style.display = 'none';
+        }
+      }
+      
+      function updateVolume(value) {
+        if (!audio) return;
+        audio.volume = parseFloat(value);
+        audio.muted = value == 0;
+        
+        if (value == 0) {
+          if (volumeOnIcon) volumeOnIcon.style.display = 'none';
+          if (volumeOffIcon) volumeOffIcon.style.display = 'block';
+        } else {
+          if (volumeOnIcon) volumeOnIcon.style.display = 'block';
+          if (volumeOffIcon) volumeOffIcon.style.display = 'none';
+        }
+      }
+      
+      function handleError() {
+        setLoading(false);
+        setPlaying(false);
+        if (statusText) statusText.textContent = 'Error de conexión';
+        
+        setTimeout(() => {
+          if (statusText) statusText.textContent = 'Radio en vivo';
+        }, 3000);
+      }
+      
+      playButton?.addEventListener('click', async () => {
+        try {
+          if (!isPlaying) {
+            setLoading(true);
+            await audio.play();
+          } else {
+            audio.pause();
+          }
+        } catch (error) {
+          console.error('Error en reproductor del header:', error);
+          handleError();
+        }
+      });
+      
+      volumeToggle?.addEventListener('click', toggleMute);
+      volumeSlider?.addEventListener('input', (e) => updateVolume(e.target.value));
+      
+      audio.addEventListener('loadstart', () => setLoading(true));
+      audio.addEventListener('canplay', () => setLoading(false));
+      audio.addEventListener('play', () => setPlaying(true));
+      audio.addEventListener('pause', () => setPlaying(false));
+      audio.addEventListener('error', () => handleError());
+      audio.addEventListener('stalled', () => setLoading(true));
+      audio.addEventListener('waiting', () => setLoading(true));
+      audio.addEventListener('playing', () => setLoading(false));
+      
+      setPlaying(false);
+    }
+    
+    if (window.innerWidth >= 768) {
+      initializeHeaderPlayer();
+    }
+    
+    function handleScroll() {
+      if (window.innerWidth >= 768) {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        
+        if (scrollTop > 50) {
+          header.classList.add('scrolled');
+        } else {
+          header.classList.remove('scrolled');
+        }
+      }
+    }
+    
+    window.addEventListener('scroll', handleScroll);
+    
+    function toggleMobileMenu() {
+      isMenuOpen = !isMenuOpen;
+      
+      if (isMenuOpen) {
+        mobileMenu.classList.add('active');
+        mobileMenuOverlay.classList.add('active');
+        mobileMenuToggle.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      } else {
+        mobileMenu.classList.remove('active');
+        mobileMenuOverlay.classList.remove('active');
+        mobileMenuToggle.classList.remove('active');
+        document.body.style.overflow = '';
+      }
+    }
+    
+    function closeMobileMenu() {
+      if (isMenuOpen) {
+        toggleMobileMenu();
+      }
+    }
+    
+    mobileMenuToggle?.addEventListener('click', toggleMobileMenu);
+    mobileMenuOverlay?.addEventListener('click', closeMobileMenu);
+    
+    mobileNavLinks.forEach(link => {
+      link.addEventListener('click', closeMobileMenu);
+    });
+    
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && isMenuOpen) {
+        closeMobileMenu();
+      }
+    });
+    
+    window.addEventListener('resize', function() {
+      if (window.innerWidth >= 768 && isMenuOpen) {
+        closeMobileMenu();
+      }
+    });
+    
+    function toggleTheme() {
+      const html = document.documentElement;
+      const currentTheme = html.getAttribute('data-theme');
+      const newTheme = currentTheme === 'day' ? 'night' : 'day';
+      const themeIcon = document.getElementById('themeIcon');
+      const mobileThemeIcon = document.getElementById('mobileThemeIcon');
+      const mobileThemeIconDirect = document.getElementById('mobileThemeIconDirect');
+      const themeLabel = document.querySelector('.theme-label');
+      
+      html.setAttribute('data-theme', newTheme);
+      localStorage.setItem('vinylstation-theme', newTheme);
+      
+      const iconText = newTheme === 'day' ? '☀️' : '🌙';
+      const labelText = newTheme === 'day' ? 'Modo día' : 'Modo noche';
+      
+      if (themeIcon) themeIcon.textContent = iconText;
+      if (mobileThemeIcon) mobileThemeIcon.textContent = iconText;
+      if (mobileThemeIconDirect) mobileThemeIconDirect.textContent = iconText;
+      if (themeLabel) themeLabel.textContent = labelText;
+    }
+
+    function initTheme() {
+      const savedTheme = localStorage.getItem('vinylstation-theme');
+      const defaultTheme = savedTheme || 'night';
+      const themeIcon = document.getElementById('themeIcon');
+      const mobileThemeIcon = document.getElementById('mobileThemeIcon');
+      const mobileThemeIconDirect = document.getElementById('mobileThemeIconDirect');
+      const themeLabel = document.querySelector('.theme-label');
+      
+      document.documentElement.setAttribute('data-theme', defaultTheme);
+      
+      const iconText = defaultTheme === 'day' ? '☀️' : '🌙';
+      const labelText = defaultTheme === 'day' ? 'Modo día' : 'Modo noche';
+      
+      if (themeIcon) themeIcon.textContent = iconText;
+      if (mobileThemeIcon) mobileThemeIcon.textContent = iconText;
+      if (mobileThemeIconDirect) mobileThemeIconDirect.textContent = iconText;
+      if (themeLabel) themeLabel.textContent = labelText;
+    }
+
+    initTheme();
+    
+    const themeToggle = document.getElementById('themeToggle');
+    const mobileThemeToggle = document.getElementById('mobileThemeToggle');
+    const mobileThemeToggleDirect = document.getElementById('mobileThemeToggleDirect');
+    
+    if (themeToggle) {
+      themeToggle.addEventListener('click', toggleTheme);
+    }
+    
+    if (mobileThemeToggle) {
+      mobileThemeToggle.addEventListener('click', function() {
+        toggleTheme();
+        setTimeout(closeMobileMenu, 300);
+      });
+    }
+    
+    if (mobileThemeToggleDirect) {
+      mobileThemeToggleDirect.addEventListener('click', toggleTheme);
+    }
+  });
+</script>
+
+<style>
+  .header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    width: 100%;
+    background: var(--color-bg);
+    padding: 1rem 2rem;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    color: var(--color-text);
+    transition: all 0.3s ease;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+  }
+  
+  @media (max-width: 767px) {
+    .header {
+      background: rgba(var(--color-bg-rgb, 10, 10, 10), 0.95);
+      backdrop-filter: blur(15px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      padding: 0.6rem 1rem;
+    }
+  }
+  
+  @media (min-width: 768px) {
+    .header.scrolled {
+      background: rgba(var(--color-bg-rgb, 10, 10, 10), 0.85);
+      backdrop-filter: blur(20px);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+      padding: 0.8rem 2rem;
+    }
+    
+    .header.scrolled .logo {
+      font-size: 1.4rem;
+    }
+    
+    .header.scrolled .logo-img {
+      width: 45px;
+      height: 45px;
+    }
+  }
+  
+  .header-content {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  
+  [data-theme="night"] .header-content {
+    max-width: 100%;
+    padding: 0 2rem;
+  }
+  
+  .header-left {
+    flex: 0 0 auto;
+  }
+  
+  .logo {
+    font-size: 1.2rem;
+    font-weight: bold;
+  }
+  
+  .logo a {
+    color: var(--title-color);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: color 0.3s ease;
+  }
+  
+  .logo-img {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    transition: all 0.3s ease;
+    animation: logoGlow 3s ease-in-out infinite alternate;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  }
+  
+  .logo-text {
+    font-size: 1.35rem;
+    font-weight: 600;
+  }
+  
+  @media (min-width: 768px) {
+    .logo {
+      font-size: 1.8rem;
+    }
+    
+    .logo-img {
+      width: 58px;
+      height: 58px;
+    }
+    
+    .logo-text {
+      font-size: 1.5rem;
+      font-weight: 700;
+    }
+  }
+  
+  .logo-img:hover {
+    transform: scale(1.05);
+  }
+  
+  @keyframes logoGlow {
+    0% {
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 8px var(--title-color, rgba(197, 173, 123, 0.1)));
+    }
+    100% {
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 15px var(--title-color, rgba(197, 173, 123, 0.3)));
+    }
+  }
+  
+  [data-theme="day"] .logo-img {
+    filter: drop-shadow(0 2px 4px rgba(5, 2, 31, 0.3));
+  }
+  
+  .mobile-controls {
+    display: none;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  
+  @media (max-width: 767px) {
+    .mobile-controls {
+      display: flex;
+    }
+  }
+  
+  .mobile-play-btn {
+    background: linear-gradient(135deg, var(--title-color) 0%, #ff6b6b 100%);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(255, 51, 51, 0.3);
+    color: white;
+  }
+  
+  .mobile-play-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(255, 51, 51, 0.4);
+  }
+  
+  .mobile-play-btn.playing {
+    background: linear-gradient(135deg, #ff6b6b 0%, var(--color-secondary, #bb2424) 100%);
+    animation: playingPulse 2s ease-in-out infinite;
+  }
+  
+  @keyframes playingPulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+  
+  .mobile-theme-toggle-direct {
+    background: linear-gradient(135deg, var(--title-color) 0%, #ff6b6b 100%);
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(255, 51, 51, 0.3);
+    color: white;
+    font-size: 0.9rem;
+  }
+  
+  .mobile-theme-toggle-direct:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(255, 51, 51, 0.4);
+  }
+  
+  [data-theme="day"] .mobile-theme-toggle-direct {
+    background: linear-gradient(135deg, var(--color-darkest) 0%, var(--color-primary) 100%);
+    box-shadow: 0 2px 8px rgba(5, 2, 31, 0.3);
+  }
+  
+  [data-theme="day"] .mobile-theme-toggle-direct:hover {
+    box-shadow: 0 4px 12px rgba(5, 2, 31, 0.4);
+  }
+  
+  .mobile-menu-toggle {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 30px;
+    height: 30px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    position: relative;
+    z-index: 1001;
+  }
+  
+  .hamburger-line {
+    width: 20px;
+    height: 2px;
+    background: var(--title-color);
+    margin: 2px 0;
+    transition: all 0.3s ease;
+    border-radius: 2px;
+  }
+  
+  .mobile-menu-toggle.active .hamburger-line:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 5px);
+  }
+  
+  .mobile-menu-toggle.active .hamburger-line:nth-child(2) {
+    opacity: 0;
+  }
+  
+  .mobile-menu-toggle.active .hamburger-line:nth-child(3) {
+    transform: rotate(-45deg) translate(7px, -6px);
+  }
+  
+  .desktop-nav {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+  }
+  
+  .main-nav ul {
+    display: flex;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    gap: 2rem;
+  }
+  
+  .main-nav a {
+    color: var(--title-color);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.95rem;
+    text-transform: capitalize;
+    letter-spacing: 0.3px;
+    transition: all 0.3s ease;
+    position: relative;
+  }
+  
+  .main-nav a::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--title-color);
+    transition: width 0.3s ease;
+  }
+  
+  .main-nav a:hover {
+    opacity: 0.8;
+  }
+  
+  .main-nav a:hover::after {
+    width: 100%;
+  }
+  
+  @media (max-width: 767px) {
+    .desktop-nav {
+      display: none;
+    }
+  }
+  
+  .header-right {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .desktop-only {
+    display: none;
+  }
+  
+  @media (min-width: 768px) {
+    .desktop-only {
+      display: flex;
+    }
+  }
+  
+  .theme-toggle {
+    background: var(--title-color);
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 42px;
+    height: 42px;
+    min-width: 42px;
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.1rem;
+    transition: all 0.2s ease;
+    box-shadow: none;
+    flex-shrink: 0;
+  }
+
+  .theme-toggle:hover {
+    transform: scale(1.05);
+    background: #a8935e;
+  }
+
+  [data-theme="day"] .theme-toggle {
+    background: var(--color-darkest);
+    color: white;
+  }
+
+  [data-theme="day"] .theme-toggle:hover {
+    background: #06032a;
+  }
+  
+  .radio-container {
+    width: 100%;
+    max-width: 380px;
+  }
+  
+  .mobile-menu {
+    position: fixed;
+    top: 0;
+    right: -100%;
+    width: 280px;
+    height: 100vh;
+    background: var(--color-bg);
+    backdrop-filter: blur(20px);
+    border-left: 1px solid rgba(255, 255, 255, 0.1);
+    transition: right 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    z-index: 1002;
+    box-shadow: -5px 0 20px rgba(0, 0, 0, 0.3);
+  }
+  
+  .mobile-menu.active {
+    right: 0;
+  }
+  
+  .mobile-nav {
+    padding: 4rem 2rem 2rem;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  
+  .mobile-nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .mobile-nav li {
+    margin-bottom: 1.5rem;
+  }
+  
+  .mobile-nav-link {
+    color: var(--title-color);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1.2rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    display: block;
+    padding: 0.8rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+  }
+  
+  .mobile-nav-link::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    width: 0;
+    height: 2px;
+    background: var(--title-color);
+    transition: width 0.3s ease;
+    transform: translateY(-50%);
+  }
+  
+  .mobile-nav-link:hover {
+    color: #ff6b6b;
+    padding-left: 1rem;
+  }
+  
+  .mobile-nav-link:hover::before {
+    width: 20px;
+  }
+  
+  .mobile-theme-toggle {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 2rem;
+  }
+  
+  .mobile-theme-btn {
+    background: linear-gradient(135deg, var(--title-color) 0%, #ff6b6b 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.8rem;
+    cursor: pointer;
+    font-size: 1rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 51, 51, 0.3);
+  }
+  
+  .mobile-theme-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 51, 51, 0.4);
+  }
+  
+  .theme-label {
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .mobile-menu-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(5px);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 1001;
+  }
+  
+  .mobile-menu-overlay.active {
+    opacity: 1;
+    visibility: visible;
+  }
+  
+  @media (min-width: 768px) {
+    .mobile-menu,
+    .mobile-menu-overlay,
+    .mobile-controls {
+      display: none;
+    }
+  }
+  
+  .header-radio-player {
+    width: 100%;
+    max-width: 380px;
+    margin: 0;
+    background: transparent;
+    backdrop-filter: none;
+    border: none;
+    border-radius: 14px;
+    padding: 16px 22px;
+    box-shadow: none;
+  }
+  
+  [data-theme="day"] .header-radio-player {
+    background: transparent;
+    box-shadow: none;
+  }
+  
+  .player-controls {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  
+  .play-button {
+    background: var(--title-color);
+    border: none;
+    border-radius: 50%;
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    color: white;
+    flex-shrink: 0;
+  }
+  
+  .play-button:hover {
+    background: #a8935e;
+    transform: scale(1.05);
+  }
+  
+  .play-button.playing {
+    background: #a8935e;
+  }
+  
+  [data-theme="day"] .play-button {
+    background: var(--color-darkest);
+  }
+  
+  [data-theme="day"] .play-button:hover {
+    background: #06032a;
+  }
+  
+  [data-theme="day"] .play-button.playing {
+    background: #06032a;
+  }
+  
+  .status-info {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+  }
+  
+  #header-status-text {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--title-color);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+  }
+  
+  [data-theme="day"] #header-status-text {
+    color: var(--color-darkest);
+    text-shadow: none;
+  }
+  
+  .loading-dot {
+    width: 8px;
+    height: 8px;
+    background: var(--title-color);
+    border-radius: 50%;
+    animation: loadingPulse 1.5s infinite;
+    flex-shrink: 0;
+  }
+  
+  @keyframes loadingPulse {
+    0%, 100% { opacity: 0.4; transform: scale(1); }
+    50% { opacity: 1; transform: scale(1.2); }
+  }
+  
+  .volume-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .volume-button {
+    background: none;
+    border: none;
+    color: var(--title-color);
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+    opacity: 0.9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .volume-button:hover {
+    opacity: 1;
+    background: rgba(197, 173, 123, 0.2);
+  }
+  
+  [data-theme="day"] .volume-button {
+    color: var(--color-darkest);
+  }
+  
+  [data-theme="day"] .volume-button:hover {
+    background: rgba(5, 2, 31, 0.1);
+  }
+  
+  .volume-slider {
+    width: 70px;
+    height: 5px;
+    background: rgba(197, 173, 123, 0.4);
+    border-radius: 3px;
+    outline: none;
+    cursor: pointer;
+    -webkit-appearance: none;
+  }
+  
+  [data-theme="day"] .volume-slider {
+    background: rgba(5, 2, 31, 0.3);
+  }
+  
+  .volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 15px;
+    height: 15px;
+    background: var(--title-color);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+  
+  [data-theme="day"] .volume-slider::-webkit-slider-thumb {
+    background: var(--color-darkest);
+  }
+  
+  .volume-slider::-webkit-slider-thumb:hover {
+    transform: scale(1.2);
+  }
+  
+  .volume-slider::-moz-range-thumb {
+    width: 15px;
+    height: 15px;
+    background: var(--title-color);
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+  }
+  
+  [data-theme="day"] .volume-slider::-moz-range-thumb {
+    background: var(--color-darkest);
+  }
+  
+  [data-theme="night"] .radio-container {
+    width: 100%;
+    max-width: 100%;
+  }
+  
+  [data-theme="night"] .header-radio-player {
+    max-width: 100%;
+  }
+  
+  @media (max-width: 767px) {
+    .header-radio-player {
+      display: none;
+    }
+  }
+  
+  @media (min-width: 768px) and (max-width: 1200px) {
+    .radio-container {
+      width: 360px;
+      max-width: 360px;
+    }
+    
+    .header-radio-player {
+      padding: 14px 20px;
+    }
+    
+    .volume-slider {
+      width: 60px;
+    }
+  }
+</style>

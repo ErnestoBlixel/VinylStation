@@ -1,0 +1,156 @@
+---
+// Componente reutilizable para páginas legales de VinylStation
+export interface Props {
+  title: string;
+  description: string;
+  icon?: string;
+  version?: string;
+  lastUpdated?: string;
+}
+
+const { 
+  title, 
+  description, 
+  icon = "⚖️", 
+  version = "1.0",
+  lastUpdated = "Junio 2025" 
+} = Astro.props;
+---
+
+<div class="legal-header">
+  <div class="site-icon-container">
+    <img src="/images/logos/logo vinylstation.png" alt="VinylStation Logo" class="site-icon" />
+  </div>
+  <h1>{icon} {title}</h1>
+  <p class="page-description">{description}</p>
+  <div class="version-info">
+    <span class="version-badge">Versión {version}</span>
+    <span class="update-badge">Actualizado: {lastUpdated}</span>
+  </div>
+</div>
+
+<style>
+  .legal-header {
+    text-align: center;
+    padding: 4rem 0 3rem;
+    animation: fadeInUp 0.8s ease-out;
+  }
+  
+  @keyframes fadeInUp {
+    0% { transform: translateY(30px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+  
+  .site-icon-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+  }
+  
+  .site-icon {
+    height: 80px;
+    width: auto;
+    animation: pulse 3s infinite ease-in-out;
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(197, 173, 123, 0.5)); }
+    50% { transform: scale(1.05); filter: drop-shadow(0 0 8px rgba(197, 173, 123, 0.8)); }
+    100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(197, 173, 123, 0.5)); }
+  }
+  
+  h1 {
+    font-size: 3.5rem;
+    margin: 0 0 1.5rem;
+    color: var(--title-color);
+    position: relative;
+    display: inline-block;
+    font-weight: 800;
+  }
+  
+  h1::after {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 4px;
+    background: linear-gradient(90deg, 
+      transparent, 
+      var(--title-color),
+      transparent);
+    border-radius: 2px;
+  }
+  
+  .page-description {
+    max-width: 700px;
+    margin: 2rem auto 1rem;
+    color: #777;
+    font-size: 1.2rem;
+    line-height: 1.6;
+  }
+  
+  .version-info {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+  }
+  
+  .version-badge,
+  .update-badge {
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  
+  .version-badge {
+    background: var(--color-primary);
+    color: white;
+  }
+  
+  .update-badge {
+    background: rgba(197, 173, 123, 0.2);
+    color: var(--title-color);
+    border: 1px solid rgba(197, 173, 123, 0.3);
+  }
+  
+  /* Responsive */
+  @media (max-width: 768px) {
+    .legal-header {
+      padding: 2rem 0;
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+    }
+    
+    .page-description {
+      font-size: 1.1rem;
+    }
+    
+    .site-icon {
+      height: 60px;
+    }
+    
+    .version-info {
+      flex-direction: column;
+      align-items: center;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    h1 {
+      font-size: 2rem;
+    }
+    
+    .page-description {
+      font-size: 1rem;
+    }
+  }
+</style>

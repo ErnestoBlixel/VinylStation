@@ -1,0 +1,899 @@
+---
+import MainLayout from '../../../layouts/MainLayout.astro';
+import { getSiteInfo, getPageData, getTodosLasNoticias } from '../../../lib/wordpress.js';
+
+export async function getStaticPaths({ paginate }) {
+  console.log('🚀 Iniciando getStaticPaths para noticias...');
+  
+  try {
+    // Cargar TODAS las noticias
+    const todasLasNoticiasData = await getTodosLasNoticias();
+    
+    if (!todasLasNoticiasData || !todasLasNoticiasData.noticias) {
+      console.error('❌ No se pudieron cargar las noticias para paginación');
+      console.error('Data recibida:', todasLasNoticiasData);
+      return [];
+    }
+
+    console.log(`✅ Generando páginas estáticas para ${todasLasNoticiasData.noticias.length} noticias`);
+
+    // Usar la función paginate de Astro
+    const paginatedPages = paginate(todasLasNoticiasData.noticias, {
+      pageSize: 12, // 12 noticias por página (como el original)
+    });
+    
+    console.log(`📄 Se generarán ${paginatedPages.length} páginas estáticas`);
+    console.log(`📄 Primera página: ${paginatedPages[0]?.params}`);
+    console.log(`📄 Última página: ${paginatedPages[paginatedPages.length - 1]?.params}`);
+    
+    return paginatedPages;
+    
+  } catch (error) {
+    console.error('💥 Error en getStaticPaths:', error);
+    return [];
+  }
+}
+
+// Obtener datos de la página actual
+const { page } = Astro.props;
+
+// Helper para quitar HTML de la descripción
+const stripHtml = (html) =>
+  html?.replace?.(/<[^>]*>/g, '').trim() || '';
+
+// Helper para formatear fecha
+const formatDate = (dateString) => {
+  if (!dateString) return '';
+  const date = new Date(dateString);
+  return date.toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+};
+
+// Inicializa variables
+let hasError = false;
+let errorMessage = '';
+let siteInfo = null;
+let pageData = null;
+
+try {
+  siteInfo = await getSiteInfo();
+  pageData = await getPageData('noticias');
+  
+  if (!siteInfo || !siteInfo.title) throw new Error('No se pudo obtener el título del sitio desde WordPress');
+} catch (error) {
+  hasError = true;
+  errorMessage = `Error conectando con WordPress: ${error.message}`;
+}
+
+// Datos de paginación de Astro
+const noticias = page.data;
+const currentPage = page.currentPage;
+const totalPages = page.lastPage;
+
+const heroTitle = hasError ? null : (pageData?.title || "Últimas Noticias");
+const heroDescription = hasError ? null : (pageData?.excerpt || "Mantente al día con las últimas noticias de música, vinilo y cultura musical");
+const pageTitle = hasError ? 'Error - Noticias' : (pageData?.seo?.title || `${heroTitle} - Página ${currentPage} - VinylStation`);
+const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.metaDesc || heroDescription);
+
+// Helpers para paginación visible (máximo 5 botones)
+let paginasVisibles = [];
+if (totalPages <= 5) {
+  paginasVisibles = Array.from({ length: totalPages }, (_, i) => i + 1);
+} else {
+  if (currentPage <= 3) {
+    paginasVisibles = [1, 2, 3, 4, 5];
+  } else if (currentPage >= totalPages - 2) {
+    paginasVisibles = [totalPages - 4, totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+  } else {
+    paginasVisibles = [currentPage - 2, currentPage - 1, currentPage, currentPage + 1, currentPage + 2];
+  }
+  paginasVisibles = paginasVisibles.filter(p => p >= 1 && p <= totalPages);
+}
+
+// URLs de paginación
+const prevUrl = page.url.prev;
+const nextUrl = page.url.next;
+---
+<MainLayout title={pageTitle} description={pageDescription}>
+  <div class="main-content">
+    {hasError ? (
+      <div class="container hero-container">
+        <div class="error-container">
+          <div class="error-icon">📰</div>
+          <h1 class="error-title">Error Cargando Noticias</h1>
+          <p class="error-message">{errorMessage}</p>
+          <div class="error-details">
+            <h3>Posibles soluciones:</h3>
+            <ul>
+              <li>Verifica conexión a: https://cms.vinylstation.es/graphql</li>
+              <li>Comprueba que WordPress esté funcionando</li>
+              <li>Revisa configuración de GraphQL y ACF</li>
+              <li>Asegúrate de que las noticias tengan campos configurados</li>
+            </ul>
+          </div>
+          <div class="error-actions">
+            <button onclick="window.location.reload()" class="btn primary-btn">
+              🔄 Reintentar
+            </button>
+            <a href="/" class="btn secondary-btn">← Volver al inicio</a>
+          </div>
+        </div>
+      </div>
+    ) : (
+      <>
+        {/* HERO */}
+        <div class="container hero-container">
+          <header class="page-header">
+            <div class="site-icon-container">
+              <img src="/images/logos/logo vinylstation.png" alt="VinylStation Logo" class="site-icon" />
+            </div>
+            <h1>{heroTitle}</h1>
+            <p class="page-description">{heroDescription}</p>
+            <div class="news-stats">
+              <div class="stat-card">
+                <span class="stat-number">{page.total}</span>
+                <span class="stat-label">Noticias</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-number">{currentPage}</span>
+                <span class="stat-label">Página</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-number">{totalPages}</span>
+                <span class="stat-label">Total</span>
+              </div>
+              <div class="stat-card">
+                <span class="stat-number">24h</span>
+                <span class="stat-label">Actualizadas</span>
+              </div>
+            </div>
+            <div class="hero-actions">
+              <a href="/programas" class="btn secondary-btn">Ver Programas</a>
+              <a href="#noticias" class="btn primary-btn">Leer Noticias</a>
+            </div>
+          </header>
+        </div>
+
+        {/* NOTICIAS */}
+        <section id="noticias" class="news-section">
+          <div class="container">
+            <div class="section-header">
+              <div class="section-title-row">
+                <h2>Noticias - Página {currentPage} de {totalPages}</h2>
+              </div>
+              <p>
+                Mostrando {noticias.length} noticias de la página {currentPage}. 
+                Total de {page.total} noticias en {totalPages} páginas.
+              </p>
+            </div>
+            
+            {noticias.length > 0 ? (
+              <>
+                <div class="news-grid">
+                  {noticias.map((noticia) => {
+                    const imagen =
+                      noticia.imagenDestacadaUrl ||
+                      noticia.featuredImage?.node?.sourceUrl ||
+                      '/images/placeholder-news.jpg';
+
+                    const fechaPublicacion = formatDate(noticia.date);
+                    const categoriasNoticia = noticia.categorias?.nodes || [];
+                    const descripcion = stripHtml(noticia.excerpt || `Noticia "${noticia.title}" - Últimas noticias de VinylStation`);
+
+                    return (
+                      <article class="news-card">
+                        <div class="news-image">
+                          <img
+                            src={imagen}
+                            alt={noticia.featuredImage?.node?.altText || noticia.title}
+                            loading="lazy"
+                            onerror="this.src='/images/placeholder-news.jpg'"
+                          />
+                          <div class="news-overlay">
+                            <a href={`/noticias/${noticia.slug || noticia.id}`} class="news-link">
+                              Leer Noticia
+                            </a>
+                          </div>
+                          {categoriasNoticia.length > 0 && (
+                            <div class="news-categories">
+                              {categoriasNoticia.slice(0, 2).map((cat) => (
+                                <span class="category-badge" key={cat.id}>{cat.name}</span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        <div class="news-info">
+                          <h3 class="news-title-card">{noticia.title}</h3>
+                          <p class="news-description">{descripcion}</p>
+                          <div class="news-meta">
+                            <time class="news-date">{fechaPublicacion}</time>
+                          </div>
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+
+                {/* Paginación */}
+                <nav class="pagination">
+                  <ul>
+                    <li>
+                      {prevUrl ? (
+                        <a href={prevUrl} class="pagination-link">Anterior</a>
+                      ) : (
+                        <span class="pagination-link disabled">Anterior</span>
+                      )}
+                    </li>
+                    {paginasVisibles.map((p) => (
+                      <li>
+                        {p === currentPage ? (
+                          <span class="pagination-link current">{p}</span>
+                        ) : (
+                          <a href={p === 1 ? '/noticias/page/1/' : `/noticias/page/${p}/`} class="pagination-link">{p}</a>
+                        )}
+                      </li>
+                    ))}
+                    <li>
+                      {nextUrl ? (
+                        <a href={nextUrl} class="pagination-link">Siguiente</a>
+                      ) : (
+                        <span class="pagination-link disabled">Siguiente</span>
+                      )}
+                    </li>
+                  </ul>
+                </nav>
+              </>
+            ) : (
+              <div class="no-news">
+                <div class="no-news-icon">📰</div>
+                <h3>No hay noticias disponibles</h3>
+                <p>Las noticias aparecerán aquí cuando sean publicadas en WordPress.</p>
+              </div>
+            )}
+          </div>
+        </section>
+      </>
+    )}
+  </div>
+</MainLayout>
+
+<style>
+  /* ESTILOS COMPLETOS */
+  .main-content {
+    background: linear-gradient(
+      135deg,
+      var(--color-bg) 0%,
+      rgba(0, 0, 0, 0.02) 50%,
+      var(--color-bg) 100%
+    );
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    position: relative;
+    z-index: 1;
+  }
+  
+  .hero-container {
+    padding: 4rem 1rem;
+    min-height: 70vh;
+    display: flex;
+    align-items: center;
+  }
+  
+  /* === ESTILOS PARA ERROR === */
+  .error-container {
+    text-align: center;
+    width: 100%;
+    padding: 2rem;
+    background: #1a1a1a;
+    border-radius: 15px;
+    border: 2px solid #ff3333;
+  }
+  
+  .error-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+  
+  .error-title {
+    color: var(--title-color);
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .error-message {
+    color: #fff;
+    font-size: 1.2rem;
+    margin-bottom: 2rem;
+    background: #333;
+    padding: 1rem;
+    border-radius: 8px;
+    font-family: monospace;
+  }
+  
+  .error-details {
+    text-align: left;
+    max-width: 500px;
+    margin: 0 auto 2rem;
+    background: #2a2a2a;
+    padding: 1.5rem;
+    border-radius: 8px;
+  }
+  
+  .error-details h3 {
+    color: var(--title-color);
+    margin-bottom: 1rem;
+  }
+  
+  .error-details ul {
+    color: #ccc;
+    list-style-position: inside;
+  }
+  
+  .error-details li {
+    margin-bottom: 0.5rem;
+  }
+  
+  .page-header {
+    text-align: center;
+    width: 100%;
+  }
+  
+  .site-icon-container {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 2rem;
+  }
+  
+  .site-icon {
+    height: 120px;
+    width: auto;
+    animation: pulse 3s infinite ease-in-out;
+  }
+  
+  @keyframes pulse {
+    0% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255, 51, 51, 0.5)); }
+    50% { transform: scale(1.05); filter: drop-shadow(0 0 8px rgba(255, 51, 51, 0.8)); }
+    100% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(255, 51, 51, 0.5)); }
+  }
+  
+  h1 {
+    font-size: 4rem;
+    margin: 0 0 1.5rem;
+    color: var(--title-color);
+    position: relative;
+    display: inline-block;
+    font-weight: 800;
+  }
+  
+  h1::after {
+    content: '';
+    position: absolute;
+    bottom: -15px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 4px;
+    background: linear-gradient(90deg, 
+      transparent, 
+      var(--title-color),
+      transparent);
+    border-radius: 2px;
+  }
+  
+  .page-description {
+    max-width: 800px;
+    margin: 2rem auto 1rem;
+    color: #777;
+    font-size: 1.3rem;
+    line-height: 1.6;
+  }
+
+  .news-stats {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin: 2rem auto 0 auto;
+    flex-wrap: wrap;
+  }
+  
+  .stat-card {
+    background: linear-gradient(135deg, rgba(255,51,51,0.10), rgba(255,51,51,0.05));
+    border: 2px solid rgba(255, 51, 51, 0.2);
+    border-radius: 15px;
+    padding: 1.5rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 120px;
+    transition: all 0.3s ease;
+  }
+  
+  .stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
+    border-color: var(--title-color);
+  }
+  
+  .stat-number {
+    font-size: 2.1rem;
+    font-weight: 800;
+    color: var(--title-color);
+    line-height: 1;
+  }
+  
+  .stat-label {
+    font-size: 0.9rem;
+    color: #666;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .hero-actions {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 3rem;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    min-width: 180px;
+    text-align: center;
+    border: none;
+    cursor: pointer;
+  }
+
+  .primary-btn {
+    background: var(--color-primary, #ff3333);
+    color: #ffffff;
+    border: 2px solid var(--color-primary, #ff3333);
+  }
+
+  .primary-btn:hover {
+    background: var(--color-secondary, #bb2424);
+    border-color: var(--color-secondary, #bb2424);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
+  }
+
+  .secondary-btn {
+    background: transparent;
+    color: var(--color-primary, #ff3333);
+    border: 2px solid var(--color-primary, #ff3333);
+  }
+
+  .secondary-btn:hover {
+    background: var(--color-primary, #ff3333);
+    color: #ffffff;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
+  }
+
+  .news-section {
+    padding: 0;
+    background: transparent;
+    position: relative;
+    z-index: 1;
+    margin-top: -2rem;
+  }
+
+  .news-section .container {
+    padding: 4rem 1rem 6rem;
+  }
+
+  .section-header {
+    text-align: left;
+    margin-bottom: 3rem;
+    position: relative;
+  }
+
+  .section-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .section-header h2 {
+    font-size: 3.2rem;
+    margin: 0;
+    color: var(--title-color);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    position: relative;
+    display: inline-block;
+    animation: titleSlideIn 1s ease-out;
+  }
+
+  @keyframes titleSlideIn {
+    0% { transform: translateX(-30px); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+  }
+
+  .section-header p {
+    font-size: 1.3rem;
+    color: #777;
+    max-width: 800px;
+    line-height: 1.6;
+    margin: 2rem 0 0;
+    animation: textFadeIn 1s ease-out 0.3s both;
+  }
+
+  @keyframes textFadeIn {
+    0% { transform: translateY(20px); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+
+  .news-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+  
+  @media (max-width: 1200px) {
+    .news-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  
+  @media (max-width: 600px) {
+    .news-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+
+  .news-card {
+    background: var(--color-card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    border: 1px solid rgba(255, 51, 51, 0.1);
+    animation: cardSlideIn 0.6s ease-out both;
+  }
+
+  @keyframes cardSlideIn {
+    0% { transform: translateY(30px) scale(0.9); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
+
+  .news-card:nth-child(1) { animation-delay: 0.1s; }
+  .news-card:nth-child(2) { animation-delay: 0.15s; }
+  .news-card:nth-child(3) { animation-delay: 0.2s; }
+  .news-card:nth-child(4) { animation-delay: 0.25s; }
+
+  .news-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 30%, rgba(255, 51, 51, 0.05) 50%, transparent 70%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .news-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.25), 0 0 15px rgba(255, 51, 51, 0.2);
+    border-color: rgba(255, 51, 51, 0.3);
+  }
+
+  .news-card:hover::before {
+    opacity: 1;
+  }
+
+  .news-image {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+  }
+
+  .news-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .news-card:hover .news-image img {
+    transform: scale(1.1);
+  }
+
+  .news-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .news-card:hover .news-overlay {
+    opacity: 1;
+  }
+
+  .news-link {
+    background: linear-gradient(135deg, var(--title-color) 0%, #ff6b6b 100%);
+    color: white;
+    padding: 0.8rem 1.5rem;
+    border-radius: 25px;
+    text-decoration: none;
+    font-weight: 600;
+    transform: translateY(10px);
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 51, 51, 0.4);
+  }
+
+  .news-card:hover .news-link {
+    transform: translateY(0);
+  }
+
+  .news-categories {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    z-index: 2;
+  }
+
+  .category-badge {
+    background: linear-gradient(135deg, var(--title-color) 0%, #ff6b6b 100%);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 8px rgba(255, 51, 51, 0.3);
+  }
+
+  .news-info {
+    padding: 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .news-title-card {
+    font-size: 1.15rem;
+    font-weight: 700;
+    color: var(--title-color);
+    margin: 0 0 0.8rem 0;
+    line-height: 1.4;
+    transition: color 0.3s ease;
+  }
+
+  .news-card:hover .news-title-card {
+    color: #ff6b6b;
+  }
+
+  .news-description {
+    color: #777;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin: 0 0 1rem 0;
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    flex: 1;
+  }
+
+  .news-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(255, 51, 51, 0.1);
+    font-size: 0.8rem;
+    margin-top: auto;
+  }
+
+  .news-date {
+    color: var(--title-color);
+    font-weight: 600;
+  }
+
+  .no-news {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #666;
+  }
+
+  .no-news-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+
+  .no-news h3 {
+    color: var(--title-color);
+    margin-bottom: 0.5rem;
+  }
+
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 2rem;
+    margin: 3rem 0 1.5rem 0;
+  }
+
+  .pagination ul {
+    list-style: none;
+    display: flex;
+    gap: 0.6rem;
+    padding: 0;
+    margin: 0;
+  }
+
+  .pagination li {
+    display: inline-block;
+  }
+
+  .pagination-link {
+    display: inline-block;
+    padding: 0.5rem 1.1rem;
+    border-radius: 20px;
+    background: var(--color-card-bg);
+    color: var(--title-color);
+    border: 2px solid var(--title-color);
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(255, 51, 51, 0.1);
+    cursor: pointer;
+  }
+
+  .pagination-link:hover:not(.disabled):not(.current) {
+    background: var(--title-color);
+    color: #fff;
+    border-color: var(--title-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(255, 51, 51, 0.3);
+  }
+
+  .pagination-link.current {
+    background: var(--title-color);
+    color: #fff;
+    border-color: var(--title-color);
+    cursor: default;
+    pointer-events: none;
+  }
+
+  .pagination-link.disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    color: #888;
+    border-color: #555;
+    background: #1a1a1a;
+    pointer-events: none;
+  }
+
+  @media (max-width: 768px) {
+    .main-content {
+      min-height: auto;
+    }
+    
+    .hero-container {
+      padding: 2rem 1rem;
+      min-height: 60vh;
+    }
+    
+    .news-section {
+      margin-top: -1rem;
+    }
+    
+    .news-section .container {
+      padding: 2rem 1rem 4rem;
+    }
+
+    .site-icon {
+      height: 80px;
+    }
+    
+    h1 {
+      font-size: 2.5rem;
+    }
+    
+    .page-description {
+      font-size: 1.1rem;
+      margin: 1.5rem auto 1rem;
+    }
+
+    .hero-actions {
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .btn {
+      width: 200px;
+      padding: 0.9rem 1.5rem;
+      font-size: 1rem;
+    }
+
+    .error-title {
+      font-size: 2rem;
+    }
+    
+    .error-message {
+      font-size: 1rem;
+    }
+    
+    .section-header h2 {
+      font-size: 2.5rem;
+    }
+    
+    .section-header p {
+      font-size: 1.1rem;
+    }
+    
+    .section-title-row {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 1.5rem;
+    }
+  }
+  
+  @media (max-width: 480px) {
+    h1 {
+      font-size: 2rem;
+    }
+    
+    .page-description {
+      font-size: 1rem;
+    }
+    
+    .error-title {
+      font-size: 1.5rem;
+    }
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+</style>

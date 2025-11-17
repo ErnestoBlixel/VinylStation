@@ -1,0 +1,53 @@
+---
+// GoogleAdsense.astro - Componente para anuncios de Google AdSense
+// src/components/GoogleAdsense.astro
+
+interface Props {
+  slot: string;
+  format?: string;
+  responsive?: boolean;
+  style?: string;
+  layout?: string;
+  layoutKey?: string;
+}
+
+const { 
+  slot, 
+  format = 'auto',
+  responsive = true,
+  style = 'display:block',
+  layout,
+  layoutKey
+} = Astro.props;
+
+// ID de cliente de AdSense para VinylStation
+const CLIENT_ID = 'ca-pub-6260623796240430';
+---
+
+<ins class="adsbygoogle"
+     style={style}
+     data-ad-client={CLIENT_ID}
+     data-ad-slot={slot}
+     data-ad-format={format}
+     data-full-width-responsive={responsive}
+     data-ad-layout={layout}
+     data-ad-layout-key={layoutKey}>
+</ins>
+<script>
+     (adsbygoogle = window.adsbygoogle || []).push({});
+</script>
+
+<style>
+  /* Estilos para contenedor de anuncios */
+  .adsbygoogle {
+    text-align: center;
+    margin: 2rem 0;
+  }
+  
+  /* En móviles, ajustar márgenes */
+  @media (max-width: 768px) {
+    .adsbygoogle {
+      margin: 1.5rem 0;
+    }
+  }
+</style>

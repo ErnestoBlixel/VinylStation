@@ -1,0 +1,591 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import UniversalHero from '../../components/UniversalHero.astro';
+import { getEquipo, getEquipoBySlug } from '../../lib/wordpress.js';
+
+// ⚡ GENERAR RUTAS ESTÁTICAS
+export async function getStaticPaths() {
+  try {
+    const data = await getEquipo({ limit: 100 });
+    const equipo = data?.equipo || [];
+
+    return equipo.map((miembro) => ({
+      params: { slug: miembro.slug },
+    }));
+  } catch (error) {
+    console.error('❌ Error en getStaticPaths de equipo:', error);
+    return [];
+  }
+}
+
+const { slug } = Astro.params;
+
+// Helper para limpiar HTML
+const stripHtml = (html) =>
+  html?.replace?.(/<[^>]*>/g, '').trim() || '';
+
+let hasError = false;
+let errorMessage = '';
+let miembro = null;
+
+try {
+  const data = await getEquipoBySlug(slug);
+  
+  if (!data) {
+    throw new Error(`No se encontró el miembro del equipo con slug: ${slug}`);
+  }
+  
+  miembro = data;
+} catch (error) {
+  hasError = true;
+  errorMessage = error.message;
+}
+
+const pageTitle = hasError
+  ? 'Error - Miembro no encontrado'
+  : (miembro?.seo?.title || `${miembro?.title} - Equipo VinylStation`);
+
+const pageDescription = hasError
+  ? 'No se pudo cargar la información del miembro del equipo'
+  : (miembro?.seo?.metaDesc || stripHtml(miembro?.excerpt || ''));
+
+// Obtener imagen destacada
+const imagenDestacada = !hasError
+  ? (miembro?.imagenDestacadaUrl || 
+     miembro?.featuredImage?.node?.sourceUrl || 
+     '/images/placeholder-team.jpg')
+  : '/images/placeholder-team.jpg';
+
+// Obtener datos adicionales del miembro
+const biografia = miembro?.content || '';
+
+// Redes sociales disponibles
+const redesSociales = [];
+if (miembro?.camposEquipo?.vsFacebook) {
+  redesSociales.push({ plataforma: 'Facebook', url: miembro.camposEquipo.vsFacebook });
+}
+if (miembro?.camposEquipo?.vsInstagram) {
+  redesSociales.push({ plataforma: 'Instagram', url: miembro.camposEquipo.vsInstagram });
+}
+if (miembro?.camposEquipo?.vsWhatsapp) {
+  redesSociales.push({ plataforma: 'WhatsApp', url: miembro.camposEquipo.vsWhatsapp });
+}
+if (miembro?.camposEquipo?.vsTiktok) {
+  redesSociales.push({ plataforma: 'TikTok', url: miembro.camposEquipo.vsTiktok });
+}
+if (miembro?.camposEquipo?.vsYoutube) {
+  redesSociales.push({ plataforma: 'YouTube', url: miembro.camposEquipo.vsYoutube });
+}
+if (miembro?.camposEquipo?.vsSoundcloud) {
+  redesSociales.push({ plataforma: 'SoundCloud', url: miembro.camposEquipo.vsSoundcloud });
+}
+if (miembro?.camposEquipo?.vsPaginaWeb) {
+  redesSociales.push({ plataforma: 'Web', url: miembro.camposEquipo.vsPaginaWeb });
+}
+---
+
+<MainLayout title={pageTitle} description={pageDescription}>
+  <div class="main-content">
+    {hasError ? (
+      <div class="container">
+        <UniversalHero 
+          title="Error - Miembro no encontrado"
+          description="No se pudo cargar la información del miembro del equipo"
+          customClass="compact"
+        />
+        
+        <div class="error-container">
+          <div class="error-icon">❌</div>
+          <h2 class="error-title">Miembro no encontrado</h2>
+          <p class="error-message">{errorMessage}</p>
+          <div class="error-details">
+            <h3>Posibles causas:</h3>
+            <ul>
+              <li>El slug "{slug}" no existe en WordPress</li>
+              <li>El miembro fue eliminado o despublicado</li>
+              <li>Error de conexión con WordPress</li>
+            </ul>
+          </div>
+          <div class="error-actions">
+            <a href="/equipo" class="btn primary-btn">← Ver todo el equipo</a>
+            <a href="/" class="btn secondary-btn">Ir al inicio</a>
+          </div>
+        </div>
+      </div>
+    ) : (
+      <>
+        {/* HERO UNIVERSAL */}
+        <UniversalHero 
+          title={miembro.title}
+          description={stripHtml(miembro.excerpt || '')}
+          customClass="compact"
+        />
+
+        {/* CONTENIDO DEL MIEMBRO */}
+        <section class="member-section">
+          <div class="container">
+            <div class="member-layout">
+              
+              {/* COLUMNA IZQUIERDA - INFO */}
+              <aside class="member-sidebar">
+                
+                {/* IMAGEN */}
+                <div class="member-image-container">
+                  <img
+                    src={imagenDestacada}
+                    alt={miembro.featuredImage?.node?.altText || miembro.title}
+                    class="member-image"
+                    loading="eager"
+                    onerror="this.src='/images/placeholder-team.jpg'"
+                  />
+                </div>
+
+                {/* INFORMACIÓN - Oculta por ahora ya que no hay campos disponibles */}
+
+                {/* REDES SOCIALES */}
+                {redesSociales && redesSociales.length > 0 && (
+                  <div class="social-card">
+                    <h3 class="info-title">Redes Sociales</h3>
+                    <div class="social-links">
+                      {redesSociales.map((red) => (
+                        <a 
+                          href={red.url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          class="social-link"
+                          title={red.plataforma}
+                        >
+                          {red.plataforma === 'Facebook' && '👥'}
+                          {red.plataforma === 'Instagram' && '📷'}
+                          {red.plataforma === 'WhatsApp' && '📱'}
+                          {red.plataforma === 'TikTok' && '🎵'}
+                          {red.plataforma === 'YouTube' && '🎥'}
+                          {red.plataforma === 'SoundCloud' && '🎶'}
+                          {red.plataforma === 'Web' && '🌐'}
+                          <span>{red.plataforma}</span>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* BOTÓN VOLVER */}
+                <a href="/equipo" class="btn-back">
+                  ← Ver todo el equipo
+                </a>
+              </aside>
+
+              {/* COLUMNA DERECHA - BIOGRAFÍA */}
+              <article class="member-content">
+                <div class="content-header">
+                  <h2>Biografía</h2>
+                </div>
+
+                {biografia ? (
+                  <div class="biografia-content" set:html={biografia}></div>
+                ) : (
+                  <div class="no-content">
+                    <p>No hay biografía disponible para este miembro del equipo.</p>
+                  </div>
+                )}
+              </article>
+            </div>
+          </div>
+        </section>
+      </>
+    )}
+  </div>
+</MainLayout>
+
+<style>
+  /* ESTILOS PRINCIPALES */
+  .main-content {
+    background: linear-gradient(135deg, var(--color-bg) 0%, rgba(0, 0, 0, 0.02) 100%);
+    min-height: 100vh;
+  }
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+
+  /* === ESTILOS DE ERROR === */
+  .error-container {
+    text-align: center;
+    padding: 2rem;
+    margin: 2rem auto;
+    background: var(--card-bg);
+    border-radius: 15px;
+    border: 2px solid var(--title-color);
+    max-width: 600px;
+  }
+
+  .error-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+
+  .error-title {
+    color: var(--title-color);
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .error-message {
+    color: var(--text-color);
+    font-size: 1rem;
+    margin-bottom: 2rem;
+    background: rgba(0,0,0,0.3);
+    padding: 1rem;
+    border-radius: 8px;
+    font-family: monospace;
+  }
+
+  .error-details {
+    text-align: left;
+    background: rgba(0,0,0,0.2);
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+  }
+
+  .error-details h3 {
+    color: var(--title-color);
+    margin-bottom: 1rem;
+  }
+
+  .error-details ul {
+    color: var(--text-color);
+    list-style-position: inside;
+  }
+
+  .error-details li {
+    margin-bottom: 0.5rem;
+  }
+
+  .error-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  /* === LAYOUT DEL MIEMBRO === */
+  .member-section {
+    padding: 4rem 0;
+  }
+
+  .member-layout {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 3rem;
+    align-items: start;
+  }
+
+  /* === SIDEBAR === */
+  .member-sidebar {
+    position: sticky;
+    top: 2rem;
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+  }
+
+  .member-image-container {
+    aspect-ratio: 1 / 1;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    border: 3px solid var(--title-color);
+  }
+
+  .member-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .member-info-card,
+  .social-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(197, 173, 123, 0.1);
+  }
+
+  .info-title {
+    color: var(--title-color);
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin: 0 0 1.5rem 0;
+    padding-bottom: 0.8rem;
+    border-bottom: 2px solid rgba(197, 173, 123, 0.2);
+  }
+
+  .info-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1.2rem;
+    padding-bottom: 1.2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  }
+
+  .info-item:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .info-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+  }
+
+  .info-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .info-label {
+    font-size: 0.85rem;
+    color: var(--text-color);
+    opacity: 0.7;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+  }
+
+  .info-value {
+    font-size: 1rem;
+    color: var(--title-color);
+    font-weight: 500;
+    word-break: break-word;
+  }
+
+  .info-link {
+    color: var(--title-color);
+    text-decoration: none;
+    transition: opacity 0.3s ease;
+  }
+
+  .info-link:hover {
+    opacity: 0.7;
+    text-decoration: underline;
+  }
+
+  /* REDES SOCIALES */
+  .social-links {
+    display: flex;
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+
+  .social-link {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.8rem;
+    background: rgba(197, 173, 123, 0.1);
+    border-radius: 8px;
+    text-decoration: none;
+    color: var(--title-color);
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border: 1px solid transparent;
+  }
+
+  .social-link:hover {
+    background: rgba(197, 173, 123, 0.2);
+    border-color: var(--title-color);
+    transform: translateX(5px);
+  }
+
+  /* BOTÓN VOLVER */
+  .btn-back {
+    display: inline-block;
+    width: 100%;
+    padding: 1rem;
+    background: var(--title-color);
+    color: var(--color-bg);
+    text-align: center;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .btn-back:hover {
+    background: #a8935e;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(197, 173, 123, 0.3);
+  }
+
+  /* === CONTENIDO PRINCIPAL === */
+  .member-content {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(197, 173, 123, 0.1);
+  }
+
+  .content-header {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid rgba(197, 173, 123, 0.2);
+  }
+
+  .content-header h2 {
+    color: var(--title-color);
+    font-size: 2rem;
+    font-weight: 700;
+    margin: 0;
+  }
+
+  .biografia-content {
+    color: var(--text-color);
+    font-size: 1.1rem;
+    line-height: 1.8;
+  }
+
+  .biografia-content :global(h1),
+  .biografia-content :global(h2),
+  .biografia-content :global(h3),
+  .biografia-content :global(h4) {
+    color: var(--title-color);
+    margin: 2rem 0 1rem 0;
+    font-weight: 700;
+  }
+
+  .biografia-content :global(p) {
+    margin-bottom: 1.5rem;
+  }
+
+  .biografia-content :global(ul),
+  .biografia-content :global(ol) {
+    margin: 1.5rem 0;
+    padding-left: 2rem;
+  }
+
+  .biografia-content :global(li) {
+    margin-bottom: 0.8rem;
+  }
+
+  .biografia-content :global(a) {
+    color: var(--title-color);
+    text-decoration: underline;
+    transition: opacity 0.3s ease;
+  }
+
+  .biografia-content :global(a:hover) {
+    opacity: 0.7;
+  }
+
+  .biografia-content :global(img) {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 2rem 0;
+  }
+
+  .biografia-content :global(blockquote) {
+    border-left: 4px solid var(--title-color);
+    padding-left: 1.5rem;
+    margin: 2rem 0;
+    font-style: italic;
+    opacity: 0.9;
+  }
+
+  .no-content {
+    text-align: center;
+    padding: 3rem;
+    color: var(--text-color);
+    opacity: 0.7;
+  }
+
+  /* BOTONES */
+  .btn {
+    display: inline-block;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    border: 2px solid;
+    text-align: center;
+  }
+
+  .primary-btn {
+    background: var(--title-color);
+    color: var(--color-bg);
+    border-color: var(--title-color);
+  }
+
+  .primary-btn:hover {
+    background: #a8935e;
+    border-color: #a8935e;
+  }
+
+  .secondary-btn {
+    background: transparent;
+    color: var(--title-color);
+    border-color: var(--title-color);
+  }
+
+  .secondary-btn:hover {
+    background: var(--title-color);
+    color: var(--color-bg);
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 992px) {
+    .member-layout {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+    }
+
+    .member-sidebar {
+      position: relative;
+      top: 0;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .member-section {
+      padding: 2rem 0;
+    }
+
+    .member-content {
+      padding: 1.5rem;
+    }
+
+    .content-header h2 {
+      font-size: 1.5rem;
+    }
+
+    .biografia-content {
+      font-size: 1rem;
+    }
+
+    .error-actions {
+      flex-direction: column;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .member-info-card,
+    .social-card {
+      padding: 1rem;
+    }
+
+    .info-title {
+      font-size: 1.1rem;
+    }
+  }
+</style>

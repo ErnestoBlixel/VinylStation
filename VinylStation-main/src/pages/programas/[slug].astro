@@ -1,0 +1,847 @@
+---
+// src/pages/programas/[slug].astro
+import MainLayout from "../../layouts/MainLayout.astro";
+import HomeHero from "../../components/HomeHero.astro";
+import { getSiteInfo, getProgramaBySlug, getProgramas } from "../../lib/wordpress";
+
+export async function getStaticPaths() {
+  const { programas } = await getProgramas({ limit: 100 });
+  return programas.map((p) => ({ params: { slug: p.slug }, props: { programa: p } }));
+}
+
+const { slug } = Astro.params;
+const { programa } = Astro.props;
+
+const siteInfo = await getSiteInfo();
+const data = programa || (await getProgramaBySlug(slug));
+if (!data) {
+  return Astro.redirect("/404");
+}
+
+const imagenPrograma =
+  data.imagenPrincipalUrl ||
+  data.imagenPrincipal?.sourceUrl ||
+  data.featuredImage?.node?.sourceUrl ||
+  "/images/placeholder-radio.jpg";
+
+const altImagen =
+  data.imagenPrincipal?.altText ||
+  data.featuredImage?.node?.altText ||
+  data.title;
+
+const pageTitle = data.seo?.title || `${data.title} - VinylStation`;
+const pageDescription =
+  data.seo?.metaDesc ||
+  data.camposPrograma?.vsDescripcion ||
+  `Escucha "${data.title}", programa en VinylStation Radio.`;
+
+// Función helper para formatear las redes sociales
+const socialLinks = [
+  { url: data.camposPrograma?.vsFacebook, icon: "facebook", label: "Facebook" },
+  { url: data.camposPrograma?.vsInstagram, icon: "instagram", label: "Instagram" },
+  { url: data.camposPrograma?.vsWhatsapp, icon: "whatsapp", label: "WhatsApp" },
+  { url: data.camposPrograma?.vsTiktok, icon: "tiktok", label: "TikTok" },
+  { url: data.camposPrograma?.vsYoutube, icon: "youtube", label: "YouTube" },
+  { url: data.camposPrograma?.vsSoundcloud, icon: "soundcloud", label: "SoundCloud" },
+].filter(social => social.url);
+
+// Función para formatear el número de WhatsApp
+function formatWhatsAppUrl(number) {
+  if (!number) return "";
+  // Eliminar todos los caracteres no numéricos
+  const cleaned = number.replace(/\D/g, '');
+  return `https://wa.me/${cleaned}`;
+}
+
+// Obtener una descripción breve del programa para el hero
+const heroDescription = data.camposPrograma?.vsDescripcion 
+  ? data.camposPrograma.vsDescripcion.replace(/<[^>]*>/g, '').substring(0, 150) + '...'
+  : `Escucha ${data.title} en VinylStation Radio`;
+---
+<MainLayout title={`${pageTitle} | ${siteInfo.title}`} description={pageDescription}>
+  <!-- Contenedor principal unificado -->
+  <div class="main-content">
+    <!-- Hero del programa con el título de la API -->
+    <HomeHero 
+      title={data.title}
+      description={heroDescription}
+    />
+
+    <!-- Breadcrumbs -->
+    <nav class="breadcrumbs">
+      <div class="container">
+        <a href="/">Inicio</a>
+        <span class="separator">›</span>
+        <a href="/programas">Programas</a>
+        <span class="separator">›</span>
+        <span class="current">{data.title}</span>
+      </div>
+    </nav>
+
+    <section class="programa-details">
+      <div class="container">
+        <div class="programa-layout">
+          <div class="programa-image-section">
+            <div class="main-image">
+              <img
+                src={imagenPrograma}
+                alt={altImagen}
+                loading="lazy"
+                onerror="this.onerror=null;this.src='/images/placeholder-radio.jpg';"
+              />
+              <div class="programa-badge">PROGRAMA</div>
+            </div>
+          </div>
+
+          <div class="programa-info-section">
+            <!-- Descripción del programa -->
+            {data.content && (
+              <div class="programa-description">
+                <div class="content" set:html={data.content}></div>
+              </div>
+            )}
+
+            <!-- Redes sociales del programa -->
+            {socialLinks.length > 0 && (
+              <div class="social-links">
+                {socialLinks.map((social) => (
+                  <a 
+                    href={social.icon === 'whatsapp' ? formatWhatsAppUrl(social.url) : social.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    class={`social-link ${social.icon}`}
+                    title={social.label}
+                  >
+                    <svg class="social-icon" viewBox="0 0 24 24" fill="currentColor">
+                      {social.icon === 'facebook' && (
+                        <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                      )}
+                      {social.icon === 'instagram' && (
+                        <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zM5.838 12a6.162 6.162 0 1112.324 0 6.162 6.162 0 01-12.324 0zM12 16a4 4 0 110-8 4 4 0 010 8zm4.965-10.405a1.44 1.44 0 112.881.001 1.44 1.44 0 01-2.881-.001z"/>
+                      )}
+                      {social.icon === 'whatsapp' && (
+                        <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                      )}
+                      {social.icon === 'tiktok' && (
+                        <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+                      )}
+                      {social.icon === 'youtube' && (
+                        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                      )}
+                      {social.icon === 'soundcloud' && (
+                        <path d="M1.175 12.225c-.051 0-.094.046-.101.115l-.233 2.154.233 2.121c.007.069.05.116.101.116.05 0 .09-.047.099-.116l.255-2.121-.27-2.154c-.009-.069-.05-.115-.101-.115zm-.899.828c-.06 0-.091.037-.104.094L0 14.479l.165 1.308c.014.057.045.094.09.094s.089-.037.099-.094l.19-1.308-.21-1.334c-.01-.057-.045-.09-.09-.09zm1.83-1.229c-.061 0-.121.051-.127.132l-.209 2.563.209 2.458c.006.08.066.131.127.131.06 0 .12-.051.126-.131l.239-2.458-.239-2.563c-.006-.081-.066-.132-.126-.132zm.915-.636c-.075 0-.135.065-.142.155l-.193 3.177.193 3.08c.007.09.067.154.142.154.074 0 .135-.064.142-.154l.219-3.08-.219-3.177c-.007-.09-.068-.155-.142-.155zm.991-.38c-.089 0-.165.08-.172.185l-.176 3.544.176 3.353c.007.104.083.184.172.184.089 0 .165-.08.172-.184l.201-3.353-.201-3.544c-.007-.105-.083-.185-.172-.185zm1.031-.613c-.104 0-.194.094-.202.213l-.158 4.136.158 3.821c.008.12.098.214.202.214.104 0 .194-.094.202-.214l.18-3.821-.18-4.136c-.008-.12-.098-.213-.202-.213zm1.047-.6c-.119 0-.224.109-.231.244l-.141 4.738.141 3.629c.007.135.112.243.231.243.118 0 .223-.108.231-.243l.16-3.629-.16-4.738c-.008-.135-.113-.244-.231-.244zm1.063-.252c-.133 0-.253.124-.261.274l-.123 4.99.123 3.397c.008.15.128.273.261.273.134 0 .253-.123.261-.273l.14-3.397-.14-4.99c-.008-.15-.127-.274-.261-.274zm6.556 1.057a3.77 3.77 0 00-.802.084c-.165-1.89-1.739-3.372-3.669-3.372-.471 0-.871.095-1.123.202-.089.037-.112.073-.112.145v6.661c0 .075.024.138.088.156.004.001 6.595.001 6.618.001 1.318 0 2.386-1.068 2.386-2.386s-1.068-2.386-2.386-2.386zm-5.493-.844c-.148 0-.283.138-.291.302l-.105 5.079.105 3.305c.008.164.143.301.291.301.148 0 .282-.137.291-.301l.12-3.305-.12-5.079c-.009-.164-.143-.302-.291-.302zm1.078-.215c-.163 0-.312.152-.321.331l-.089 5.295.089 3.184c.009.178.158.33.321.33.162 0 .312-.152.32-.33l.101-3.184-.101-5.295c-.008-.179-.158-.331-.32-.331zm1.094.063c-.178 0-.342.167-.35.361l-.071 4.932.071 3.121c.008.193.172.36.35.36.178 0 .342-.167.35-.36l.082-3.121-.082-4.932c-.008-.194-.172-.361-.35-.361zm1.095.203c-.193 0-.371.181-.38.39l-.054 4.591.054 3.044c.009.208.187.389.38.389.192 0 .371-.181.379-.389l.061-3.044-.061-4.591c-.008-.209-.187-.39-.379-.39z"/>
+                      )}
+                    </svg>
+                  </a>
+                ))}
+              </div>
+            )}
+
+            <div class="programa-actions">
+              <a href="/programas" class="btn primary-btn">
+                ← Volver a todos los programas
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Sección del equipo -->
+    {data.camposPrograma?.vsEquipo?.nodes?.length > 0 && (
+      <section class="equipo-section">
+        <div class="container">
+          <h2 class="section-title">Equipo del Programa</h2>
+          <div class="equipo-list">
+            {data.camposPrograma.vsEquipo.nodes.map((miembro) => {
+              const imagenMiembro = miembro.featuredImage?.node?.sourceUrl || "/images/placeholder-team.jpg";
+              const socialLinksMiembro = [
+                { url: miembro.camposEquipo?.vsFacebook, icon: "facebook", label: "Facebook" },
+                { url: miembro.camposEquipo?.vsInstagram, icon: "instagram", label: "Instagram" },
+                { url: miembro.camposEquipo?.vsWhatsapp, icon: "whatsapp", label: "WhatsApp" },
+                { url: miembro.camposEquipo?.vsTiktok, icon: "tiktok", label: "TikTok" },
+                { url: miembro.camposEquipo?.vsYoutube, icon: "youtube", label: "YouTube" },
+                { url: miembro.camposEquipo?.vsSoundcloud, icon: "soundcloud", label: "SoundCloud" },
+                { url: miembro.camposEquipo?.vsPaginaWeb, icon: "web", label: "Sitio Web" },
+              ].filter(social => social.url);
+
+              return (
+                <div class="equipo-card">
+                  <div class="equipo-image">
+                    <img 
+                      src={imagenMiembro} 
+                      alt={miembro.title}
+                      loading="lazy"
+                      onerror="this.onerror=null;this.src='/images/placeholder-team.jpg';"
+                    />
+                  </div>
+                  <div class="equipo-info">
+                    <h3>{miembro.title}</h3>
+                    {socialLinksMiembro.length > 0 && (
+                      <div class="equipo-social">
+                        {socialLinksMiembro.map((social) => (
+                          <a 
+                            href={social.icon === 'whatsapp' ? formatWhatsAppUrl(social.url) : social.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            class={`social-link-small ${social.icon}`}
+                            title={`${social.label} de ${miembro.title}`}
+                          >
+                            <svg class="social-icon-small" viewBox="0 0 24 24" fill="currentColor">
+                              {social.icon === 'facebook' && (
+                                <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
+                              )}
+                              {social.icon === 'instagram' && (
+                                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zM5.838 12a6.162 6.162 0 1112.324 0 6.162 6.162 0 01-12.324 0zM12 16a4 4 0 110-8 4 4 0 010 8zm4.965-10.405a1.44 1.44 0 112.881.001 1.44 1.44 0 01-2.881-.001z"/>
+                              )}
+                              {social.icon === 'whatsapp' && (
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                              )}
+                              {social.icon === 'tiktok' && (
+                                <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/>
+                              )}
+                              {social.icon === 'youtube' && (
+                                <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                              )}
+                              {social.icon === 'soundcloud' && (
+                                <path d="M1.175 12.225c-.051 0-.094.046-.101.115l-.233 2.154.233 2.121c.007.069.05.116.101.116.05 0 .09-.047.099-.116l.255-2.121-.27-2.154c-.009-.069-.05-.115-.101-.115zm-.899.828c-.06 0-.091.037-.104.094L0 14.479l.165 1.308c.014.057.045.094.09.094s.089-.037.099-.094l.19-1.308-.21-1.334c-.01-.057-.045-.09-.09-.09zm1.83-1.229c-.061 0-.121.051-.127.132l-.209 2.563.209 2.458c.006.08.066.131.127.131.06 0 .12-.051.126-.131l.239-2.458-.239-2.563c-.006-.081-.066-.132-.126-.132zm.915-.636c-.075 0-.135.065-.142.155l-.193 3.177.193 3.08c.007.09.067.154.142.154.074 0 .135-.064.142-.154l.219-3.08-.219-3.177c-.007-.09-.068-.155-.142-.155zm.991-.38c-.089 0-.165.08-.172.185l-.176 3.544.176 3.353c.007.104.083.184.172.184.089 0 .165-.08.172-.184l.201-3.353-.201-3.544c-.007-.105-.083-.185-.172-.185zm1.031-.613c-.104 0-.194.094-.202.213l-.158 4.136.158 3.821c.008.12.098.214.202.214.104 0 .194-.094.202-.214l.18-3.821-.18-4.136c-.008-.12-.098-.213-.202-.213zm1.047-.6c-.119 0-.224.109-.231.244l-.141 4.738.141 3.629c.007.135.112.243.231.243.118 0 .223-.108.231-.243l.16-3.629-.16-4.738c-.008-.135-.113-.244-.231-.244zm1.063-.252c-.133 0-.253.124-.261.274l-.123 4.99.123 3.397c.008.15.128.273.261.273.134 0 .253-.123.261-.273l.14-3.397-.14-4.99c-.008-.15-.127-.274-.261-.274zm6.556 1.057a3.77 3.77 0 00-.802.084c-.165-1.89-1.739-3.372-3.669-3.372-.471 0-.871.095-1.123.202-.089.037-.112.073-.112.145v6.661c0 .075.024.138.088.156.004.001 6.595.001 6.618.001 1.318 0 2.386-1.068 2.386-2.386s-1.068-2.386-2.386-2.386zm-5.493-.844c-.148 0-.283.138-.291.302l-.105 5.079.105 3.305c.008.164.143.301.291.301.148 0 .282-.137.291-.301l.12-3.305-.12-5.079c-.009-.164-.143-.302-.291-.302zm1.078-.215c-.163 0-.312.152-.321.331l-.089 5.295.089 3.184c.009.178.158.33.321.33.162 0 .312-.152.32-.33l.101-3.184-.101-5.295c-.008-.179-.158-.331-.32-.331zm1.094.063c-.178 0-.342.167-.35.361l-.071 4.932.071 3.121c.008.193.172.36.35.36.178 0 .342-.167.35-.36l.082-3.121-.082-4.932c-.008-.194-.172-.361-.35-.361zm1.095.203c-.193 0-.371.181-.38.39l-.054 4.591.054 3.044c.009.208.187.389.38.389.192 0 .371-.181.379-.389l.061-3.044-.061-4.591c-.008-.209-.187-.39-.379-.39z"/>
+                              )}
+                              {social.icon === 'web' && (
+                                <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm8.485 12c0 .673-.093 1.322-.261 1.938l-3.669-3.669c.626-.459 1.039-1.199 1.039-2.033 0-1.381-1.119-2.5-2.5-2.5-.834 0-1.574.413-2.033 1.039l-3.669-3.669A8.428 8.428 0 0111.33 2.845v3.687c0 .276.224.5.5.5h2.34c.276 0 .5-.224.5-.5V3.515a8.485 8.485 0 015.815 8.485zM12 21.515a8.485 8.485 0 01-8.485-8.485c0-.673.093-1.322.261-1.938l3.669 3.669c-.626.459-1.039 1.199-1.039 2.033 0 1.381 1.119 2.5 2.5 2.5.834 0 1.574-.413 2.033-1.039l3.669 3.669a8.428 8.428 0 01-1.938.261h-.005v-3.687c0-.276-.224-.5-.5-.5h-2.34c-.276 0-.5.224-.5.5v3.017c-.11 0-.22 0-.33 0z"/>
+                              )}
+                            </svg>
+                          </a>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    )}
+
+    <!-- Sección de podcasts -->
+    {data.camposPrograma?.vsPodcasts?.nodes?.length > 0 && (
+      <section class="podcasts-section">
+        <div class="container">
+          <h2 class="section-title">Podcasts del Programa</h2>
+          <div class="podcasts-grid">
+            {data.camposPrograma.vsPodcasts.nodes.map((podcast) => {
+              const imagenPodcast = podcast.featuredImage?.node?.sourceUrl || "/images/placeholder-podcast.jpg";
+              const fechaEmision = podcast.camposPodcast?.vsFechaEmision 
+                ? new Date(podcast.camposPodcast.vsFechaEmision).toLocaleDateString('es-ES', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  })
+                : new Date(podcast.date).toLocaleDateString('es-ES', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                  });
+
+              return (
+                <article class="podcast-card">
+                  <div class="podcast-image">
+                    <img 
+                      src={imagenPodcast} 
+                      alt={podcast.title}
+                      loading="lazy"
+                      onerror="this.onerror=null;this.src='/images/placeholder-podcast.jpg';"
+                    />
+                    <div class="podcast-badge">PODCAST</div>
+                  </div>
+                  <div class="podcast-content">
+                    <h3>{podcast.title}</h3>
+                    <p class="podcast-date">{fechaEmision}</p>
+                    <div class="podcast-links">
+                      {podcast.camposPodcast?.vsSoundcloud && (
+                        <a 
+                          href={podcast.camposPodcast.vsSoundcloud} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          class="podcast-link soundcloud"
+                          title="Escuchar en SoundCloud"
+                        >
+                          <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                            <path d="M1.175 12.225c-.051 0-.094.046-.101.115l-.233 2.154.233 2.121c.007.069.05.116.101.116.05 0 .09-.047.099-.116l.255-2.121-.27-2.154c-.009-.069-.05-.115-.101-.115zm-.899.828c-.06 0-.091.037-.104.094L0 14.479l.165 1.308c.014.057.045.094.09.094s.089-.037.099-.094l.19-1.308-.21-1.334c-.01-.057-.045-.09-.09-.09zm1.83-1.229c-.061 0-.121.051-.127.132l-.209 2.563.209 2.458c.006.08.066.131.127.131.06 0 .12-.051.126-.131l.239-2.458-.239-2.563c-.006-.081-.066-.132-.126-.132zm.915-.636c-.075 0-.135.065-.142.155l-.193 3.177.193 3.08c.007.09.067.154.142.154.074 0 .135-.064.142-.154l.219-3.08-.219-3.177c-.007-.09-.068-.155-.142-.155zm.991-.38c-.089 0-.165.08-.172.185l-.176 3.544.176 3.353c.007.104.083.184.172.184.089 0 .165-.08.172-.184l.201-3.353-.201-3.544c-.007-.105-.083-.185-.172-.185zm1.031-.613c-.104 0-.194.094-.202.213l-.158 4.136.158 3.821c.008.12.098.214.202.214.104 0 .194-.094.202-.214l.18-3.821-.18-4.136c-.008-.12-.098-.213-.202-.213zm1.047-.6c-.119 0-.224.109-.231.244l-.141 4.738.141 3.629c.007.135.112.243.231.243.118 0 .223-.108.231-.243l.16-3.629-.16-4.738c-.008-.135-.113-.244-.231-.244zm1.063-.252c-.133 0-.253.124-.261.274l-.123 4.99.123 3.397c.008.15.128.273.261.273.134 0 .253-.123.261-.273l.14-3.397-.14-4.99c-.008-.15-.127-.274-.261-.274zm6.556 1.057a3.77 3.77 0 00-.802.084c-.165-1.89-1.739-3.372-3.669-3.372-.471 0-.871.095-1.123.202-.089.037-.112.073-.112.145v6.661c0 .075.024.138.088.156.004.001 6.595.001 6.618.001 1.318 0 2.386-1.068 2.386-2.386s-1.068-2.386-2.386-2.386zm-5.493-.844c-.148 0-.283.138-.291.302l-.105 5.079.105 3.305c.008.164.143.301.291.301.148 0 .282-.137.291-.301l.12-3.305-.12-5.079c-.009-.164-.143-.302-.291-.302zm1.078-.215c-.163 0-.312.152-.321.331l-.089 5.295.089 3.184c.009.178.158.33.321.33.162 0 .312-.152.32-.33l.101-3.184-.101-5.295c-.008-.179-.158-.331-.32-.331zm1.094.063c-.178 0-.342.167-.35.361l-.071 4.932.071 3.121c.008.193.172.36.35.36.178 0 .342-.167.35-.36l.082-3.121-.082-4.932c-.008-.194-.172-.361-.35-.361zm1.095.203c-.193 0-.371.181-.38.39l-.054 4.591.054 3.044c.009.208.187.389.38.389.192 0 .371-.181.379-.389l.061-3.044-.061-4.591c-.008-.209-.187-.39-.379-.39z"/>
+                          </svg>
+                          SoundCloud
+                        </a>
+                      )}
+                      {podcast.camposPodcast?.vsYoutube && (
+                        <a 
+                          href={podcast.camposPodcast.vsYoutube} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          class="podcast-link youtube"
+                          title="Ver en YouTube"
+                        >
+                          <svg viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+                            <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/>
+                          </svg>
+                          YouTube
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+    )}
+  </div>
+</MainLayout>
+
+<style>
+  /* === CONTENEDOR PRINCIPAL UNIFICADO === */
+  .main-content {
+    background: linear-gradient(
+      135deg,
+      var(--color-bg) 0%,
+      rgba(0, 0, 0, 0.02) 50%,
+      var(--color-bg) 100%
+    );
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+  }
+  
+  .main-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -50%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(
+      45deg, 
+      transparent 30%, 
+      rgba(255, 51, 51, 0.02) 50%, 
+      transparent 70%
+    );
+    animation: backgroundShimmer 20s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 0;
+  }
+  
+  @keyframes backgroundShimmer {
+    0%, 100% { transform: translateX(-100%) rotate(0deg); opacity: 0.3; }
+    50% { transform: translateX(0%) rotate(1deg); opacity: 0.7; }
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* === BREADCRUMBS === */
+  .breadcrumbs {
+    background: var(--color-card-bg);
+    padding: 1rem 0;
+    border-bottom: 1px solid rgba(255, 51, 51, 0.1);
+    position: relative;
+    z-index: 2;
+  }
+
+  .breadcrumbs .container {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+  }
+
+  .breadcrumbs a {
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    transition: color 0.3s ease;
+  }
+
+  .breadcrumbs a:hover {
+    color: var(--color-text);
+  }
+
+  .breadcrumbs .separator {
+    color: var(--color-text-secondary);
+    opacity: 0.5;
+  }
+
+  .breadcrumbs .current {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+
+  /* === GRID PRINCIPAL === */
+  .programa-details {
+    position: relative;
+    z-index: 1;
+    padding: 3rem 0 6rem;
+  }
+  
+  .programa-details .container {
+    margin: 0 auto;
+  }
+  
+  .programa-layout {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    gap: 4rem;
+    align-items: stretch;
+    height: auto;
+  }
+  
+  @media (max-width: 968px) {
+    .programa-layout {
+      grid-template-columns: 1fr;
+      gap: 2rem;
+      height: auto;
+    }
+    
+    .programa-image-section {
+      height: auto;
+    }
+    
+    .programa-info-section {
+      height: auto;
+      overflow-y: visible;
+    }
+  }
+
+  /* === IMAGEN 1:1 === */
+  .programa-image-section {
+    position: sticky;
+    top: 2rem;
+    animation: fadeInUp 0.8s ease-out;
+    height: auto;
+  }
+  
+  .programa-image-section .main-image {
+    position: relative;
+    aspect-ratio: 1/1;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 51, 51, 0.1);
+    transition: transform 0.3s ease;
+  }
+  
+  .programa-image-section .main-image:hover {
+    transform: scale(1.02);
+  }
+  
+  .programa-image-section .main-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  /* === BADGE === */
+  .programa-badge {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    background: linear-gradient(135deg, var(--title-color) 0%, #ff6b6b 100%);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(255, 51, 51, 0.3);
+    backdrop-filter: blur(10px);
+  }
+
+  /* === SECCIÓN DE INFO === */
+  .programa-info-section {
+    background: var(--color-card-bg);
+    padding: 2.5rem;
+    border-radius: 20px;
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+    border: 1px solid rgba(255, 51, 51, 0.1);
+    animation: fadeInUp 0.8s ease-out 0.2s both;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    height: auto;
+    overflow-y: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  
+  .programa-info-section::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* === DESCRIPCIÓN === */
+  .programa-description {
+    margin-bottom: 2rem;
+  }
+  
+  .content,
+  .programa-description p {
+    color: var(--color-text);
+    line-height: 1.7;
+    font-size: 1.1rem;
+    margin-bottom: 1rem;
+  }
+
+  /* === REDES SOCIALES === */
+  .social-links {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .social-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    background: rgba(255, 51, 51, 0.1);
+    color: var(--title-color);
+    text-decoration: none;
+    transition: all 0.3s ease;
+  }
+
+  .social-link:hover {
+    background: var(--title-color);
+    color: white;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(255, 51, 51, 0.3);
+  }
+
+  .social-icon {
+    width: 24px;
+    height: 24px;
+  }
+
+  /* === BOTÓN "VOLVER" === */
+  .programa-actions {
+    text-align: center;
+    padding-top: 2rem;
+    border-top: 1px solid var(--color-text-secondary);
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 1rem 2rem;
+    border-radius: 50px;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    min-width: 220px;
+    text-align: center;
+    border: none;
+    cursor: pointer;
+  }
+
+  .primary-btn {
+    background: var(--color-primary, #ff3333);
+    color: #ffffff;
+    border: 2px solid var(--color-primary, #ff3333);
+  }
+
+  .primary-btn:hover {
+    background: var(--color-secondary, #bb2424);
+    border-color: var(--color-secondary, #bb2424);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(255, 51, 51, 0.3);
+  }
+
+  /* === SECCIÓN DEL EQUIPO === */
+  .equipo-section {
+    padding: 4rem 0;
+    background: rgba(0, 0, 0, 0.02);
+    position: relative;
+    z-index: 1;
+  }
+
+  .section-title {
+    color: var(--title-color);
+    font-size: 2.5rem;
+    text-align: center;
+    margin-bottom: 3rem;
+    font-weight: 800;
+    position: relative;
+  }
+  
+  .section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100px;
+    height: 4px;
+    background: linear-gradient(90deg, 
+      transparent,
+      var(--title-color),
+      transparent);
+    border-radius: 2px;
+  }
+
+  .equipo-list {
+    display: grid;
+    gap: 2rem;
+  }
+
+  .equipo-card {
+    background: var(--color-card-bg);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 51, 51, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    transition: all 0.3s ease;
+  }
+
+  .equipo-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(255, 51, 51, 0.2);
+  }
+
+  .equipo-image {
+    flex-shrink: 0;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid rgba(255, 51, 51, 0.2);
+  }
+
+  .equipo-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .equipo-info {
+    flex-grow: 1;
+  }
+
+  .equipo-info h3 {
+    color: var(--title-color);
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+    font-weight: 700;
+  }
+
+  .equipo-social {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .social-link-small {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    background: rgba(255, 51, 51, 0.1);
+    color: var(--title-color);
+    text-decoration: none;
+    transition: all 0.3s ease;
+  }
+
+  .social-link-small:hover {
+    background: var(--title-color);
+    color: white;
+    transform: translateY(-2px);
+  }
+
+  .social-icon-small {
+    width: 18px;
+    height: 18px;
+  }
+
+  /* === SECCIÓN DE PODCASTS === */
+  .podcasts-section {
+    padding: 4rem 0;
+    position: relative;
+    z-index: 1;
+  }
+
+  .podcasts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 2rem;
+  }
+
+  .podcast-card {
+    background: var(--color-card-bg);
+    border-radius: 15px;
+    overflow: hidden;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 51, 51, 0.1);
+    transition: all 0.3s ease;
+  }
+
+  .podcast-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 40px rgba(255, 51, 51, 0.2);
+  }
+
+  .podcast-image {
+    position: relative;
+    aspect-ratio: 16/9;
+    overflow: hidden;
+  }
+
+  .podcast-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .podcast-card:hover .podcast-image img {
+    transform: scale(1.05);
+  }
+
+  .podcast-badge {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    background: linear-gradient(135deg, #8B5CF6 0%, #a78bfa 100%);
+    color: white;
+    padding: 0.4rem 0.8rem;
+    border-radius: 15px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .podcast-content {
+    padding: 1.5rem;
+  }
+
+  .podcast-content h3 {
+    color: var(--title-color);
+    font-size: 1.2rem;
+    margin-bottom: 0.5rem;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  .podcast-date {
+    color: var(--color-text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 1rem;
+  }
+
+  .podcast-links {
+    display: flex;
+    gap: 0.75rem;
+  }
+
+  .podcast-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--color-text);
+    text-decoration: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .podcast-link.soundcloud:hover {
+    background: #ff5500;
+    color: white;
+  }
+
+  .podcast-link.youtube:hover {
+    background: #ff0000;
+    color: white;
+  }
+
+  /* === ANIMACIONES === */
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(30px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 768px) {
+    .programa-details {
+      padding: 2rem 0 4rem;
+    }
+    
+    .programa-info-section {
+      padding: 2rem;
+      height: auto;
+    }
+    
+    .equipo-card {
+      flex-direction: column;
+      text-align: center;
+    }
+
+    .equipo-image {
+      width: 120px;
+      height: 120px;
+    }
+
+    .equipo-social {
+      justify-content: center;
+    }
+
+    .podcasts-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .section-title {
+      font-size: 2rem;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .programa-info-section {
+      padding: 1.5rem;
+      height: auto;
+    }
+    
+    .breadcrumbs .current {
+      display: none;
+    }
+
+    .social-links {
+      justify-content: center;
+    }
+  }
+  
+  /* === SMOOTH SCROLL === */
+  html {
+    scroll-behavior: smooth;
+  }
+</style>

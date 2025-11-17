@@ -1,0 +1,207 @@
+---
+// GoogleAnalytics.astro - Componente GA4 para VinylStation
+// Configuración optimizada para radio online y catálogo de vinilos
+
+interface Props {
+  measurementId?: string;
+  enableInDev?: boolean;
+}
+
+const { 
+  measurementId = import.meta.env.PUBLIC_GA4_MEASUREMENT_ID || 'G-BQLS42B2L1',
+  enableInDev = import.meta.env.PUBLIC_ENABLE_ANALYTICS_DEV === 'true' || false 
+} = Astro.props;
+
+// Solo cargar Analytics en producción o si está habilitado en dev
+const shouldLoadAnalytics = import.meta.env.PROD || enableInDev;
+const isProduction = import.meta.env.PROD;
+---
+
+{shouldLoadAnalytics && (
+  <>
+    <!-- Google Analytics 4 Script -->
+    <script async src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`}></script>
+    
+    <script define:vars={{ measurementId, isProduction }}>
+      // Configuración inicial de Google Analytics 4
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      
+      // Configuración principal de GA4
+      gtag('config', measurementId, {
+        // Configuración de privacidad y rendimiento
+        anonymize_ip: true,
+        allow_google_signals: true,
+        allow_ad_personalization_signals: false,
+        
+        // Configuraciones específicas para VinylStation
+        page_title: document.title,
+        page_location: window.location.href,
+        
+        // Enhanced ecommerce para vinilos (si aplica)
+        send_page_view: true,
+        
+        // Configuración de debug en desarrollo
+        debug_mode: !isProduction,
+        
+        // Configuraciones adicionales para radio online
+        custom_map: {
+          'custom_parameter_1': 'radio_action',
+          'custom_parameter_2': 'vinyl_interaction',
+          'custom_parameter_3': 'program_engagement'
+        }
+      });
+      
+      // Función global para eventos personalizados de VinylStation
+      window.trackVinylStationEvent = function(action, category, label, value) {
+        if (typeof gtag !== 'undefined') {
+          gtag('event', action, {
+            event_category: category,
+            event_label: label,
+            value: value,
+            send_to: measurementId
+          });
+        }
+      };
+      
+      // Función específica para tracking de radio
+      window.trackRadioEvent = function(action, details = {}) {
+        if (typeof gtag !== 'undefined') {
+          // Evento principal de radio (mantener funcionamiento actual)
+          gtag('event', 'radio_interaction', {
+            event_category: 'Radio Player',
+            event_label: action,
+            radio_action: action,
+            stream_url: details.streamUrl || 'https://stream.zeno.fm/4g7qxnxrloluv',
+            timestamp: new Date().toISOString(),
+            send_to: measurementId,
+            ...details
+          });
+          
+          // NUEVO: Evento específico de conversión para reproducción
+          if (action === 'play') {
+            gtag('event', 'radio_play', {
+              'event_category': 'Radio Player',
+              'event_label': 'Usuario inicia reproducción',
+              'value': 1,
+              'stream_url': details.streamUrl || 'https://stream.zeno.fm/4g7qxnxrloluv',
+              'player_type': details.player_type || 'unknown',
+              'timestamp': new Date().toISOString(),
+              'send_to': measurementId
+            });
+          }
+        }
+      };
+      
+      // Función para tracking de vinilos
+      window.trackVinylEvent = function(action, vinylData = {}) {
+        if (typeof gtag !== 'undefined') {
+          gtag('event', 'vinyl_interaction', {
+            event_category: 'Vinyl Catalog',
+            event_label: action,
+            vinyl_interaction: action,
+            vinyl_title: vinylData.title || '',
+            vinyl_artist: vinylData.artist || '',
+            vinyl_genre: vinylData.genre || '',
+            send_to: measurementId,
+            ...vinylData
+          });
+        }
+      };
+      
+      // Función para tracking de programas
+      window.trackProgramEvent = function(action, programData = {}) {
+        if (typeof gtag !== 'undefined') {
+          gtag('event', 'program_interaction', {
+            event_category: 'Radio Programs',
+            event_label: action,
+            program_engagement: action,
+            program_name: programData.name || '',
+            program_time: programData.time || '',
+            send_to: measurementId,
+            ...programData
+          });
+        }
+      };
+      
+      // Auto-tracking de scroll profundo (enhanced engagement)
+      let scrollDepth = {
+        25: false,
+        50: false,
+        75: false,
+        100: false
+      };
+      
+      function trackScrollDepth() {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const scrollPercent = Math.round((scrollTop / docHeight) * 100);
+        
+        Object.keys(scrollDepth).forEach(depth => {
+          if (scrollPercent >= depth && !scrollDepth[depth]) {
+            scrollDepth[depth] = true;
+            gtag('event', 'scroll', {
+              event_category: 'Engagement',
+              event_label: `${depth}% Scroll`,
+              value: parseInt(depth),
+              send_to: measurementId
+            });
+          }
+        });
+      }
+      
+      // Throttled scroll tracking
+      let scrollTimeout;
+      window.addEventListener('scroll', function() {
+        if (scrollTimeout) clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(trackScrollDepth, 100);
+      });
+      
+      // Auto-tracking de tiempo en página
+      let pageStartTime = new Date().getTime();
+      let timeTracked = false;
+      
+      function trackTimeOnPage() {
+        if (!timeTracked) {
+          const timeSpent = Math.round((new Date().getTime() - pageStartTime) / 1000);
+          
+          if (timeSpent >= 30) { // Solo trackear si pasa más de 30 segundos
+            gtag('event', 'time_on_page', {
+              event_category: 'Engagement',
+              event_label: `${timeSpent} seconds`,
+              value: timeSpent,
+              send_to: measurementId
+            });
+            timeTracked = true;
+          }
+        }
+      }
+      
+      // Trackear cuando el usuario abandona la página
+      window.addEventListener('beforeunload', trackTimeOnPage);
+      
+      // También trackear después de 30 segundos
+      setTimeout(trackTimeOnPage, 30000);
+      
+      // Debug en consola para desarrollo
+      if (!isProduction) {
+        console.log('🔍 VinylStation GA4 Analytics initialized:', {
+          measurementId: measurementId,
+          environment: 'development',
+          functions: [
+            'trackVinylStationEvent(action, category, label, value)',
+            'trackRadioEvent(action, details)',
+            'trackVinylEvent(action, vinylData)',
+            'trackProgramEvent(action, programData)'
+          ]
+        });
+      }
+    </script>
+  </>
+)}
+
+<!-- Comentarios para debugging -->
+{!shouldLoadAnalytics && (
+  <!-- Google Analytics deshabilitado en desarrollo -->
+)}

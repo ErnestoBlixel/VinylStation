@@ -1,0 +1,472 @@
+---
+import MainLayout from '../../layouts/MainLayout.astro';
+import UniversalHero from '../../components/UniversalHero.astro';
+import { getSiteInfo, getPageData, getProgramas } from '../../lib/wordpress.js';
+
+// Helper para convertir "<p>Hola</p>" → "Hola"
+const stripHtml = (html) =>
+  html?.replace?.(/<[^>]*>/g, '').trim() || '';
+
+let hasError = false;
+let errorMessage = '';
+let siteInfo = null;
+let pageData = null;
+let programasData = null;
+
+try {
+  siteInfo = await getSiteInfo();
+  pageData = await getPageData('programas');
+  programasData = await getProgramas({ limit: 50 });
+
+  if (!siteInfo || !siteInfo.title) {
+    throw new Error('No se pudo obtener el título del sitio desde WordPress');
+  }
+} catch (error) {
+  hasError = true;
+  errorMessage = `Error conectando con WordPress: ${error.message}`;
+}
+
+const programas = hasError ? [] : (programasData?.programas || []);
+const heroTitle = hasError ? "Error - Programas" : (pageData?.title || "Nuestra Programación");
+const heroDescription = hasError ? 
+  "Error cargando los programas desde WordPress" : 
+  (pageData?.excerpt || `Descubre nuestros ${programas.length} programas especializados en música y vinilo. Programación única 24/7.`);
+
+const pageTitle = hasError ? 'Error - Programas' : (pageData?.seo?.title || `${heroTitle} - VinylStation`);
+const pageDescription = hasError ? 'Error cargando contenido' : (pageData?.seo?.metaDesc || heroDescription);
+---
+
+<MainLayout title={pageTitle} description={pageDescription}>
+  <div class="main-content">
+    {hasError ? (
+      <div class="container">
+        <UniversalHero 
+          title="Error - Programas"
+          description="Error conectando con WordPress. Revisa la conexión e intenta de nuevo."
+          customClass="compact"
+        />
+        
+        <div class="error-container">
+          <div class="error-icon">📻</div>
+          <h2 class="error-title">Error Cargando Programas</h2>
+          <p class="error-message">{errorMessage}</p>
+          <div class="error-details">
+            <h3>Posibles soluciones:</h3>
+            <ul>
+              <li>Verificar conexión a: https://cms.vinylstation.es/graphql</li>
+              <li>Comprobar que WordPress esté funcionando</li>
+              <li>Revisar configuración de GraphQL y ACF</li>
+              <li>Verificar que los programas tengan campos configurados</li>
+            </ul>
+          </div>
+          <div class="error-actions">
+            <button onclick="window.location.reload()" class="btn primary-btn">
+              🔄 Reintentar
+            </button>
+            <a href="/" class="btn secondary-btn">← Volver al inicio</a>
+          </div>
+        </div>
+      </div>
+    ) : (
+      <>
+        {/* HERO UNIVERSAL SIN EFECTOS */}
+        <UniversalHero 
+          title={heroTitle}
+          description={heroDescription}
+          customClass="compact"
+        />
+
+        {/* PROGRAMAS */}
+        <section id="programas" class="programs-section">
+          <div class="container">
+            <div class="section-header">
+              <div class="section-title-row">
+                <h2>Nuestra Programación</h2>
+                <div class="programs-stats">
+                  <div class="stat-badge">
+                    <span class="stat-number">{programas.length}</span>
+                    <span class="stat-label">Programas</span>
+                  </div>
+                  <div class="stat-badge">
+                    <span class="stat-number">24/7</span>
+                    <span class="stat-label">Al Aire</span>
+                  </div>
+                </div>
+              </div>
+              <p>
+                Descubre nuestra programación especializada. Cada programa es una experiencia única dedicada a explorar diferentes géneros, épocas y estilos de la música en vinilo.
+              </p>
+            </div>
+            
+            {programas.length > 0 ? (
+              <div class="programs-grid">
+                {programas.map((programa, index) => {
+                  // imagen 1:1 perfecta
+                  const imagen =
+                    programa.imagenPrincipalUrl ||
+                    programa.imagenPrincipal?.sourceUrl ||
+                    '/images/placeholder-radio.jpg';
+
+                  // descripción como texto limpio
+                  const rawDesc =
+                    programa.camposPrograma?.vsDescripcion ||
+                    programa.excerpt ||
+                    `Programa "${programa.title}" - Música especializada en vinilo`;
+                  const descripcion = stripHtml(rawDesc);
+
+                  return (
+                    <div class="program-card">
+                      <div class="program-image">
+                        <img
+                          src={imagen}
+                          alt={programa.imagenPrincipal?.altText || programa.title}
+                          loading="lazy"
+                          onerror="this.src='/images/placeholder-radio.jpg'"
+                        />
+                        <div class="program-overlay">
+                          <a href={`/programas/${programa.slug || programa.id}`} class="program-link">
+                            Ver Programa
+                          </a>
+                        </div>
+                      </div>
+                      <div class="program-info">
+                        <h3 class="program-title-card">{programa.title}</h3>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div class="no-programs">
+                <div class="no-programs-icon">🎵</div>
+                <h3>No hay programas disponibles</h3>
+                <p>Los programas aparecerán aquí cuando sean configurados en WordPress.</p>
+              </div>
+            )}
+          </div>
+        </section>
+      </>
+    )}
+  </div>
+</MainLayout>
+
+<style>
+  /* ESTILOS LIMPIOS PARA PROGRAMAS */
+  .main-content {
+    background: linear-gradient(135deg, var(--color-bg) 0%, rgba(0, 0, 0, 0.02) 100%);
+    min-height: 100vh;
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 1rem;
+  }
+  
+  /* === ESTILOS PARA ERROR === */
+  .error-container {
+    text-align: center;
+    padding: 2rem;
+    margin: 2rem auto;
+    background: var(--card-bg);
+    border-radius: 15px;
+    border: 2px solid var(--title-color);
+    max-width: 600px;
+  }
+  
+  .error-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+  }
+  
+  .error-title {
+    color: var(--title-color);
+    font-size: 2rem;
+    margin-bottom: 1rem;
+  }
+  
+  .error-message {
+    color: var(--text-color);
+    font-size: 1rem;
+    margin-bottom: 2rem;
+    background: rgba(0,0,0,0.3);
+    padding: 1rem;
+    border-radius: 8px;
+    font-family: monospace;
+  }
+  
+  .error-details {
+    text-align: left;
+    background: rgba(0,0,0,0.2);
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+  }
+  
+  .error-details h3 {
+    color: var(--title-color);
+    margin-bottom: 1rem;
+  }
+  
+  .error-details ul {
+    color: var(--text-color);
+    list-style-position: inside;
+  }
+  
+  .error-details li {
+    margin-bottom: 0.5rem;
+  }
+  
+  .error-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .programs-section {
+    padding: 4rem 0;
+  }
+
+  .section-header {
+    text-align: center;
+    margin-bottom: 3rem;
+  }
+
+  .section-title-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+
+  .section-header h2 {
+    font-size: 3rem;
+    margin: 0;
+    color: var(--title-color);
+    font-weight: 700;
+  }
+
+  .programs-stats {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+  
+  .stat-badge {
+    background: var(--card-bg);
+    border: 2px solid var(--title-color);
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 80px;
+  }
+  
+  .stat-number {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--title-color);
+    line-height: 1;
+  }
+  
+  .stat-label {
+    font-size: 0.8rem;
+    color: var(--text-color);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .section-header p {
+    font-size: 1.2rem;
+    color: var(--text-color);
+    max-width: 800px;
+    margin: 0 auto;
+    line-height: 1.6;
+  }
+
+  .programs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 2rem;
+    margin-top: 2rem;
+  }
+
+  .program-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+    border: 1px solid rgba(197, 173, 123, 0.1);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .program-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(197, 173, 123, 0.3);
+  }
+
+  .program-image {
+    position: relative;
+    aspect-ratio: 1 / 1;
+    overflow: hidden;
+  }
+
+  .program-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .program-card:hover .program-image img {
+    transform: scale(1.05);
+  }
+
+  .program-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .program-card:hover .program-overlay {
+    opacity: 1;
+  }
+
+  .program-link {
+    background: var(--title-color);
+    color: var(--color-bg);
+    padding: 0.8rem 1.5rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+  }
+
+  .program-link:hover {
+    background: #a8935e;
+  }
+
+  .program-info {
+    padding: 1.5rem;
+    text-align: center;
+    flex: 1;
+  }
+
+  .program-title-card {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--title-color);
+    margin: 0;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .no-programs {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-color);
+  }
+
+  .no-programs-icon {
+    font-size: 4rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+  }
+
+  .no-programs h3 {
+    color: var(--title-color);
+    margin-bottom: 0.5rem;
+  }
+
+  .btn {
+    display: inline-block;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    border: 2px solid;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .primary-btn {
+    background: var(--title-color);
+    color: var(--color-bg);
+    border-color: var(--title-color);
+  }
+
+  .primary-btn:hover {
+    background: #a8935e;
+    border-color: #a8935e;
+  }
+
+  .secondary-btn {
+    background: transparent;
+    color: var(--title-color);
+    border-color: var(--title-color);
+  }
+
+  .secondary-btn:hover {
+    background: var(--title-color);
+    color: var(--color-bg);
+  }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .section-title-row {
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+    
+    .section-header h2 {
+      font-size: 2rem;
+    }
+    
+    .programs-grid {
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 1.5rem;
+    }
+    
+    .programs-stats {
+      flex-direction: row;
+      justify-content: center;
+    }
+    
+    .error-actions {
+      flex-direction: column;
+      align-items: center;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .section-header h2 {
+      font-size: 1.8rem;
+    }
+    
+    .programs-grid {
+      grid-template-columns: 1fr;
+      gap: 1rem;
+    }
+  }
+</style>
