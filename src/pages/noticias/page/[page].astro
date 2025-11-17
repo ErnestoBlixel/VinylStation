@@ -19,8 +19,10 @@ export async function getStaticPaths() {
       return [{ params: { page: '1' } }];
     }
     
-    const totalPages = Math.ceil(totalNoticias / itemsPerPage);
-    console.log(`📊 Total noticias: ${totalNoticias}, Páginas a generar: ${totalPages}`);
+    // 🔥 LIMITAR A 300 NOTICIAS MÁXIMO (25 PÁGINAS)
+    const noticiasLimitadas = Math.min(totalNoticias, 300);
+    const totalPages = Math.ceil(noticiasLimitadas / itemsPerPage);
+    console.log(`📊 Total noticias: ${totalNoticias} (limitadas a ${noticiasLimitadas}), Páginas a generar: ${totalPages}`);
     
     // Generar rutas para todas las páginas
     const paths = [];

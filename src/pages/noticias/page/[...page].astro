@@ -15,10 +15,12 @@ export async function getStaticPaths({ paginate }) {
       return [];
     }
 
-    console.log(`✅ Generando páginas estáticas para ${todasLasNoticiasData.noticias.length} noticias`);
+    // 🔥 LIMITAR A 300 NOTICIAS PARA REDUCIR TIEMPO DE BUILD
+    const noticiasLimitadas = todasLasNoticiasData.noticias.slice(0, 300);
+    console.log(`✅ Generando páginas estáticas para ${noticiasLimitadas.length} noticias (de ${todasLasNoticiasData.noticias.length} totales)`);
 
     // Usar la función paginate de Astro
-    const paginatedPages = paginate(todasLasNoticiasData.noticias, {
+    const paginatedPages = paginate(noticiasLimitadas, {
       pageSize: 12, // 12 noticias por página (como el original)
     });
     
